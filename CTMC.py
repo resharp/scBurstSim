@@ -10,7 +10,7 @@ k_d = 0.01   # k_d = decay rate
 max_minutes = 1440 # 24 hours = 1440 minutes
 nr_refractions = 1
 
-windows = [[400, 520, 'EU']] # e.g. 60 minutes of EU labeling
+windows = [[400, 520, 'EU']] # e.g. 120 minutes of EU labeling
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 wash_out = 490
 
@@ -57,8 +57,6 @@ def plot_events(df, df_poisson_arrivals):
 
 def plot_dynamics(df_poisson_arrivals, windows = [], df_label_arrivals = []):
 
-    plot_events(df, df_poisson_arrivals)
-
     plt.title("l_01={l_01}; k_syn={k_syn}; k_d={k_d} -> burst size: {bs} +/- {std}; burst freq: {freq}".format(
         bs=mean_burst_size, std=std_burst_size
         , freq=burst_frequency
@@ -83,6 +81,7 @@ def plot_dynamics(df_poisson_arrivals, windows = [], df_label_arrivals = []):
         plt.axvline(end_window, c="r")
 
     plt.legend()
+
     plt.show()
 
 
@@ -151,13 +150,16 @@ df_decays = df_poisson_arrivals[['label','decay', "count_d"]].\
 df_poisson_arrivals = df_poisson_arrivals[["label", "arrival", "count_s"]]
 df_poisson_arrivals = df_poisson_arrivals.append(df_decays).sort_values(by="arrival")
 
-df_poisson_arrivals['cum_count'] = df_poisson_arrivals['count_s'].cumsum()
+plot_events(df, df_poisson_arrivals)
 
 df_labeled_arrivals = []
 for window in windows:
     df_labeled = df_poisson_arrivals[ df_poisson_arrivals.label == window[WINDOW_LABEL]]
     df_labeled['cum_count'] = df_labeled['count_s'].cumsum()
     df_labeled_arrivals.append(df_labeled)
+
+df_poisson_arrivals = df_poisson_arrivals[df_poisson_arrivals.label == ""]
+df_poisson_arrivals['cum_count'] = df_poisson_arrivals['count_s'].cumsum()
 
 debug = "True"
 
