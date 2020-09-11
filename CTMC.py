@@ -9,16 +9,17 @@ k_syn = 0.16  # k_syn = synthesis rate = transcription rate
 k_d = 0.01   # k_d = decay rate
 max_minutes = 1440 # 24 hours = 1440 minutes
 nr_refractions = 1
-start_window = 400
-end_window = 430
-wash_out = 460
+
+windows = [[400, 520, 'EU']] # e.g. 60 minutes of EU labeling
+WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
+wash_out = 490
 
 
-def new_poisson_arrivals(start_time, interval) -> list:
+def new_poisson_arrivals(start_time, interval, windows = []) -> list:
     poisson_list = []
 
     last_arrival = 0
-
+    label = ""
     while last_arrival < interval:
         arrival = np.random.exponential(scale=1.0, size=None) / k_syn
         last_arrival = last_arrival + arrival
@@ -28,8 +29,15 @@ def new_poisson_arrivals(start_time, interval) -> list:
         decay = np.random.exponential(scale=1.0, size=None) / k_d
         decay_time = start_time + last_arrival + decay
 
+        arrival_time = start_time + last_arrival
+
         if last_arrival < interval:
-            poisson_list.append([start_time + last_arrival, 1, decay_time, -1])
+            for window in windows:
+                if window[WINDOW_START] < arrival_time < window[WINDOW_END]:
+                    label = window[WINDOW_LABEL]
+                else:
+                    label = ""
+            poisson_list.append([label, arrival_time, 1, decay_time, -1])
 
     return poisson_list
 
@@ -47,21 +55,32 @@ def plot_events(df, df_poisson_arrivals):
     plt.scatter(decay_list, y_decays, color='r', marker="o", s=9)
 
 
-def plot_dynamics(df_poisson_arrivals):
+def plot_dynamics(df_poisson_arrivals, windows = [], df_label_arrivals = []):
 
     plot_events(df, df_poisson_arrivals)
 
-    plt.title("Burst size: {bs} +/- {std}; # burst frequency: {freq}".format(
-        bs=mean_burst_size, std=std_burst_size, freq=burst_frequency))
+    plt.title("l_01={l_01}; k_syn={k_syn}; k_d={k_d} -> burst size: {bs} +/- {std}; burst freq: {freq}".format(
+        bs=mean_burst_size, std=std_burst_size
+        , freq=burst_frequency
+        , l_01 = l_01, k_syn=k_syn, k_d=k_d))
 
     plt.step(df_poisson_arrivals["arrival"], df_poisson_arrivals["cum_count"], where="post", color="tab:blue")
+
+    colors = ["darkgreen", "m"]; color = 0
+    for df_label_arrival in df_labeled_arrivals:
+        plt.step(df_label_arrival["arrival"], df_label_arrival["cum_count"], where="post", color=colors[color])
+        color = color + 1
 
     plt.xlim(0, max_minutes)
     plt.xlabel("minutes")
     plt.ylabel("nr of transcripts")
 
-    plt.axvline(start_window, label='labeling window', c="r")
-    plt.axvline(end_window, c="r")
+    for window in windows:
+        start_window = window[WINDOW_START]
+        end_window = window[WINDOW_END]
+
+        plt.axvline(start_window, label='labeling window', c="r")
+        plt.axvline(end_window, c="r")
 
     plt.legend()
     plt.show()
@@ -106,7 +125,7 @@ while current_time < max_minutes:
         # current_time is the start of active (ON) state
         # state_time is length of burst
         # now create new Poisson arrivals
-        new_arrivals = new_poisson_arrivals(current_time, state_time)
+        new_arrivals = new_poisson_arrivals(current_time, state_time, windows)
         burst_size = len(new_arrivals)
         poisson_arrivals = poisson_arrivals + new_arrivals
 
@@ -123,16 +142,22 @@ while current_time < max_minutes:
 
 df = pd.DataFrame(data=dtmc_list, columns=["state", "begin_time", "end_time", "state_time", "burst_size"])
 
-df_poisson_arrivals = pd.DataFrame(poisson_arrivals, columns=["arrival", "count_s", "decay", "count_d"])
+df_poisson_arrivals = pd.DataFrame(poisson_arrivals, columns=["label", "arrival", "count_s", "decay", "count_d"])
 
 # we will now put the arrivals and decays in one table and sort by time
-df_decays = df_poisson_arrivals[['decay', "count_d"]].\
+df_decays = df_poisson_arrivals[['label','decay', "count_d"]].\
     rename(columns={'decay': 'arrival', 'count_d': 'count_s'})
 
-df_poisson_arrivals = df_poisson_arrivals[["arrival", "count_s"]]
+df_poisson_arrivals = df_poisson_arrivals[["label", "arrival", "count_s"]]
 df_poisson_arrivals = df_poisson_arrivals.append(df_decays).sort_values(by="arrival")
 
 df_poisson_arrivals['cum_count'] = df_poisson_arrivals['count_s'].cumsum()
+
+df_labeled_arrivals = []
+for window in windows:
+    df_labeled = df_poisson_arrivals[ df_poisson_arrivals.label == window[WINDOW_LABEL]]
+    df_labeled['cum_count'] = df_labeled['count_s'].cumsum()
+    df_labeled_arrivals.append(df_labeled)
 
 debug = "True"
 
@@ -142,6 +167,6 @@ std_burst_size = df[df.state == "1"].burst_size.std().round(1)
 nr_bursts = len(df[df.state == "1"])
 burst_frequency = round(nr_bursts/max_minutes, 3)
 
-plot_dynamics(df_poisson_arrivals)
+plot_dynamics(df_poisson_arrivals, windows, df_labeled_arrivals)
 
 # plot_waiting_time_distribution(df)
