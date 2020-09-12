@@ -1,45 +1,25 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from Transcription import Transcription
 
-# two transitions
-l_01 = 0.02
-l_10 = 0.02
-k_syn = 0.16  # k_syn = synthesis rate = transcription rate
-k_d = 0.01   # k_d = decay rate
+# part of Experiment (analog windows)
 max_minutes = 1440 # 24 hours = 1440 minutes
-nr_refractions = 1
-
 windows = [[400, 520, 'EU']] # e.g. 120 minutes of EU labeling
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 wash_out = 490
 
+# part of Transcription model (basis parameters)
+# two transitions
+l_01 = 0.02
+l_10 = 0.02
+k_syn = 0.16  # k_syn = synthesis rate = transcription rate
+nr_refractions = 1
+# decay is strictly not part of transcription but we include it in the model
+k_d = 0.01   # k_d = decay rate
 
-def new_poisson_arrivals(start_time, interval, windows = []) -> list:
-    poisson_list = []
 
-    last_arrival = 0
-    label = ""
-    while last_arrival < interval:
-        arrival = np.random.exponential(scale=1.0, size=None) / k_syn
-        last_arrival = last_arrival + arrival
-
-        # we immediately determine the decay time once a transcript comes into existence
-        # to do: check if this is the right distribution for a death process
-        decay = np.random.exponential(scale=1.0, size=None) / k_d
-        decay_time = start_time + last_arrival + decay
-
-        arrival_time = start_time + last_arrival
-
-        if last_arrival < interval:
-            for window in windows:
-                if window[WINDOW_START] < arrival_time < window[WINDOW_END]:
-                    label = window[WINDOW_LABEL]
-                else:
-                    label = ""
-            poisson_list.append([label, arrival_time, 1, decay_time, -1])
-
-    return poisson_list
+trans = Transcription(l_01, l_10, k_syn, nr_refractions, k_d)
 
 
 def plot_events(df, df_poisson_arrivals):
@@ -105,6 +85,8 @@ current_time = 0
 end_time = 0
 poisson_arrivals = []
 
+# this main part is part Of either Experiment or Transcription
+# l_01 and l_10 are from the Transcription Model
 while current_time < max_minutes:
 
     state_time = 0
@@ -124,7 +106,7 @@ while current_time < max_minutes:
         # current_time is the start of active (ON) state
         # state_time is length of burst
         # now create new Poisson arrivals
-        new_arrivals = new_poisson_arrivals(current_time, state_time, windows)
+        new_arrivals = trans.new_poisson_arrivals(current_time, state_time, windows)
         burst_size = len(new_arrivals)
         poisson_arrivals = poisson_arrivals + new_arrivals
 
@@ -133,7 +115,7 @@ while current_time < max_minutes:
 
     current_time = end_time
 
-    # switch state
+    # switch state (can be done on Transcription)
     if state == "0":
         state = "1"
     else:
