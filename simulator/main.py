@@ -1,5 +1,3 @@
-import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from Transcription import Transcription
 
@@ -66,6 +64,7 @@ def plot_dynamics(df_poisson_arrivals, windows = [], df_label_arrivals = []):
 
 
 def plot_waiting_time_distribution(df):
+
     df_off = df[df.state == "0"]
     df_on = df[df.state == "1"]
 
@@ -78,52 +77,8 @@ def plot_waiting_time_distribution(df):
     plt.show()
 
 
-dtmc_list = []
+df_dtmc, df_poisson_arrivals = trans.run_bursts(max_minutes, windows)
 
-state = "0"
-current_time = 0
-end_time = 0
-poisson_arrivals = []
-
-# this main part is part Of either Experiment or Transcription
-# l_01 and l_10 are from the Transcription Model
-while current_time < max_minutes:
-
-    state_time = 0
-    burst_size = 0
-    if state == "0":
-        l = l_01
-        # we could get a peaked distribution of waiting times by repeating (setting alpha > 1)
-        # see alpha in https://homepage.divms.uiowa.edu/~mbognar/applets/gamma.html
-        # this is a simple way to simulate multiple refractory states?
-        alpha = nr_refractions
-        for i in range(alpha):
-            state_time = state_time + np.random.exponential(scale=1.0, size=None) / l
-    else:
-        l = l_10
-        state_time = state_time + np.random.exponential(scale=1.0, size=None) / l
-
-        # current_time is the start of active (ON) state
-        # state_time is length of burst
-        # now create new Poisson arrivals
-        new_arrivals = trans.new_poisson_arrivals(current_time, state_time, windows)
-        burst_size = len(new_arrivals)
-        poisson_arrivals = poisson_arrivals + new_arrivals
-
-    end_time = current_time + state_time
-    dtmc_list.append([state, current_time, end_time, state_time, burst_size])
-
-    current_time = end_time
-
-    # switch state (can be done on Transcription)
-    if state == "0":
-        state = "1"
-    else:
-        state = "0"
-
-df = pd.DataFrame(data=dtmc_list, columns=["state", "begin_time", "end_time", "state_time", "burst_size"])
-
-df_poisson_arrivals = pd.DataFrame(poisson_arrivals, columns=["label", "arrival", "count_s", "decay", "count_d"])
 
 # we will now put the arrivals and decays in one table and sort by time
 df_decays = df_poisson_arrivals[['label','decay', "count_d"]].\
@@ -132,7 +87,7 @@ df_decays = df_poisson_arrivals[['label','decay', "count_d"]].\
 df_poisson_arrivals = df_poisson_arrivals[["label", "arrival", "count_s"]]
 df_poisson_arrivals = df_poisson_arrivals.append(df_decays).sort_values(by="arrival")
 
-plot_events(df, df_poisson_arrivals)
+plot_events(df_dtmc, df_poisson_arrivals)
 
 df_labeled_arrivals = []
 for window in windows:
@@ -146,9 +101,9 @@ df_poisson_arrivals['cum_count'] = df_poisson_arrivals['count_s'].cumsum()
 debug = "True"
 
 # calculate average burst size
-mean_burst_size = df[df.state == "1"].burst_size.mean().round(1)
-std_burst_size = df[df.state == "1"].burst_size.std().round(1)
-nr_bursts = len(df[df.state == "1"])
+mean_burst_size = df_dtmc[df_dtmc.state == "1"].burst_size.mean().round(1)
+std_burst_size = df_dtmc[df_dtmc.state == "1"].burst_size.std().round(1)
+nr_bursts = len(df_dtmc[df_dtmc.state == "1"])
 burst_frequency = round(nr_bursts/max_minutes, 3)
 
 plot_dynamics(df_poisson_arrivals, windows, df_labeled_arrivals)
