@@ -7,15 +7,17 @@ class Transcription:
     l_01 = 0
     l_10 = 0
     k_syn = 0  # k_syn = synthesis rate = transcription rate
-    nr_refractions = 1
+    nr_refractions = 0
     # decay is strictly not part of transcription but we include it in the model
     k_d = 0.01  # k_d = decay rate
 
     def __init__(self, l_01, l_10, k_syn, nr_refractions, k_d):
+
         self.l_01 = l_01
         self.l_10 = l_10
         self.k_syn = k_syn
         self.k_d = k_d
+        self.nr_refractions = nr_refractions
 
     def new_poisson_arrivals(self, start_time, interval, windows = []) -> list:
         poisson_list = []
