@@ -41,7 +41,7 @@ burst_frequency = round(nr_bursts/max_minutes, 3)
 title = "l_01={l_01}; k_syn={k_syn}; k_d={k_d} -> burst size: {bs} +/- {std}; burst freq: {freq}".format(
     bs=mean_burst_size, std=std_burst_size
     , freq=burst_frequency
-    , l_01=l_01, k_syn=k_syn, k_d=k_d)
+    , l_01=params.l_01, k_syn=params.k_syn, k_d=params.k_d)
 
 plot_dynamics(title=title, df_poisson_arrivals=df_poisson_arrivals, max_minutes=max_minutes,
               windows=windows, df_labeled_arrivals=df_labeled_arrivals )
