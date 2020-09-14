@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from Transcription import Transcription
+from Transcription import *
 
 # part of Experiment (analog windows)
 max_minutes = 1440 # 24 hours = 1440 minutes
@@ -15,9 +15,6 @@ k_syn = 0.16  # k_syn = synthesis rate = transcription rate
 nr_refractions = 1
 # decay is strictly not part of transcription but we include it in the model
 k_d = 0.01   # k_d = decay rate
-
-
-trans = Transcription(l_01, l_10, k_syn, nr_refractions, k_d)
 
 
 def plot_events(df, df_poisson_arrivals):
@@ -76,6 +73,9 @@ def plot_waiting_time_distribution(df):
     plt.title("Distribution of ON and OFF time intervals")
     plt.show()
 
+
+params = TranscriptParams(l_01, l_10, k_syn, nr_refractions, k_d)
+trans = Transcription(params)
 
 df_dtmc, df_poisson_arrivals = trans.run_bursts(max_minutes, windows)
 

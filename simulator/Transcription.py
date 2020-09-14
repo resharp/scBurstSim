@@ -1,28 +1,30 @@
 import numpy as np
 import pandas as pd
+from typing import NamedTuple
 
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 
 
+class TranscriptParams(NamedTuple):
+    l_01: int
+    l_10: int
+    k_syn: int              # k_syn = synthesis rate = transcription rate
+    nr_refractions: int
+    k_d: int                # decay is strictly not part of transcription but we include it in the model
+
+
 class Transcription:
-    l_01 = 0
-    l_10 = 0
-    k_syn = 0  # k_syn = synthesis rate = transcription rate
-    nr_refractions = 0
-    # decay is strictly not part of transcription but we include it in the model
-    k_d = 0.01  # k_d = decay rate
+
+    params = None
+
     state = "0"
 
     df_dtmc = None
     df_poisson_arrivals = None
 
-    def __init__(self, l_01, l_10, k_syn, nr_refractions, k_d):
+    def __init__(self, params):
 
-        self.l_01 = l_01
-        self.l_10 = l_10
-        self.k_syn = k_syn
-        self.k_d = k_d
-        self.nr_refractions = nr_refractions
+        self.params = params
 
         self.state = "0"
 
@@ -32,12 +34,12 @@ class Transcription:
         last_arrival = 0
         label = ""
         while last_arrival < interval:
-            arrival = np.random.exponential(scale=1.0, size=None) / self.k_syn
+            arrival = np.random.exponential(scale=1.0, size=None) / self.params.k_syn
             last_arrival = last_arrival + arrival
 
             # we immediately determine the decay time once a transcript comes into existence
             # to do: check if this is the right distribution for a death process
-            decay = np.random.exponential(scale=1.0, size=None) / self.k_d
+            decay = np.random.exponential(scale=1.0, size=None) / self.params.k_d
             decay_time = start_time + last_arrival + decay
 
             arrival_time = start_time + last_arrival
@@ -72,17 +74,16 @@ class Transcription:
             state_time = 0
             burst_size = 0
 
-            # this state switching should be moved to Transcription
             if self.state == "0":
-                l = self.l_01
+                l = self.params.l_01
                 # we could get a peaked distribution of waiting times by repeating (setting alpha > 1)
                 # see alpha in https://homepage.divms.uiowa.edu/~mbognar/applets/gamma.html
                 # this is a simple way to simulate multiple refractory states?
-                alpha = self.nr_refractions
+                alpha = self.params.nr_refractions
                 for i in range(alpha):
                     state_time = state_time + np.random.exponential(scale=1.0, size=None) / l
             else:
-                l = self.l_10
+                l = self.params.l_10
                 state_time = state_time + np.random.exponential(scale=1.0, size=None) / l
 
                 # current_time is the start of active (ON) state
