@@ -3,11 +3,12 @@ from simulator.transcription_plots import *
 
 max_minutes = 1440 # 24 hours = 1440 minutes
 # part of Experiment (Uridine analog windows)
-windows = [[400, 520, 'EU']] # e.g. 120 minutes of EU labeling
-WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
-freeze = 490
 
-params = TranscriptParams(l_01=0.02, l_10=0.02, k_syn=0.16, nr_refractions=1, k_d=0.01)
+windows = [[400, 460, 'EU'], [490, 550, '4SU']] # e.g. 120 minutes of EU labeling
+WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
+freeze = 580
+
+params = TranscriptParams(l_01=0.02, l_10=0.02, k_syn=0.32, nr_refractions=1, k_d=0.01)
 
 trans = Transcription(params)
 

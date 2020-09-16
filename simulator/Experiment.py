@@ -9,6 +9,8 @@ class Experiment:
     freeze = 0
     trans = None
 
+    df_all_arrivals = None
+
     def __init__(self, nr_cells, nr_alleles, params, windows, freeze):
 
         self.nr_cells = nr_cells
@@ -38,12 +40,19 @@ class Experiment:
                 df_unlabeled_arrivals = self.trans.df_unlabeled_arrivals
 
                 # we remember all the individual molecules to sample later and add technical noise
+                # to do: for this we need the original format with a row per transcript
+                df_poisson_arrivals["cell_id"] = cell_id
+                df_poisson_arrivals["allele_id"] = allele_id
+
                 poisson_arrivals.append(df_poisson_arrivals)
 
-                for label, count in self.calculate_count(df_labeled_arrivals, df_unlabeled_arrivals):
-                    counts.append([cell_id, allele_id, label, "OFF", count])
+                for label, count, count_un in self.calculate_count(df_labeled_arrivals, df_unlabeled_arrivals):
+                    counts.append([cell_id, allele_id, label, "OFF", count, count_un])
 
-        df_counts = pd.DataFrame(counts, columns=["cell_id", "allele_id", "label", "state", "real_count"])
+        df_counts = pd.DataFrame(
+            counts, columns=["cell_id", "allele_id", "label", "state", "real_count", "real_count_unlabeled"])
+
+        self.df_all_arrivals = pd.concat(poisson_arrivals)
 
         return df_counts
 
@@ -51,17 +60,27 @@ class Experiment:
 
         counts = []
 
-        for df_labeled_arrival in df_labeled_arrivals:
+        if len(df_unlabeled_arrivals) > 0:
+            df_before_freeze = df_unlabeled_arrivals[df_unlabeled_arrivals.arrival < self.freeze]
+            if len(df_before_freeze) > 0:
+                label = ""
+                if len(df_before_freeze) > 0:
+                    cum_count_unlabeled = df_before_freeze.iloc[-1]["cum_count"]
+                else:
+                    cum_count_unlabeled = 0
+                counts.append([label, cum_count_unlabeled, cum_count_unlabeled])
+
+        for label, df_labeled_arrival in df_labeled_arrivals:
 
             if len(df_labeled_arrival) > 0:
-                label = df_labeled_arrival.iloc[0]["label"]
 
                 df_before_freeze = df_labeled_arrival[df_labeled_arrival.arrival < self.freeze]
                 if len(df_before_freeze) > 0:
                     cum_count = df_before_freeze.iloc[-1]["cum_count"]
                 else:
                     cum_count = 0
-                counts.append([label, cum_count])
+                counts.append([label, cum_count, cum_count_unlabeled])
+
 
         return counts
 

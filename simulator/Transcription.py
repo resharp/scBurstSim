@@ -50,6 +50,7 @@ class Transcription:
                 for window in windows:
                     if window[WINDOW_START] < arrival_time < window[WINDOW_END]:
                         label = window[WINDOW_LABEL]
+                        break
                     else:
                         label = ""
                 poisson_list.append([label, arrival_time, 1, decay_time, -1])
@@ -134,7 +135,7 @@ class Transcription:
             df_labeled = (self.df_poisson_arrivals[self.df_poisson_arrivals.label == window[WINDOW_LABEL]]).\
                 copy(deep=True)
             df_labeled['cum_count'] = df_labeled['count_s'].cumsum()
-            self.df_labeled_arrivals.append(df_labeled)
+            self.df_labeled_arrivals.append([window[WINDOW_LABEL], df_labeled])
 
     def sum_unlabeled_arrivals(self):
         self.df_unlabeled_arrivals = (self.df_poisson_arrivals[self.df_poisson_arrivals.label == ""]).copy(deep=True)
