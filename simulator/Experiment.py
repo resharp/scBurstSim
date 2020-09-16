@@ -1,6 +1,7 @@
 from simulator.Transcription import *
 import pandas as pd
 
+WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 
 class Experiment:
     nr_cells = 0
@@ -47,10 +48,17 @@ class Experiment:
                 poisson_arrivals.append(df_poisson_arrivals)
 
                 for label, count, count_un in self.calculate_count(df_labeled_arrivals, df_unlabeled_arrivals):
-                    counts.append([cell_id, allele_id, label, "OFF", count, count_un])
+
+                    # to do: determine percentage of ON time for label
+                    if label != "":
+                        perc_burst_time = self.perc_burst_time(df_dtmc, label)
+                    else:
+                        perc_burst_time = 0
+
+                    counts.append([cell_id, allele_id, label, perc_burst_time, count, count_un])
 
         df_counts = pd.DataFrame(
-            counts, columns=["cell_id", "allele_id", "label", "state", "real_count", "real_count_unlabeled"])
+            counts, columns=["cell_id", "allele_id", "label", "perc_label_on", "real_count", "real_count_unlabeled"])
 
         self.df_all_arrivals = pd.concat(poisson_arrivals)
 
@@ -60,6 +68,7 @@ class Experiment:
 
         counts = []
 
+        cum_count_unlabeled = 0
         if len(df_unlabeled_arrivals) > 0:
             df_before_freeze = df_unlabeled_arrivals[df_unlabeled_arrivals.arrival < self.freeze]
             if len(df_before_freeze) > 0:
@@ -81,6 +90,30 @@ class Experiment:
                     cum_count = 0
                 counts.append([label, cum_count, cum_count_unlabeled])
 
-
         return counts
+
+    def perc_burst_time(self, df_dtmc, label) -> int:
+
+        for window in self.windows:
+            if window[WINDOW_LABEL] == label:
+                start = window[WINDOW_START]
+                end = window[WINDOW_END]
+
+        interval = end - start
+
+        active_states = df_dtmc[(df_dtmc["state"] == "1") &
+                                (df_dtmc["end_time"] >= start) &
+                                (df_dtmc["begin_time"] <= end)].copy(deep=True)
+
+        active_states["begin_time"] = np.maximum(active_states["begin_time"], start)
+        active_states["end_time"] = np.minimum(active_states["end_time"], end)
+        active_states.loc["state_time"] = active_states["end_time"] - active_states["begin_time"]
+
+        if len(active_states) > 0:
+            sum_state_time = active_states["state_time"].sum()
+            perc = sum_state_time / interval
+        else:
+            perc = 0
+
+        return perc
 
