@@ -21,6 +21,8 @@ class Transcription:
 
     df_dtmc = None
     df_poisson_arrivals = None
+    df_labeled_arrivals = []
+    df_unlabeled_arrivals = None
 
     def __init__(self, params):
 
@@ -28,7 +30,7 @@ class Transcription:
 
         self.state = "0"
 
-    def new_poisson_arrivals(self, start_time, interval, windows = []) -> list:
+    def new_poisson_arrivals(self, start_time, interval, windows=[]) -> list:
         poisson_list = []
 
         last_arrival = 0
@@ -106,4 +108,34 @@ class Transcription:
         self.df_poisson_arrivals = pd.DataFrame(poisson_arrivals,
                                                 columns=["label", "arrival", "count_s", "decay", "count_d"])
 
+        # we will now put the arrivals and decays in one table and sort by time
+        self.sort_events()
+
+        self.sum_labeled_arrivals(windows)
+
+        self.sum_unlabeled_arrivals()
+
         return self.df_dtmc, self.df_poisson_arrivals
+
+    def sort_events(self):
+
+        df_decays = self.df_poisson_arrivals[['label','decay', "count_d"]].\
+            rename(columns={'decay': 'arrival', 'count_d': 'count_s'})
+
+        df_poisson_arrivals = self.df_poisson_arrivals[["label", "arrival", "count_s"]]
+        df_poisson_arrivals = df_poisson_arrivals.append(df_decays).sort_values(by="arrival")
+
+        self.df_poisson_arrivals = df_poisson_arrivals
+
+    def sum_labeled_arrivals(self, windows):
+
+        self.df_labeled_arrivals = []
+        for window in windows:
+            df_labeled = (self.df_poisson_arrivals[self.df_poisson_arrivals.label == window[WINDOW_LABEL]]).\
+                copy(deep=True)
+            df_labeled['cum_count'] = df_labeled['count_s'].cumsum()
+            self.df_labeled_arrivals.append(df_labeled)
+
+    def sum_unlabeled_arrivals(self):
+        self.df_unlabeled_arrivals = (self.df_poisson_arrivals[self.df_poisson_arrivals.label == ""]).copy(deep=True)
+        self.df_unlabeled_arrivals['cum_count'] = self.df_unlabeled_arrivals['count_s'].cumsum()

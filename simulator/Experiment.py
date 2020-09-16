@@ -2,7 +2,6 @@ from simulator.Transcription import *
 import pandas as pd
 
 
-# Experiment should include windows and freeze moment (correct name?)
 class Experiment:
     nr_cells = 0
     nr_alleles = 0
@@ -21,7 +20,7 @@ class Experiment:
 
     # run returns count matrix + TPs for gene being ON or OFF during labeling window(s)
     # so something like (per label so we can easily generalize to two types of labels):
-    # cell_id ; gene_id ; label; state_80 (80% ON) ; real_count
+    # cell_id ; gene_id ; label; percentage_on ; real_count
     def run(self) -> pd.DataFrame:
 
         poisson_arrivals = []
@@ -30,16 +29,39 @@ class Experiment:
         # loop cells
         for i_c in range(self.nr_cells):
             for i_a in range(self.nr_alleles):
+                cell_id = i_c + 1
+                allele_id = i_a + 1
+
                 df_dtmc, df_poisson_arrivals = self.trans.run_bursts(max_minutes=self.freeze, windows=self.windows)
+
+                df_labeled_arrivals = self.trans.df_labeled_arrivals
+                df_unlabeled_arrivals = self.trans.df_unlabeled_arrivals
 
                 # we remember all the individual molecules to sample later and add technical noise
                 poisson_arrivals.append(df_poisson_arrivals)
 
-                # calculate counts
-                # to do: replace with real code, this is just some scaffolding code
-                count = [i_c+1, i_a+1, "", "OFF", 0]
-                counts.append(count)
+                for label, count in self.calculate_count(df_labeled_arrivals, df_unlabeled_arrivals):
+                    counts.append([cell_id, allele_id, label, "OFF", count])
 
-        df_counts = pd.DataFrame(counts, columns=["cell_id", "allele_id", "label", "state", "count"])
+        df_counts = pd.DataFrame(counts, columns=["cell_id", "allele_id", "label", "state", "real_count"])
 
         return df_counts
+
+    def calculate_count(self, df_labeled_arrivals, df_unlabeled_arrivals):
+
+        counts = []
+
+        for df_labeled_arrival in df_labeled_arrivals:
+
+            if len(df_labeled_arrival) > 0:
+                label = df_labeled_arrival.iloc[0]["label"]
+
+                df_before_freeze = df_labeled_arrival[df_labeled_arrival.arrival < self.freeze]
+                if len(df_before_freeze) > 0:
+                    cum_count = df_before_freeze.iloc[-1]["cum_count"]
+                else:
+                    cum_count = 0
+                counts.append([label, cum_count])
+
+        return counts
+
