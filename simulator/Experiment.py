@@ -107,7 +107,7 @@ class Experiment:
 
         active_states["begin_time"] = np.maximum(active_states["begin_time"], start)
         active_states["end_time"] = np.minimum(active_states["end_time"], end)
-        active_states.loc["state_time"] = active_states["end_time"] - active_states["begin_time"]
+        active_states["state_time"] = active_states["end_time"] - active_states["begin_time"]
 
         if len(active_states) > 0:
             sum_state_time = active_states["state_time"].sum()
