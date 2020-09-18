@@ -90,3 +90,24 @@ def do_kolmogorov_smirnov_tests_for_percentages_on(df_counts_eu):
     plt.plot(df_ks.perc, df_ks.minus_log_pvalue)
     plt.show()
 
+def regression_plot(x, y, data):
+
+    # g0 = sns.lmplot(x=x, y=y,
+    #                 # maybe
+    #                 # hue="noise_level",
+    #                 # hue_order=["level_1", "level_2", "level_3"],
+    #                 data=data,
+    #                 height=5, aspect=1.5)
+
+    sns.jointplot(x=x, y=y, data=data, kind="reg",
+                  marginal_kws=dict(bins=20, rug=True))
+
+    plt.xlim(-0.1, 1.1)
+    if y == "fraction":
+        plt.ylim(-0.1, 1.1)
+
+    # title = "{x} agains {y}".format(x=x, y=y)
+    # plt.title(title)
+
+    plt.show()
+

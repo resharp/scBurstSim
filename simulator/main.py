@@ -21,12 +21,14 @@ df_counts["fraction"] = df_counts["real_count"] / (df_counts["real_count"] + df_
 
 df_counts_eu = df_counts[df_counts.label == "EU"].copy(deep=True)
 
-df_counts_eu = violin_plot_fraction(0.5, "50", df_counts_eu)
+df_counts_eu = violin_plot_fraction(0.8, "80", df_counts_eu)
 
-do_kolmogorov_smirnov_tests_for_percentages_on(df_counts_eu)
+# do_kolmogorov_smirnov_tests_for_percentages_on(df_counts_eu)
 
 df_all_arrivals = exp.df_all_arrivals
 
-try_out_logistic_regression(perc="50", df_counts_label=df_counts_eu)
+# try_out_logistic_regression(perc="50", df_counts_label=df_counts_eu)
 
-show_distribution_real_counts(df_counts, nr_cells)
+regression_plot("perc_label_on", "fraction", df_counts_eu)
+
+# show_distribution_real_counts(df_counts, nr_cells)
