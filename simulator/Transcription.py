@@ -87,7 +87,9 @@ class Transcription:
                     state_time = state_time + np.random.exponential(scale=1.0, size=None) / l
             else:
                 l = self.params.l_10
-                state_time = state_time + np.random.exponential(scale=1.0, size=None) / l
+                alpha = self.params.nr_refractions
+                for i in range(alpha):
+                    state_time = state_time + np.random.exponential(scale=1.0, size=None) / l
 
                 # current_time is the start of active (ON) state
                 # state_time is length of burst

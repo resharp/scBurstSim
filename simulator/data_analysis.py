@@ -100,11 +100,14 @@ def regression_plot(x, y, data):
     #                 height=5, aspect=1.5)
 
     sns.jointplot(x=x, y=y, data=data, kind="reg",
-                  marginal_kws=dict(bins=20, rug=True))
+                  marginal_kws=dict(bins=10))
 
     plt.xlim(-0.1, 1.1)
     if y == "fraction":
         plt.ylim(-0.1, 1.1)
+
+    plt.xlabel("percentage of time burst was ON during labeling window")
+    plt.ylabel("fraction of labeled mRNA")
 
     # title = "{x} agains {y}".format(x=x, y=y)
     # plt.title(title)

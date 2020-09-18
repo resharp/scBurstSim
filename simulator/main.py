@@ -1,6 +1,17 @@
 from simulator.Experiment import *
 from simulator.Transcription import *
 from simulator.data_analysis import *
+import os
+import pandas as pd
+if os.name == 'nt':
+    dir_sep = "\\"
+    # to do: set your own working directory for locally storing data sets
+    work_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\source\scBurstSim\data"
+else:
+    dir_sep = "/"
+    work_dir = "."
+
+run_sim = False # run_sim False uses locally stored data set
 
 max_minutes = 1440  # 24 hours = 1440 minutes
 windows = [[400, 520, 'EU']]  # e.g. 120 minutes of EU labeling
@@ -13,7 +24,12 @@ nr_cells = 1000
 nr_alleles = 1
 exp = Experiment(nr_cells, nr_alleles, params, windows, freeze)
 
-df_counts = exp.run()
+filename = "{wd}{dir_sep}df_counts".format(wd=work_dir, dir_sep=dir_sep)
+if run_sim:
+    df_counts = exp.run()
+    df_counts.to_csv(path_or_buf=filename, sep='\t', index=False)
+else:
+    df_counts = pd.read_csv(filename, sep='\t')
 
 print("Experiment run. Number of counts: {counts}.".format(counts=len(df_counts)))
 
@@ -31,4 +47,4 @@ df_all_arrivals = exp.df_all_arrivals
 
 regression_plot("perc_label_on", "fraction", df_counts_eu)
 
-# show_distribution_real_counts(df_counts, nr_cells)
+show_distribution_real_counts(df_counts, nr_cells)

@@ -22,7 +22,7 @@ def plot_dynamics(title, df_poisson_arrivals, max_minutes, windows=[], df_labele
 
     plt.step(df_poisson_arrivals["arrival"], df_poisson_arrivals["cum_count"], where="post", color="tab:blue")
 
-    colors = ["darkgreen", "m"]; color = 0
+    colors = ["darkgreen", "peru"]; color = 0
     for label, df_label_arrival in df_labeled_arrivals:
         plt.step(df_label_arrival["arrival"], df_label_arrival["cum_count"], where="post", color=colors[color])
         color = color + 1
