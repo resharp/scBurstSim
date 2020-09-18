@@ -5,6 +5,8 @@ from sklearn.linear_model import LogisticRegression
 import pandas as pd
 import seaborn as sns
 
+WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
+
 
 def show_distribution_real_counts(df_counts, nr_cells):
     # NB: not all zeroes are shown! (when burst was absent; however, can be derived from unlabeled counts)
@@ -90,7 +92,8 @@ def do_kolmogorov_smirnov_tests_for_percentages_on(df_counts_eu):
     plt.plot(df_ks.perc, df_ks.minus_log_pvalue)
     plt.show()
 
-def regression_plot(x, y, data):
+
+def regression_plot(x, y, data, exp_params):
 
     # g0 = sns.lmplot(x=x, y=y,
     #                 # maybe
@@ -106,11 +109,15 @@ def regression_plot(x, y, data):
     if y == "fraction":
         plt.ylim(-0.1, 1.1)
 
-    plt.xlabel("percentage of time burst was ON during labeling window")
-    plt.ylabel("fraction of labeled mRNA")
+    params = exp_params.trans_params
+    title = "window={start}->{end}; freeze={freeze}; l_01={l_01}; k_syn={k_syn}; k_d={k_d}".format(
+        l_01=params.l_01, k_syn=params.k_syn, k_d=params.k_d, freeze=exp_params.freeze,
+        start=exp_params.windows[0][WINDOW_START], end=exp_params.windows[0][WINDOW_END])
 
-    # title = "{x} agains {y}".format(x=x, y=y)
-    # plt.title(title)
+    # from=exp_params.windows[0][WINDOW_START], to = exp_params.windows[0][WINDOW_END]
+
+    plt.xlabel("percentage of time burst was ON during labeling window ({title})".format(title=title))
+    plt.ylabel("fraction of labeled mRNA")
 
     plt.show()
 

@@ -1,25 +1,29 @@
 from simulator.Transcription import *
 import pandas as pd
+from typing import NamedTuple
 
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 
-class Experiment:
-    nr_cells = 0
-    nr_alleles = 0
-    windows = []
-    freeze = 0
-    trans = None
 
+class ExperimentParams(NamedTuple):
+    nr_cells: int
+    nr_alleles: int
+    windows: list
+    freeze: int
+    trans_params: object
+
+
+class Experiment:
+
+    params = None
+
+    trans = None
     df_all_arrivals = None
 
-    def __init__(self, nr_cells, nr_alleles, params, windows, freeze):
+    def __init__(self, params):
 
-        self.nr_cells = nr_cells
-        self.nr_alleles = nr_alleles
-        self.windows = windows
-        self.freeze = freeze
-
-        self.trans = Transcription(params)
+        self.params = params
+        self.trans = Transcription(params.trans_params)
 
     # run returns count matrix + TPs for gene being ON or OFF during labeling window(s)
     # so something like (per label so we can easily generalize to two types of labels):
@@ -30,12 +34,13 @@ class Experiment:
         counts = []
 
         # loop cells
-        for i_c in range(self.nr_cells):
-            for i_a in range(self.nr_alleles):
+        for i_c in range(self.params.nr_cells):
+            for i_a in range(self.params.nr_alleles):
                 cell_id = i_c + 1
                 allele_id = i_a + 1
 
-                df_dtmc, df_poisson_arrivals = self.trans.run_bursts(max_minutes=self.freeze, windows=self.windows)
+                df_dtmc, df_poisson_arrivals = self.trans.run_bursts(max_minutes=self.params.freeze
+                                                                     , windows=self.params.windows)
 
                 df_labeled_arrivals = self.trans.df_labeled_arrivals
                 df_unlabeled_arrivals = self.trans.df_unlabeled_arrivals
@@ -70,7 +75,7 @@ class Experiment:
 
         cum_count_unlabeled = 0
         if len(df_unlabeled_arrivals) > 0:
-            df_before_freeze = df_unlabeled_arrivals[df_unlabeled_arrivals.arrival < self.freeze]
+            df_before_freeze = df_unlabeled_arrivals[df_unlabeled_arrivals.arrival < self.params.freeze]
             if len(df_before_freeze) > 0:
                 label = ""
                 if len(df_before_freeze) > 0:
@@ -83,7 +88,7 @@ class Experiment:
 
             if len(df_labeled_arrival) > 0:
 
-                df_before_freeze = df_labeled_arrival[df_labeled_arrival.arrival < self.freeze]
+                df_before_freeze = df_labeled_arrival[df_labeled_arrival.arrival < self.params.freeze]
                 if len(df_before_freeze) > 0:
                     cum_count = df_before_freeze.iloc[-1]["cum_count"]
                 else:
@@ -94,7 +99,7 @@ class Experiment:
 
     def perc_burst_time(self, df_dtmc, label) -> int:
 
-        for window in self.windows:
+        for window in self.params.windows:
             if window[WINDOW_LABEL] == label:
                 start = window[WINDOW_START]
                 end = window[WINDOW_END]

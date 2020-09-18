@@ -4,9 +4,10 @@ from simulator.transcription_plots import *
 max_minutes = 1440 # 24 hours = 1440 minutes
 # part of Experiment (Uridine analog windows)
 
-windows = [[400, 460, 'EU'], [490, 550, '4SU']] # e.g. 120 minutes of EU labeling
+# windows = [[400, 460, 'EU'], [490, 550, '4SU']] # e.g. 120 minutes of EU labeling
+windows = [[400, 520, 'EU']] # e.g. 120 minutes of EU labeling
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
-freeze = 580
+freeze = windows[-1][WINDOW_END] + 30  # freeze 30 minutes after end of last window
 
 params = TranscriptParams(l_01=0.02, l_10=0.02, k_syn=0.16, nr_refractions=1, k_d=0.01)
 
@@ -30,7 +31,7 @@ title = "l_01={l_01}; k_syn={k_syn}; k_d={k_d} -> burst size: {bs} +/- {std}; bu
     , freq=burst_frequency
     , l_01=params.l_01, k_syn=params.k_syn, k_d=params.k_d)
 
-plot_dynamics(title=title, df_poisson_arrivals=df_unlabeled_arrivals, max_minutes=max_minutes,
+plot_dynamics(title=title, df_poisson_arrivals=df_unlabeled_arrivals, freeze=freeze, max_minutes=max_minutes,
               windows=windows, df_labeled_arrivals=df_labeled_arrivals)
 
 # plot_waiting_time_distribution(df_dtmc)

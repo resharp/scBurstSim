@@ -16,7 +16,7 @@ def plot_events(df_dtmc, df_poisson_arrivals):
     plt.scatter(decay_list, y_decays, color='r', marker="o", s=9)
 
 
-def plot_dynamics(title, df_poisson_arrivals, max_minutes, windows=[], df_labeled_arrivals=[]):
+def plot_dynamics(title, df_poisson_arrivals, freeze, max_minutes, windows=[], df_labeled_arrivals=[]):
 
     plt.title(title)
 
@@ -37,6 +37,8 @@ def plot_dynamics(title, df_poisson_arrivals, max_minutes, windows=[], df_labele
 
         plt.axvline(start_window, label='labeling window', c="r")
         plt.axvline(end_window, c="r")
+
+    plt.axvline(freeze, linestyle='--', color='black', label="freeze")
 
     plt.legend()
 
