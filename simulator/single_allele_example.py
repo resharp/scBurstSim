@@ -13,12 +13,12 @@ params = TranscriptParams(l_01=0.02, l_10=0.02, k_syn=0.16, nr_refractions=1, k_
 
 trans = Transcription(params)
 
-df_dtmc, df_poisson_arrivals = trans.run_bursts(max_minutes, windows)
+df_dtmc, df_events = trans.run_bursts(max_minutes, windows)
 
-df_unlabeled_arrivals = trans.df_unlabeled_arrivals
-df_labeled_arrivals = trans.df_labeled_arrivals
+df_unlabeled_events = trans.df_unlabeled_events
+df_labeled_events = trans.df_labeled_events
 
-plot_events(df_dtmc, df_poisson_arrivals)
+plot_events(df_dtmc, df_events)
 
 # calculate average burst size
 mean_burst_size = df_dtmc[df_dtmc.state == "1"].burst_size.mean().round(1)
@@ -31,7 +31,7 @@ title = "l_01={l_01}; k_syn={k_syn}; k_d={k_d} -> burst size: {bs} +/- {std}; bu
     , freq=burst_frequency
     , l_01=params.l_01, k_syn=params.k_syn, k_d=params.k_d)
 
-plot_dynamics(title=title, df_poisson_arrivals=df_unlabeled_arrivals, freeze=freeze, max_minutes=max_minutes,
-              windows=windows, df_labeled_arrivals=df_labeled_arrivals)
+plot_dynamics(title=title, df_events=df_unlabeled_events, freeze=freeze, max_minutes=max_minutes,
+              windows=windows, df_labeled_arrivals=df_labeled_events)
 
 # plot_waiting_time_distribution(df_dtmc)

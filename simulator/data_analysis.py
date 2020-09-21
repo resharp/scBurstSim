@@ -17,7 +17,7 @@ def show_distribution_real_counts(df_counts, nr_cells):
     plt.show()
 
 
-# to do: fix: this logistic regression does not work well on inbalanced ON/OFF dataset
+# TODO: fix or remove: this logistic regression does not work well on inbalanced ON/OFF dataset
 def try_out_logistic_regression(perc, df_counts_label):
 
     # instantiate the model (using the default parameters)
@@ -31,7 +31,7 @@ def try_out_logistic_regression(perc, df_counts_label):
     y_train = df_counts_label[["state"]].values.ravel()
 
     # fit the model with data
-    # to do: split training and validation data set and determine AUC etc
+    # TODO: split training and validation data set and determine AUC etc
     logreg.fit(x_train, y_train)
 
     # sanity check: good separation between OFF and ON separation?

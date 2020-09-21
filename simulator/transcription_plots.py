@@ -3,24 +3,24 @@ import matplotlib.pyplot as plt
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 
 
-def plot_events(df_dtmc, df_poisson_arrivals):
+def plot_events(df_dtmc, df_events):
     plt.step(df_dtmc["begin_time"], df_dtmc["state"], where="post", color="m")
 
-    arrival_list = df_poisson_arrivals[df_poisson_arrivals.count_s > 0]['arrival'].to_list()
+    arrival_list = df_events[df_events.count_s > 0]['arrival'].to_list()
     y_arrivals = [1] * len(arrival_list)
 
-    decay_list = df_poisson_arrivals[df_poisson_arrivals.count_s < 0]['arrival'].to_list()
+    decay_list = df_events[df_events.count_s < 0]['arrival'].to_list()
     y_decays = [0] * len(arrival_list)
 
     plt.scatter(arrival_list, y_arrivals, color='m', marker="d", s=9)
     plt.scatter(decay_list, y_decays, color='r', marker="o", s=9)
 
 
-def plot_dynamics(title, df_poisson_arrivals, freeze, max_minutes, windows=[], df_labeled_arrivals=[]):
+def plot_dynamics(title, df_events, freeze, max_minutes, windows=[], df_labeled_arrivals=[]):
 
     plt.title(title)
 
-    plt.step(df_poisson_arrivals["arrival"], df_poisson_arrivals["cum_count"], where="post", color="tab:blue")
+    plt.step(df_events["arrival"], df_events["cum_count"], where="post", color="tab:blue")
 
     colors = ["darkgreen", "peru"]; color = 0
     for label, df_label_arrival in df_labeled_arrivals:

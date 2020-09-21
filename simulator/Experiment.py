@@ -25,9 +25,10 @@ class Experiment:
         self.params = params
         self.trans = Transcription(params.trans_params)
 
-    # run returns count matrix + TPs for gene being ON or OFF during labeling window(s)
-    # so something like (per label so we can easily generalize to two types of labels):
-    # cell_id ; gene_id ; label; percentage_on ; real_count
+    # run returns count matrix + true positives for gene being ON or OFF during labeling window(s)
+    # returns:
+    # (per label so we can easily generalize to two types of labels):
+    # cell_id ; allele_id ; label; perc_label_on; real_count; real_count_unlabeled
     def run(self) -> pd.DataFrame:
 
         poisson_arrivals = []
@@ -39,22 +40,21 @@ class Experiment:
                 cell_id = i_c + 1
                 allele_id = i_a + 1
 
-                df_dtmc, df_poisson_arrivals = self.trans.run_bursts(max_minutes=self.params.freeze
+                df_dtmc, df_events = self.trans.run_bursts(max_minutes=self.params.freeze
                                                                      , windows=self.params.windows)
 
-                df_labeled_arrivals = self.trans.df_labeled_arrivals
-                df_unlabeled_arrivals = self.trans.df_unlabeled_arrivals
+                df_labeled_events = self.trans.df_labeled_events
+                df_unlabeled_events = self.trans.df_unlabeled_events
 
-                # we remember all the individual molecules to sample later and add technical noise
-                # to do: for this we need the original format with a row per transcript
-                df_poisson_arrivals["cell_id"] = cell_id
-                df_poisson_arrivals["allele_id"] = allele_id
+                df_events["cell_id"] = cell_id
+                df_events["allele_id"] = allele_id
 
+                # TODO: we should remember all the individual poisson arrivals and decays
+                df_poisson_arrivals = self.trans.df_poisson_arrivals
                 poisson_arrivals.append(df_poisson_arrivals)
 
-                for label, count, count_un in self.calculate_count(df_labeled_arrivals, df_unlabeled_arrivals):
+                for label, count, count_un in self.calculate_count(df_labeled_events, df_unlabeled_events):
 
-                    # to do: determine percentage of ON time for label
                     if label != "":
                         perc_burst_time = self.perc_burst_time(df_dtmc, label)
                     else:
@@ -84,6 +84,7 @@ class Experiment:
                     cum_count_unlabeled = 0
                 counts.append([label, cum_count_unlabeled, cum_count_unlabeled])
 
+        # TODO: Also add a record when there is no labeled arrival?
         for label, df_labeled_arrival in df_labeled_arrivals:
 
             if len(df_labeled_arrival) > 0:

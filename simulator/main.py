@@ -5,7 +5,7 @@ import os
 import pandas as pd
 if os.name == 'nt':
     dir_sep = "\\"
-    # to do: set your own working directory for locally storing data sets
+    # TODO: set your own working directory for locally storing data sets
     work_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\source\scBurstSim\data"
 else:
     dir_sep = "/"
@@ -20,7 +20,7 @@ freeze = windows[-1][WINDOW_END] + 30  # freeze 30 minutes after end of last win
 
 trans_params = TranscriptParams(l_01=0.02, l_10=0.02, k_syn=0.16, nr_refractions=1, k_d=0.01)
 
-nr_cells = 1000
+nr_cells = 200
 nr_alleles = 1
 
 exp_params = ExperimentParams(nr_cells=nr_cells, nr_alleles=nr_alleles, windows=windows, freeze=freeze,
@@ -45,6 +45,7 @@ df_counts_eu = df_counts[df_counts.label == "EU"].copy(deep=True)
 
 # do_kolmogorov_smirnov_tests_for_percentages_on(df_counts_eu)
 
+# TODO: df_all_arrivals can be used for sampling (it still contains information on singular molecule level)
 df_all_arrivals = exp.df_all_arrivals
 
 # try_out_logistic_regression(perc="50", df_counts_label=df_counts_eu)

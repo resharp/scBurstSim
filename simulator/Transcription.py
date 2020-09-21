@@ -21,8 +21,10 @@ class Transcription:
 
     df_dtmc = None
     df_poisson_arrivals = None
-    df_labeled_arrivals = []
-    df_unlabeled_arrivals = None
+    df_events = None
+
+    df_labeled_events = []
+    df_unlabeled_events = None
 
     def __init__(self, params):
 
@@ -40,7 +42,7 @@ class Transcription:
             last_arrival = last_arrival + arrival
 
             # we immediately determine the decay time once a transcript comes into existence
-            # to do: check if this is the right distribution for a death process
+            # TODO: check if this is the right distribution for a death process
             decay = np.random.exponential(scale=1.0, size=None) / self.params.k_d
             decay_time = start_time + last_arrival + decay
 
@@ -111,34 +113,37 @@ class Transcription:
         self.df_poisson_arrivals = pd.DataFrame(poisson_arrivals,
                                                 columns=["label", "arrival", "count_s", "decay", "count_d"])
 
-        # we will now put the arrivals and decays in one table and sort by time
-        self.sort_events()
+        # we will now put the arrivals and decays in one table self.df_events and sort by time ..
+        self.df_events = self.sort_events()
 
-        self.sum_labeled_arrivals(windows)
+        # .. enable cumulative sums
+        self.sum_labeled_events(windows)
 
-        self.sum_unlabeled_arrivals()
+        self.sum_unlabeled_events()
 
-        return self.df_dtmc, self.df_poisson_arrivals
+        return self.df_dtmc, self.df_events
 
+    # here we put (time of) arrivals and decays in the same column to sort and to enable cumulative sums
+    # however we lose the single molecule information this way
     def sort_events(self):
 
         df_decays = self.df_poisson_arrivals[['label','decay', "count_d"]].\
             rename(columns={'decay': 'arrival', 'count_d': 'count_s'})
 
         df_poisson_arrivals = self.df_poisson_arrivals[["label", "arrival", "count_s"]]
-        df_poisson_arrivals = df_poisson_arrivals.append(df_decays).sort_values(by="arrival")
+        df_events = df_poisson_arrivals.append(df_decays).sort_values(by="arrival")
 
-        self.df_poisson_arrivals = df_poisson_arrivals
+        return df_events
 
-    def sum_labeled_arrivals(self, windows):
+    def sum_labeled_events(self, windows):
 
-        self.df_labeled_arrivals = []
+        self.df_labeled_events = []
         for window in windows:
-            df_labeled = (self.df_poisson_arrivals[self.df_poisson_arrivals.label == window[WINDOW_LABEL]]).\
+            df_labeled = (self.df_events[self.df_events.label == window[WINDOW_LABEL]]).\
                 copy(deep=True)
             df_labeled['cum_count'] = df_labeled['count_s'].cumsum()
-            self.df_labeled_arrivals.append([window[WINDOW_LABEL], df_labeled])
+            self.df_labeled_events.append([window[WINDOW_LABEL], df_labeled])
 
-    def sum_unlabeled_arrivals(self):
-        self.df_unlabeled_arrivals = (self.df_poisson_arrivals[self.df_poisson_arrivals.label == ""]).copy(deep=True)
-        self.df_unlabeled_arrivals['cum_count'] = self.df_unlabeled_arrivals['count_s'].cumsum()
+    def sum_unlabeled_events(self):
+        self.df_unlabeled_events = (self.df_events[self.df_events.label == ""]).copy(deep=True)
+        self.df_unlabeled_events['cum_count'] = self.df_unlabeled_events['count_s'].cumsum()
