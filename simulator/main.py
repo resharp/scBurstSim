@@ -18,7 +18,8 @@ windows = [[400, 460, 'EU']]  # e.g. 120 minutes of EU labeling
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 freeze = windows[-1][WINDOW_END] + 30  # freeze 30 minutes after end of last window
 
-trans_params = TranscriptParams(l_01=0.02, l_10=0.02, k_syn=0.16, nr_refractions=1, k_d=0.01)
+k = 0.02    # keep k_ON and k_OFF equal
+trans_params = TranscriptParams(k_01=k, k_10=k, k_syn=0.16, nr_refractions=1, k_d=0.01)
 
 nr_cells = 200
 nr_alleles = 1
@@ -46,7 +47,7 @@ df_counts_eu = df_counts[df_counts.label == "EU"].copy(deep=True)
 # do_kolmogorov_smirnov_tests_for_percentages_on(df_counts_eu)
 
 # TODO: df_all_arrivals can be used for sampling (it still contains information on singular molecule level)
-df_all_arrivals = exp.df_all_arrivals
+df_all_transcripts = exp.df_all_transcripts
 
 # try_out_logistic_regression(perc="50", df_counts_label=df_counts_eu)
 

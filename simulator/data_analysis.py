@@ -110,8 +110,8 @@ def regression_plot(x, y, data, exp_params):
         plt.ylim(-0.1, 1.1)
 
     params = exp_params.trans_params
-    title = "window={start}->{end}; freeze={freeze}; l_01={l_01}; k_syn={k_syn}; k_d={k_d}".format(
-        l_01=params.l_01, k_syn=params.k_syn, k_d=params.k_d, freeze=exp_params.freeze,
+    title = "window={start}->{end}; freeze={freeze}; k_01={k_01}; k_syn={k_syn}; k_d={k_d}".format(
+        k_01=params.k_01, k_syn=params.k_syn, k_d=params.k_d, freeze=exp_params.freeze,
         start=exp_params.windows[0][WINDOW_START], end=exp_params.windows[0][WINDOW_END])
 
     # from=exp_params.windows[0][WINDOW_START], to = exp_params.windows[0][WINDOW_END]

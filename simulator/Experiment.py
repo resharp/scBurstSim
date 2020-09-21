@@ -18,7 +18,7 @@ class Experiment:
     params = None
 
     trans = None
-    df_all_arrivals = None
+    df_all_transcripts = None
 
     def __init__(self, params):
 
@@ -31,7 +31,7 @@ class Experiment:
     # cell_id ; allele_id ; label; perc_label_on; real_count; real_count_unlabeled
     def run(self) -> pd.DataFrame:
 
-        poisson_arrivals = []
+        transcripts = []
         counts = []
 
         # loop cells
@@ -49,9 +49,9 @@ class Experiment:
                 df_events["cell_id"] = cell_id
                 df_events["allele_id"] = allele_id
 
-                # TODO: we should remember all the individual poisson arrivals and decays
-                df_poisson_arrivals = self.trans.df_poisson_arrivals
-                poisson_arrivals.append(df_poisson_arrivals)
+                # TODO: we should remember all the individual poisson arrivals and decays on single transcript level
+                df_transcripts = self.trans.df_transcripts
+                transcripts.append(df_transcripts)
 
                 for label, count, count_un in self.calculate_count(df_labeled_events, df_unlabeled_events):
 
@@ -65,17 +65,17 @@ class Experiment:
         df_counts = pd.DataFrame(
             counts, columns=["cell_id", "allele_id", "label", "perc_label_on", "real_count", "real_count_unlabeled"])
 
-        self.df_all_arrivals = pd.concat(poisson_arrivals)
+        self.df_all_transcripts = pd.concat(transcripts)
 
         return df_counts
 
-    def calculate_count(self, df_labeled_arrivals, df_unlabeled_arrivals):
+    def calculate_count(self, df_labeled_events, df_unlabeled_events):
 
         counts = []
 
         cum_count_unlabeled = 0
-        if len(df_unlabeled_arrivals) > 0:
-            df_before_freeze = df_unlabeled_arrivals[df_unlabeled_arrivals.arrival < self.params.freeze]
+        if len(df_unlabeled_events) > 0:
+            df_before_freeze = df_unlabeled_events[df_unlabeled_events.arrival < self.params.freeze]
             if len(df_before_freeze) > 0:
                 label = ""
                 if len(df_before_freeze) > 0:
@@ -85,7 +85,7 @@ class Experiment:
                 counts.append([label, cum_count_unlabeled, cum_count_unlabeled])
 
         # TODO: Also add a record when there is no labeled arrival?
-        for label, df_labeled_arrival in df_labeled_arrivals:
+        for label, df_labeled_arrival in df_labeled_events:
 
             if len(df_labeled_arrival) > 0:
 

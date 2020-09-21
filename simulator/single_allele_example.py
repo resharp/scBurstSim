@@ -9,7 +9,8 @@ windows = [[400, 520, 'EU']] # e.g. 120 minutes of EU labeling
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 freeze = windows[-1][WINDOW_END] + 30  # freeze 30 minutes after end of last window
 
-params = TranscriptParams(l_01=0.02, l_10=0.02, k_syn=0.16, nr_refractions=1, k_d=0.01)
+k = 0.02
+params = TranscriptParams(k_01=k, k_10=k, k_syn=0.16, nr_refractions=1, k_d=0.01)
 
 trans = Transcription(params)
 
@@ -26,10 +27,10 @@ std_burst_size = df_dtmc[df_dtmc.state == "1"].burst_size.std().round(1)
 nr_bursts = len(df_dtmc[df_dtmc.state == "1"])
 burst_frequency = round(nr_bursts/max_minutes, 3)
 
-title = "l_01={l_01}; k_syn={k_syn}; k_d={k_d} -> burst size: {bs} +/- {std}; burst freq: {freq}".format(
+title = "k_01={k_01}; k_syn={k_syn}; k_d={k_d} -> burst size: {bs} +/- {std}; burst freq: {freq}".format(
     bs=mean_burst_size, std=std_burst_size
     , freq=burst_frequency
-    , l_01=params.l_01, k_syn=params.k_syn, k_d=params.k_d)
+    , k_01=params.k_01, k_syn=params.k_syn, k_d=params.k_d)
 
 plot_dynamics(title=title, df_events=df_unlabeled_events, freeze=freeze, max_minutes=max_minutes,
               windows=windows, df_labeled_arrivals=df_labeled_events)
