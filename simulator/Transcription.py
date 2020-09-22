@@ -83,13 +83,12 @@ class Transcription:
                 # see alpha in https://homepage.divms.uiowa.edu/~mbognar/applets/gamma.html
                 # this is a simple way to simulate multiple refractory states?
                 alpha = self.params.nr_refractions
+                k = k * alpha
                 for i in range(alpha):
                     state_time = state_time + np.random.exponential(scale=1.0, size=None) / k
             else:
                 k = self.params.k_10
-                alpha = self.params.nr_refractions
-                for i in range(alpha):
-                    state_time = state_time + np.random.exponential(scale=1.0, size=None) / k
+                state_time = np.random.exponential(scale=1.0, size=None) / k
 
                 # current_time is the start of active (ON) state
                 # state_time is length of burst
