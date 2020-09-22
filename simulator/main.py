@@ -15,13 +15,15 @@ run_sim = True # run_sim False uses locally stored data set
 
 max_minutes = 1440  # 24 hours = 1440 minutes
 windows = [[400, 460, 'EU']]  # e.g. 120 minutes of EU labeling
+# windows = [[400, 460, '4SU'], [490, 550, 'EU']]  # e.g. 120 minutes of EU labeling
+# windows = [[400, 460, 'EU'], [490, 550, '4SU']]  # e.g. 120 minutes of EU labeling
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 freeze = windows[-1][WINDOW_END] + 30  # freeze 30 minutes after end of last window
 
 k = 0.02    # keep k_ON and k_OFF equal
 trans_params = TranscriptParams(k_01=k, k_10=k, k_syn=0.16, nr_refractions=1, k_d=0.01)
 
-nr_cells = 200
+nr_cells = 1000
 nr_alleles = 1
 
 exp_params = ExperimentParams(nr_cells=nr_cells, nr_alleles=nr_alleles, windows=windows, freeze=freeze,
@@ -46,7 +48,7 @@ df_counts_eu = df_counts[df_counts.label == "EU"].copy(deep=True)
 
 # do_kolmogorov_smirnov_tests_for_percentages_on(df_counts_eu)
 
-# TODO: df_all_arrivals can be used for sampling (it still contains information on singular molecule level)
+# TODO: df_all_arrivals can be used for sampling (it still contains information on single molecule level)
 df_all_transcripts = exp.df_all_transcripts
 
 # try_out_logistic_regression(perc="50", df_counts_label=df_counts_eu)

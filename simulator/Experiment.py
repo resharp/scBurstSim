@@ -51,15 +51,20 @@ class Experiment:
 
                 # TODO: we should remember all the individual poisson arrivals and decays on single transcript level
                 df_transcripts = self.trans.df_transcripts
+                df_transcripts["cell_id"] = cell_id
+                df_transcripts["allele_id"] = allele_id
+
                 transcripts.append(df_transcripts)
 
-                for label, count, count_un in self.calculate_count(df_labeled_events, df_unlabeled_events):
+                # calculate unlabeled counts
+                count_un = self.calculate_unlabeled_count(df_unlabeled_events)
+                counts.append([cell_id, allele_id, "", 0, count_un, count_un])
 
-                    if label != "":
-                        perc_burst_time = self.perc_burst_time(df_dtmc, label)
-                    else:
-                        perc_burst_time = 0
-
+                # calculate labeled counts
+                for window in self.params.windows:
+                    label = window[WINDOW_LABEL]
+                    count = self.calculate_count(label, df_labeled_events)
+                    perc_burst_time = self.perc_burst_time(df_dtmc, label)
                     counts.append([cell_id, allele_id, label, perc_burst_time, count, count_un])
 
         df_counts = pd.DataFrame(
@@ -69,34 +74,40 @@ class Experiment:
 
         return df_counts
 
-    def calculate_count(self, df_labeled_events, df_unlabeled_events):
+    def calculate_count(self, par_label, df_labeled_events):
 
-        counts = []
+        cum_count = 0
+        detected = False
+
+        for label, df_labeled_event in df_labeled_events:
+            if label == par_label:
+                detected = True
+                if len(df_labeled_event) > 0:
+                    df_before_freeze = df_labeled_event[df_labeled_event.arrival < self.params.freeze]
+                    if len(df_before_freeze) > 0:
+                        cum_count = df_before_freeze.iloc[-1]["cum_count"]
+                    else:
+                        cum_count = 0
+                else:
+                    cum_count = 0
+        if not detected:
+            cum_count = 0
+
+        return cum_count
+
+    def calculate_unlabeled_count(self, df_unlabeled_events):
 
         cum_count_unlabeled = 0
         if len(df_unlabeled_events) > 0:
             df_before_freeze = df_unlabeled_events[df_unlabeled_events.arrival < self.params.freeze]
             if len(df_before_freeze) > 0:
-                label = ""
                 if len(df_before_freeze) > 0:
                     cum_count_unlabeled = df_before_freeze.iloc[-1]["cum_count"]
                 else:
                     cum_count_unlabeled = 0
-                counts.append([label, cum_count_unlabeled, cum_count_unlabeled])
-
-        # TODO: Also add a record when there is no labeled arrival?
-        for label, df_labeled_arrival in df_labeled_events:
-
-            if len(df_labeled_arrival) > 0:
-
-                df_before_freeze = df_labeled_arrival[df_labeled_arrival.arrival < self.params.freeze]
-                if len(df_before_freeze) > 0:
-                    cum_count = df_before_freeze.iloc[-1]["cum_count"]
-                else:
-                    cum_count = 0
-                counts.append([label, cum_count, cum_count_unlabeled])
-
-        return counts
+        else:
+            cum_count_unlabeled = 0
+        return cum_count_unlabeled
 
     def perc_burst_time(self, df_dtmc, label) -> int:
 
