@@ -34,14 +34,12 @@ df_unlabeled_events = trans.df_unlabeled_events
 df_labeled_events = trans.df_labeled_events
 
 # calculate average burst size
-mean_burst_size = df_dtmc[df_dtmc.state == "1"].burst_size.mean().round(1)
-std_burst_size = df_dtmc[df_dtmc.state == "1"].burst_size.std().round(1)
 nr_bursts = len(df_dtmc[df_dtmc.state == "1"])
 burst_frequency = round(nr_bursts/max_minutes, 3)
 
 title = "strategy={name}; k_01={k_01}; k_10={k_10};k_syn={k_syn}; k_d={k_d} -> " \
-        "burst size: {bs} +/- {std}; burst freq: {freq}".format(
-    name=params.name ,bs=mean_burst_size, std=std_burst_size
+        "burst freq: {freq}".format(
+    name=params.name
     , freq=burst_frequency
     , k_01=params.k_01, k_10=params.k_10, k_syn=params.k_syn, k_d=params.k_d)
 

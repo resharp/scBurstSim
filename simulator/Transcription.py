@@ -66,17 +66,15 @@ class Transcription:
         else:
             self.state = "0"
 
-    def run_bursts(self, max_minutes, windows):
+    def run_bursts(self, max_minutes, windows) -> [pd.DataFrame, pd.DataFrame]:
 
         dtmc_list = []
 
         current_time = 0
-        poisson_arrivals = []
 
         while current_time < max_minutes:
 
             state_time = 0
-            burst_size = 0
 
             if self.state == "0":
                 k = self.params.k_01
@@ -91,22 +89,28 @@ class Transcription:
                 k = self.params.k_10
                 state_time = np.random.exponential(scale=1.0, size=None) / k
 
-                # current_time is the start of active (ON) state
-                # state_time is length of burst
-                # now create new Poisson arrivals
-                new_arrivals = self.new_poisson_arrivals(current_time, state_time, windows)
-                burst_size = len(new_arrivals)
-                poisson_arrivals = poisson_arrivals + new_arrivals
-
             end_time = current_time + state_time
-            dtmc_list.append([self.state, current_time, end_time, state_time, burst_size])
+
+            dtmc = [self.state, current_time, end_time, state_time]
+            dtmc_list.append(dtmc)
 
             current_time = end_time
 
             self.switch_state()
 
         self.df_dtmc = pd.DataFrame(data=dtmc_list,
-                                    columns=["state", "begin_time", "end_time", "state_time", "burst_size"])
+                                    columns=["state", "begin_time", "end_time", "state_time"])
+
+        # better separate dtmc_list and poisson arrivals
+        poisson_arrivals = []
+
+        for dtmc in dtmc_list:
+            state = dtmc[0]
+            if state == "1":
+                current_time = dtmc[1]
+                state_time = dtmc[3]
+                new_arrivals = self.new_poisson_arrivals(current_time, state_time, windows)
+                poisson_arrivals = poisson_arrivals + new_arrivals
 
         self.df_transcripts = pd.DataFrame(poisson_arrivals,
                                            columns=["label", "arrival", "count_s", "decay", "count_d"])
