@@ -10,20 +10,25 @@ class ExperimentParams(NamedTuple):
     nr_alleles: int
     windows: list
     freeze: int
-    trans_params: object
 
 
 class Experiment:
 
     params = None
 
-    trans = None
     df_all_transcripts = None
+    strategies = []
+    strategies_file = ""
+    trans = None
 
-    def __init__(self, params):
+    def __init__(self, params, strategies_file):
 
         self.params = params
-        self.trans = Transcription(params.trans_params)
+        self.strategies_file = strategies_file
+
+    def read_strategies(self):
+        sr = StrategyReader(self.strategies_file)
+        self.strategies = sr.select_all()
 
     # run returns count matrix + true positives for gene being ON or OFF during labeling window(s)
     # returns:
@@ -33,42 +38,50 @@ class Experiment:
 
         transcripts = []
         counts = []
+        allele_id = 0
 
-        # loop cells
-        for i_c in range(self.params.nr_cells):
-            for i_a in range(self.params.nr_alleles):
-                cell_id = i_c + 1
-                allele_id = i_a + 1
+        self.read_strategies()
 
-                df_dtmc, df_events = self.trans.run_bursts(max_minutes=self.params.freeze,
-                                                           windows=self.params.windows)
+        # loop through strategies
+        for params in self.strategies:
+            self.trans = Transcription(params)
 
-                df_labeled_events = self.trans.df_labeled_events
-                df_unlabeled_events = self.trans.df_unlabeled_events
+            # loop cells
+            for i_c in range(self.params.nr_cells):
 
-                df_events["cell_id"] = cell_id
-                df_events["allele_id"] = allele_id
+                for i_a in range(self.params.nr_alleles):
+                    cell_id = i_c + 1
+                    allele_id = allele_id + 1
 
-                # TODO: we should remember all the individual poisson arrivals and decays on single transcript level
-                df_transcripts = self.trans.df_transcripts
-                df_transcripts["cell_id"] = cell_id
-                df_transcripts["allele_id"] = allele_id
+                    df_dtmc, df_events = self.trans.run_bursts(max_minutes=self.params.freeze,
+                                                               windows=self.params.windows)
 
-                transcripts.append(df_transcripts)
+                    df_labeled_events = self.trans.df_labeled_events
+                    df_unlabeled_events = self.trans.df_unlabeled_events
 
-                # calculate unlabeled counts
-                count_un = self.calculate_unlabeled_count(df_unlabeled_events)
-                counts.append([cell_id, allele_id, "", 0, count_un, count_un])
+                    df_events["cell_id"] = cell_id
+                    df_events["allele_id"] = allele_id
 
-                # calculate labeled counts
-                for window in self.params.windows:
-                    label = window[WINDOW_LABEL]
-                    count = self.calculate_count(label, df_labeled_events)
-                    perc_burst_time = self.perc_burst_time(df_dtmc, label)
-                    counts.append([cell_id, allele_id, label, perc_burst_time, count, count_un])
+                    # TODO: we should remember all the individual poisson arrivals and decays on single transcript level
+                    df_transcripts = self.trans.df_transcripts
+                    df_transcripts["cell_id"] = cell_id
+                    df_transcripts["allele_id"] = allele_id
+
+                    transcripts.append(df_transcripts)
+
+                    # calculate unlabeled counts
+                    count_un = self.calculate_unlabeled_count(df_unlabeled_events)
+                    counts.append([cell_id, allele_id, self.trans.params.name, "", 0, count_un, count_un])
+
+                    # calculate labeled counts
+                    for window in self.params.windows:
+                        label = window[WINDOW_LABEL]
+                        count = self.calculate_count(label, df_labeled_events)
+                        perc_burst_time = self.perc_burst_time(df_dtmc, label)
+                        counts.append([cell_id, allele_id, self.trans.params.name, label, perc_burst_time, count, count_un])
 
         df_counts = pd.DataFrame(
-            counts, columns=["cell_id", "allele_id", "label", "perc_label_on", "real_count", "real_count_unlabeled"])
+            counts, columns=["cell_id", "allele_id", "strategy", "label", "perc_label_on", "real_count", "real_count_unlabeled"])
 
         self.df_all_transcripts = pd.concat(transcripts)
 

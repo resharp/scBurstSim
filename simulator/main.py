@@ -24,13 +24,13 @@ sr = StrategyReader(work_dir + dir_sep + "strategies.csv" )
 trans_params = sr.get_random()
 half_life = int(np.log(2) / trans_params.k_d); mean_life = int(1 / trans_params.k_d)
 
-nr_cells = 200
+nr_cells = 1000
 nr_alleles = 1
 
-exp_params = ExperimentParams(nr_cells=nr_cells, nr_alleles=nr_alleles, windows=windows, freeze=freeze,
-                              trans_params=trans_params)
+exp_params = ExperimentParams(nr_cells=nr_cells, nr_alleles=nr_alleles, windows=windows, freeze=freeze)
 
-exp = Experiment(exp_params)
+strategies_file = work_dir + dir_sep + "strategies.csv"
+exp = Experiment(exp_params, strategies_file)
 
 filename = "{wd}{dir_sep}df_counts".format(wd=work_dir, dir_sep=dir_sep)
 if run_sim:
@@ -56,5 +56,6 @@ df_all_transcripts = exp.df_all_transcripts
 # try_out_logistic_regression(perc="50", df_counts_label=df_counts_eu)
 
 regression_plot("perc_label_on", "fraction", df_counts_eu, exp_params)
+# regression_plot("real_count_unlabeled", "real_count", df_counts_eu, exp_params)
 
 # show_distribution_real_counts(df_counts, nr_cells)

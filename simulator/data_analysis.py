@@ -95,29 +95,34 @@ def do_kolmogorov_smirnov_tests_for_percentages_on(df_counts_eu):
 
 def regression_plot(x, y, data, exp_params):
 
+    g1 = sns.jointplot(x=x, y=y, data=data, kind="reg",
+                  marginal_kws=dict(bins=10))
+
     # g0 = sns.lmplot(x=x, y=y,
     #                 # maybe
-    #                 # hue="noise_level",
+    #                 hue="strategy",
     #                 # hue_order=["level_1", "level_2", "level_3"],
     #                 data=data,
     #                 height=5, aspect=1.5)
-
-    sns.jointplot(x=x, y=y, data=data, kind="reg",
-                  marginal_kws=dict(bins=10))
-
-    plt.xlim(-0.1, 1.1)
     if y == "fraction":
         plt.ylim(-0.1, 1.1)
 
-    params = exp_params.trans_params
-    title = "window={start}->{end}; freeze={freeze}; k_01={k_01}; k_syn={k_syn}; k_d={k_d}".format(
-        k_01=params.k_01, k_syn=params.k_syn, k_d=params.k_d, freeze=exp_params.freeze,
+    title = "window={start}->{end}; freeze={freeze}".format(
+        freeze=exp_params.freeze,
         start=exp_params.windows[0][WINDOW_START], end=exp_params.windows[0][WINDOW_END])
 
-    # from=exp_params.windows[0][WINDOW_START], to = exp_params.windows[0][WINDOW_END]
+    plt.xlabel("{x} ({title})".format(x=x, title=title))
+    plt.ylabel(y)
 
-    plt.xlabel("percentage of time burst was ON during labeling window ({title})".format(title=title))
-    plt.ylabel("fraction of labeled mRNA")
+    strategies = data.strategy.unique()
+
+    # TODO implement complete kde solution like this;
+    # https://stackoverflow.com/questions/51210955/seaborn-jointplot-add-colors-for-each-class
+    colors = ["r", "b", "g"]  # better colors please
+    i_c = 0
+    for strategy in strategies:
+        data_f = data[data.strategy == strategy]
+        g1.ax_joint.scatter(x=data_f[x], y=data_f[y], c=colors[i_c])
+        i_c = i_c + 1
 
     plt.show()
-
