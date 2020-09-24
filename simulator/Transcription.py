@@ -6,11 +6,11 @@ WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 
 
 class TranscriptParams(NamedTuple):
-    k_01: int
-    k_10: int
-    k_syn: int              # k_syn = synthesis rate = transcription rate
+    k_01: float
+    k_10: float
+    k_syn: float            # k_syn = synthesis rate = transcription rate
     nr_refractions: int
-    k_d: int                # decay is strictly not part of transcription but we include it in the model
+    k_d: float              # decay is strictly not part of transcription but we include it in the model
 
 
 class Transcription:
@@ -144,3 +144,27 @@ class Transcription:
     def sum_unlabeled_events(self):
         self.df_unlabeled_events = (self.df_events[self.df_events.label == ""]).copy(deep=True)
         self.df_unlabeled_events['cum_count'] = self.df_unlabeled_events['count_s'].cumsum()
+
+
+class StrategyReader:
+    filename = ""
+    df_strategies = None
+
+    def __init__(self, filename):
+        self.filename = filename
+
+    def get(self, strategy):
+
+        if self.df_strategies is None:
+            self.df_strategies = pd.read_csv(self.filename, sep="\t")
+
+        df_strategy = self.df_strategies[self.df_strategies.name == strategy]
+        if len(df_strategy) == 0:
+            raise RuntimeError("{strategy} is no valid strategy name! "
+                               "See stragy names in file {filename}".format(strategy=strategy, filename=self.filename))
+
+        params = TranscriptParams(k_01=df_strategy.k_01.item(), k_10=df_strategy.k_10.item(),
+                                  k_syn=df_strategy.k_syn.item(), k_d=df_strategy.k_d.item(),
+                                  nr_refractions=2)
+
+        return params
