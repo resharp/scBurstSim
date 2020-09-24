@@ -13,15 +13,17 @@ else:
 
 run_sim = True # run_sim False uses locally stored data set
 
-max_minutes = 1440  # 24 hours = 1440 minutes
-windows = [[400, 460, 'EU']]  # e.g. 120 minutes of EU labeling
-# windows = [[400, 460, '4SU'], [490, 550, 'EU']]  # e.g. 120 minutes of EU labeling
-# windows = [[400, 460, 'EU'], [490, 550, '4SU']]  # e.g. 120 minutes of EU labeling
+start_window = 600
+windows = [[start_window, start_window + 120, 'EU']] # e.g. 120 minutes of EU labeling
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
-freeze = windows[-1][WINDOW_END] + 30  # freeze 30 minutes after end of last window
+freeze = windows[-1][WINDOW_END] + 0  # freeze 0 minutes after end of last window
 
-k = 0.02    # keep k_ON and k_OFF equal
-trans_params = TranscriptParams(k_01=k, k_10=k, k_syn=0.16, nr_refractions=1, k_d=0.01)
+k_10 = 0.02
+k_01 = k_10
+k_d = 0.01
+k_syn = 0.16
+half_life = int(np.log(2)/k_d); mean_life = int(1/k_d)
+trans_params = TranscriptParams(k_01=k_01, k_10=k_10, k_syn=k_syn, nr_refractions=2, k_d=k_d)
 
 nr_cells = 1000
 nr_alleles = 1
@@ -35,6 +37,7 @@ filename = "{wd}{dir_sep}df_counts".format(wd=work_dir, dir_sep=dir_sep)
 if run_sim:
     df_counts = exp.run()
     df_counts.to_csv(path_or_buf=filename, sep='\t', index=False)
+
 else:
     df_counts = pd.read_csv(filename, sep='\t')
 

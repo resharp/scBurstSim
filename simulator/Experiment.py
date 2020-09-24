@@ -40,8 +40,8 @@ class Experiment:
                 cell_id = i_c + 1
                 allele_id = i_a + 1
 
-                df_dtmc, df_events = self.trans.run_bursts(max_minutes=self.params.freeze
-                                                                     , windows=self.params.windows)
+                df_dtmc, df_events = self.trans.run_bursts(max_minutes=self.params.freeze,
+                                                           windows=self.params.windows)
 
                 df_labeled_events = self.trans.df_labeled_events
                 df_unlabeled_events = self.trans.df_unlabeled_events

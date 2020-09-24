@@ -51,9 +51,11 @@ def plot_waiting_time_distribution(df):
     df_on = df[df.state == "1"]
 
     fig, ax = plt.subplots()
-    ax.hist(df_on["state_time"], color="r", bins=60, label="active (ON)")
-    ax.hist(df_off["state_time"], color="b", bins=60, label="silent (OFF)")
+    ax.hist(df_on["state_time"], color="r", bins=30, label="active (ON) time in burst")
+    ax.hist(df_off["state_time"], color="b", bins=30, label="silent (OFF) time until burst")
     legend = ax.legend(loc='upper right', shadow=True, fontsize='x-large')
 
-    plt.title("Distribution of ON and OFF time intervals")
+    plt.xlabel("minutes")
+    plt.ylabel("occurences")
+    plt.title("Distribution of ON and OFF time intervals (minutes)")
     plt.show()
