@@ -18,14 +18,13 @@ windows = [[start_window, start_window + 120, 'EU']] # e.g. 120 minutes of EU la
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 freeze = windows[-1][WINDOW_END] + 0  # freeze 0 minutes after end of last window
 
-k_10 = 0.02
-k_01 = k_10
-k_d = 0.01
-k_syn = 0.16
-half_life = int(np.log(2)/k_d); mean_life = int(1/k_d)
-trans_params = TranscriptParams(k_01=k_01, k_10=k_10, k_syn=k_syn, nr_refractions=2, k_d=k_d)
+sr = StrategyReader(work_dir + dir_sep + "strategies.csv" )
+# see strategy names in data\strategies.csv
+# params = sr.get(strategy="frequent")
+trans_params = sr.get_random()
+half_life = int(np.log(2) / trans_params.k_d); mean_life = int(1 / trans_params.k_d)
 
-nr_cells = 1000
+nr_cells = 200
 nr_alleles = 1
 
 exp_params = ExperimentParams(nr_cells=nr_cells, nr_alleles=nr_alleles, windows=windows, freeze=freeze,

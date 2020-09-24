@@ -1,3 +1,4 @@
+# named strategies for the simulator/Transcription class (tab separated!)
 name	k_01	k_10	k_syn	k_d
 frequent	0.02	0.02	0.16	0.01
 large_swing	0.005	0.01	0.16	0.005

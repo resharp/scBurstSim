@@ -11,6 +11,7 @@ class TranscriptParams(NamedTuple):
     k_syn: float            # k_syn = synthesis rate = transcription rate
     nr_refractions: int
     k_d: float              # decay is strictly not part of transcription but we include it in the model
+    name: str
 
 
 class Transcription:
@@ -156,15 +157,27 @@ class StrategyReader:
     def get(self, strategy):
 
         if self.df_strategies is None:
-            self.df_strategies = pd.read_csv(self.filename, sep="\t")
+            self.df_strategies = pd.read_csv(self.filename, sep="\t", comment="#")
 
         df_strategy = self.df_strategies[self.df_strategies.name == strategy]
         if len(df_strategy) == 0:
             raise RuntimeError("{strategy} is no valid strategy name! "
-                               "See stragy names in file {filename}".format(strategy=strategy, filename=self.filename))
+                               "See strategy names in file {filename}".
+                               format(strategy=strategy, filename=self.filename))
+        params = self.convert_to_params(df_strategy)
+        return params
 
+    def get_random(self):
+        if self.df_strategies is None:
+            self.df_strategies = pd.read_csv(self.filename, sep="\t", comment="#")
+
+        df_strategy = self.df_strategies.sample(1)
+
+        return self.convert_to_params(df_strategy)
+
+    @staticmethod
+    def convert_to_params(df_strategy):
         params = TranscriptParams(k_01=df_strategy.k_01.item(), k_10=df_strategy.k_10.item(),
                                   k_syn=df_strategy.k_syn.item(), k_d=df_strategy.k_d.item(),
-                                  nr_refractions=2)
-
+                                  nr_refractions=2, name=df_strategy.name.item())
         return params
