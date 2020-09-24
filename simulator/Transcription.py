@@ -128,7 +128,6 @@ class Transcription:
                                       columns=["label", "arrival", "count_s", "decay", "count_d"])
         return df_transcripts
 
-
     # here we put (time of) arrivals and decays in the same column to sort and to enable cumulative sums
     # however we lose the single molecule information this way
     def sort_events(self):
@@ -162,10 +161,18 @@ class StrategyReader:
     def __init__(self, filename):
         self.filename = filename
 
+    def select_all(self):
+
+        self.read_strategies()
+
+        params_list = [TranscriptParams(k_01=item.k_01, k_10=item.k_10, k_syn=item.k_syn, k_d=item.k_d,
+                                        nr_refractions=2, name=item['name'])
+                       for id_dummy, item in self.df_strategies.iterrows()]
+        return params_list
+
     def get(self, strategy):
 
-        if self.df_strategies is None:
-            self.df_strategies = pd.read_csv(self.filename, sep="\t", comment="#")
+        self.read_strategies()
 
         df_strategy = self.df_strategies[self.df_strategies.name == strategy]
         if len(df_strategy) == 0:
@@ -176,12 +183,15 @@ class StrategyReader:
         return params
 
     def get_random(self):
-        if self.df_strategies is None:
-            self.df_strategies = pd.read_csv(self.filename, sep="\t", comment="#")
+        self.read_strategies()
 
         df_strategy = self.df_strategies.sample(1)
 
         return self.convert_to_params(df_strategy)
+
+    def read_strategies(self):
+        if self.df_strategies is None:
+            self.df_strategies = pd.read_csv(self.filename, sep="\t", comment="#")
 
     @staticmethod
     def convert_to_params(df_strategy):
