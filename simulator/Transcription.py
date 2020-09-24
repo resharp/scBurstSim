@@ -68,10 +68,26 @@ class Transcription:
 
     def run_bursts(self, max_minutes, windows) -> [pd.DataFrame, pd.DataFrame]:
 
+        dtmc_list = self.create_dtmc_list(max_minutes)
+
+        self.df_dtmc = pd.DataFrame(data=dtmc_list,
+                                    columns=["state", "begin_time", "end_time", "state_time"])
+
+        self.df_transcripts = self.create_transcripts(dtmc_list, windows)
+
+        # we will now put the arrivals and decays in one table self.df_events and sort by time ..
+        self.df_events = self.sort_events()
+
+        # .. enable cumulative sums
+        self.sum_labeled_events(windows)
+
+        self.sum_unlabeled_events()
+
+        return self.df_dtmc, self.df_events
+
+    def create_dtmc_list(self, max_minutes):
         dtmc_list = []
-
         current_time = 0
-
         while current_time < max_minutes:
 
             state_time = 0
@@ -97,13 +113,10 @@ class Transcription:
             current_time = end_time
 
             self.switch_state()
+        return dtmc_list
 
-        self.df_dtmc = pd.DataFrame(data=dtmc_list,
-                                    columns=["state", "begin_time", "end_time", "state_time"])
-
-        # better separate dtmc_list and poisson arrivals
+    def create_transcripts(self, dtmc_list, windows):
         poisson_arrivals = []
-
         for dtmc in dtmc_list:
             state = dtmc[0]
             if state == "1":
@@ -111,19 +124,10 @@ class Transcription:
                 state_time = dtmc[3]
                 new_arrivals = self.new_poisson_arrivals(current_time, state_time, windows)
                 poisson_arrivals = poisson_arrivals + new_arrivals
+        df_transcripts = pd.DataFrame(poisson_arrivals,
+                                      columns=["label", "arrival", "count_s", "decay", "count_d"])
+        return df_transcripts
 
-        self.df_transcripts = pd.DataFrame(poisson_arrivals,
-                                           columns=["label", "arrival", "count_s", "decay", "count_d"])
-
-        # we will now put the arrivals and decays in one table self.df_events and sort by time ..
-        self.df_events = self.sort_events()
-
-        # .. enable cumulative sums
-        self.sum_labeled_events(windows)
-
-        self.sum_unlabeled_events()
-
-        return self.df_dtmc, self.df_events
 
     # here we put (time of) arrivals and decays in the same column to sort and to enable cumulative sums
     # however we lose the single molecule information this way
