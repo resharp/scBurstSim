@@ -11,7 +11,7 @@ else:
     dir_sep = "/"
     work_dir = "."
 
-run_sim = False # setting run_sim to False results in use of locally stored data set
+run_sim = True # setting run_sim to False results in use of locally stored data set
 
 start_windows = 600; length_window = 120; between_window = 15
 window_eu = [start_windows, start_windows + length_window, 'EU'] # e.g. 120 minutes of EU labeling
@@ -27,10 +27,13 @@ sr = StrategyReader(work_dir + dir_sep + "strategies.csv" )
 trans_params = sr.get_random()
 half_life = int(np.log(2) / trans_params.k_d); mean_life = int(1 / trans_params.k_d)
 
-nr_cells = 1000
-nr_alleles = 1
+nr_cells = 50
+nr_coordinated_groups = 2  # maybe rename to nr_allele_groups (coordinated)
+nr_trace_copies = 3
 
-exp_params = ExperimentParams(nr_cells=nr_cells, nr_alleles=nr_alleles, windows=windows, freeze=freeze)
+exp_params = ExperimentParams(nr_cells=nr_cells,
+                              nr_coordinated_groups=nr_coordinated_groups, nr_trace_copies=nr_trace_copies,
+                              windows=windows, freeze=freeze)
 
 strategies_file = work_dir + dir_sep + "strategies.csv"
 exp = Experiment(exp_params, strategies_file)
@@ -57,7 +60,7 @@ df_all_transcripts = exp.df_all_transcripts
 
 # try_out_logistic_regression(perc="50", df_counts_label=df_counts_eu)
 
-regression_plot("perc_label_on", "fraction", df_counts_eu, exp_params)
+# regression_plot("perc_label_on", "fraction", df_counts_eu, exp_params)
 
 density_plot("fraction", "strategy", df_counts_eu, exp_params)
 # density_plot("perc_label_on", "strategy", df_counts_eu, exp_params)

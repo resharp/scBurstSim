@@ -66,9 +66,10 @@ class Transcription:
         else:
             self.state = "0"
 
-    def run_bursts(self, max_minutes, windows) -> [pd.DataFrame, pd.DataFrame]:
+    def run_bursts(self, max_minutes, windows, dtmc_list=None) -> (pd.DataFrame, pd.DataFrame, list):
 
-        dtmc_list = self.create_dtmc_list(max_minutes)
+        if dtmc_list is None:
+            dtmc_list = self.create_dtmc_list(max_minutes)
 
         self.df_dtmc = pd.DataFrame(data=dtmc_list,
                                     columns=["state", "begin_time", "end_time", "state_time"])
@@ -83,7 +84,7 @@ class Transcription:
 
         self.sum_unlabeled_events()
 
-        return self.df_dtmc, self.df_events
+        return self.df_dtmc, self.df_events, dtmc_list
 
     def create_dtmc_list(self, max_minutes):
         dtmc_list = []

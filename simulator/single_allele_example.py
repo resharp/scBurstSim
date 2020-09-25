@@ -28,7 +28,7 @@ def run_example(params):
 
     trans = Transcription(params)
 
-    df_dtmc, df_events = trans.run_bursts(max_minutes, windows)
+    df_dtmc, df_events, dtmc_list = trans.run_bursts(max_minutes, windows)
 
     df_unlabeled_events = trans.df_unlabeled_events
     df_labeled_events = trans.df_labeled_events
