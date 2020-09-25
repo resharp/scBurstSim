@@ -27,8 +27,8 @@ sr = StrategyReader(work_dir + dir_sep + "strategies.csv" )
 trans_params = sr.get_random()
 half_life = int(np.log(2) / trans_params.k_d); mean_life = int(1 / trans_params.k_d)
 
-nr_cells = 50
-nr_coordinated_groups = 2  # maybe rename to nr_allele_groups (coordinated)
+nr_cells = 100
+nr_coordinated_groups = 3
 nr_trace_copies = 3
 
 exp_params = ExperimentParams(nr_cells=nr_cells,
@@ -46,8 +46,6 @@ else:
     df_counts = pd.read_csv(filename, sep='\t')
 
 print("Experiment run. Number of counts: {counts}.".format(counts=len(df_counts)))
-
-df_counts["fraction"] = df_counts["real_count"] / (df_counts["real_count"] + df_counts["real_count_unlabeled"])
 
 df_counts_eu = df_counts[df_counts.label == "EU"]
 

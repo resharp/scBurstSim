@@ -34,47 +34,53 @@ class Experiment:
         self.strategies = sr.select_all()
 
     # run returns count matrix + true positives for gene being ON or OFF during labeling window(s)
-    # returns:
-    # (per label so we can easily generalize to two types of labels):
+    # returns (per label so we can easily generalize to two types of labels):
     # cell_id ; allele_id ; label; perc_label_on; real_count; real_count_unlabeled
     def run(self) -> pd.DataFrame:
 
         transcripts = []
         counts = []
-        allele_id = 0
 
         self.read_strategies()
 
         # first determine all unique alleles
         alleles = []
-        for i_a in range(self.params.nr_coordinated_groups * self.params.nr_trace_copies):
-            allele_id = allele_id + 1
-            alleles.append(allele_id)
+        allele_id = 0
+        allele_group_id = 0
+        for i_cg in range(self.params.nr_coordinated_groups):
+            allele_group_id = allele_group_id + 1
+            for i_tc in range(self.params.nr_trace_copies):
+                allele_id = allele_id + 1
+                alleles.append((allele_group_id, allele_id))
 
         for params in self.strategies:
             self.trans = Transcription(params)
 
             for i_c in range(self.params.nr_cells):
                 cell_id = i_c + 1
-                dtmc_list = None
-                for allele_id in alleles:
+                old_group_id = -1
+                for allele_group_id, allele_id in alleles:
 
                     # within every cell the coordinated allele groups should have the same dtmc trace
                     # only change trace when there is a new group
-                    if allele_id % self.params.nr_trace_copies == 1:
+                    if allele_group_id != old_group_id:
                         dtmc_list = None
-                    counts, transcripts, dtmc_list = self.run_and_count(allele_id, cell_id, counts, transcripts,
-                                                                        dtmc_list)
+                    counts, transcripts, dtmc_list = self.run_and_count(allele_group_id, allele_id, cell_id, counts,
+                                                                        transcripts, dtmc_list)
+                    old_group_id = allele_group_id
 
         df_counts = pd.DataFrame(
-            counts, columns=["cell_id", "allele_id", "trace_id",
+            counts, columns=["cell_id", "allele_group_id", "allele_id", "trace_id",
                              "strategy", "label", "perc_label_on", "real_count", "real_count_unlabeled"])
 
         self.df_all_transcripts = pd.concat(transcripts)
 
+        df_counts["fraction"] = df_counts["real_count"] / (df_counts["real_count"] + df_counts["real_count_unlabeled"])
+        df_counts["strategy_group"] = df_counts.strategy + "_" + df_counts.allele_group_id.map(str)
+
         return df_counts
 
-    def run_and_count(self, allele_id, cell_id, counts, transcripts, dtmc_list=None):
+    def run_and_count(self, allele_group_id, allele_id, cell_id, counts, transcripts, dtmc_list=None):
 
         if dtmc_list is None:
             self.trace_id = self.trace_id + 1
@@ -97,7 +103,7 @@ class Experiment:
 
         # calculate unlabeled counts
         count_un = self.calculate_unlabeled_count(df_unlabeled_events)
-        counts.append([cell_id, allele_id, self.trace_id,
+        counts.append([cell_id, allele_group_id, allele_id, self.trace_id,
                        self.trans.params.name, "", 0, count_un, count_un])
 
         # calculate labeled counts
@@ -105,7 +111,7 @@ class Experiment:
             label = window[WINDOW_LABEL]
             count = self.calculate_count(label, df_labeled_events)
             perc_burst_time = self.perc_burst_time(df_dtmc, label)
-            counts.append([cell_id, allele_id, self.trace_id,
+            counts.append([cell_id, allele_group_id, allele_id, self.trace_id,
                            self.trans.params.name, label, perc_burst_time, count, count_un])
 
         return counts, transcripts, dtmc_list
