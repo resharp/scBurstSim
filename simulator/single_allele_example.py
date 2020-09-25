@@ -15,8 +15,11 @@ max_minutes = 1440*nr_days # 24 hours = 1440 minutes
 # part of Experiment (Uridine analog windows)
 
 # windows = [[400, 460, 'EU'], [520, 580, '4SU']] # e.g. 120 minutes of EU labeling
-start_window = 600
-windows = [[start_window, start_window + 120, 'EU']] # e.g. 120 minutes of EU labeling
+start_windows = 600; length_window = 120; between_window = 15
+window_eu = [start_windows, start_windows + length_window, 'EU'] # e.g. 120 minutes of EU labeling
+window_4su = [start_windows + length_window + between_window,
+              start_windows + 2*length_window + between_window, '4SU'] # e.g. 120 minutes of EU labeling
+windows = [window_eu, window_4su]
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 freeze = windows[-1][WINDOW_END] + 0  # freeze 30 minutes after end of last window
 

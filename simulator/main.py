@@ -11,10 +11,13 @@ else:
     dir_sep = "/"
     work_dir = "."
 
-run_sim = True # run_sim False uses locally stored data set
+run_sim = False # setting run_sim to False results in use of locally stored data set
 
-start_window = 600
-windows = [[start_window, start_window + 120, 'EU']] # e.g. 120 minutes of EU labeling
+start_windows = 600; length_window = 120; between_window = 15
+window_eu = [start_windows, start_windows + length_window, 'EU'] # e.g. 120 minutes of EU labeling
+window_4su = [start_windows + length_window + between_window,
+              start_windows + 2*length_window + between_window, '4SU'] # e.g. 120 minutes of EU labeling
+windows = [window_eu]
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 freeze = windows[-1][WINDOW_END] + 0  # freeze 0 minutes after end of last window
 
@@ -36,7 +39,6 @@ filename = "{wd}{dir_sep}df_counts".format(wd=work_dir, dir_sep=dir_sep)
 if run_sim:
     df_counts = exp.run()
     df_counts.to_csv(path_or_buf=filename, sep='\t', index=False)
-
 else:
     df_counts = pd.read_csv(filename, sep='\t')
 
@@ -44,7 +46,7 @@ print("Experiment run. Number of counts: {counts}.".format(counts=len(df_counts)
 
 df_counts["fraction"] = df_counts["real_count"] / (df_counts["real_count"] + df_counts["real_count_unlabeled"])
 
-df_counts_eu = df_counts[df_counts.label == "EU"].copy(deep=True)
+df_counts_eu = df_counts[df_counts.label == "EU"]
 
 # df_counts_eu = violin_plot_fraction(0.8, "80", df_counts_eu)
 
@@ -56,6 +58,9 @@ df_all_transcripts = exp.df_all_transcripts
 # try_out_logistic_regression(perc="50", df_counts_label=df_counts_eu)
 
 regression_plot("perc_label_on", "fraction", df_counts_eu, exp_params)
+
+density_plot("fraction", "strategy", df_counts_eu, exp_params)
+# density_plot("perc_label_on", "strategy", df_counts_eu, exp_params)
 # regression_plot("real_count_unlabeled", "real_count", df_counts_eu, exp_params)
 
 # show_distribution_real_counts(df_counts, nr_cells)

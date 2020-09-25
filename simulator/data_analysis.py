@@ -95,8 +95,7 @@ def do_kolmogorov_smirnov_tests_for_percentages_on(df_counts_eu):
 
 def regression_plot(x, y, data, exp_params):
 
-    g1 = sns.jointplot(x=x, y=y, data=data, kind="reg",
-                  marginal_kws=dict(bins=10))
+    g1 = sns.jointplot(x=x, y=y, data=data, kind="reg", scatter=False)
 
     # g0 = sns.lmplot(x=x, y=y,
     #                 # maybe
@@ -104,9 +103,8 @@ def regression_plot(x, y, data, exp_params):
     #                 # hue_order=["level_1", "level_2", "level_3"],
     #                 data=data,
     #                 height=5, aspect=1.5)
-    if y == "fraction":
-        plt.ylim(-0.1, 1.1)
-
+    plt.ylim(-0.1, 1.1)
+    plt.xlim(-0.1, 1.1)
     title = "window={start}->{end}; freeze={freeze}".format(
         freeze=exp_params.freeze,
         start=exp_params.windows[0][WINDOW_START], end=exp_params.windows[0][WINDOW_END])
@@ -114,15 +112,46 @@ def regression_plot(x, y, data, exp_params):
     plt.xlabel("{x} ({title})".format(x=x, title=title))
     plt.ylabel(y)
 
-    strategies = data.strategy.unique()
+    # strategies = data.strategy.unique()
+    #
+    # colors = ["r", "b", "g"]  # better colors please
+    # i_c = 0
+    # for strategy in strategies:
+    #     data_f = data[data.strategy == strategy]
+    #     g1.ax_joint.scatter(x=data_f[x], y=data_f[y], c=colors[i_c])
+    #     i_c = i_c + 1
+
+    colors = {'real_bursty': 'red', 'frequent': 'blue', 'large_swing': 'green'}
 
     # TODO implement complete kde solution like this;
     # https://stackoverflow.com/questions/51210955/seaborn-jointplot-add-colors-for-each-class
-    colors = ["r", "b", "g"]  # better colors please
-    i_c = 0
-    for strategy in strategies:
-        data_f = data[data.strategy == strategy]
-        g1.ax_joint.scatter(x=data_f[x], y=data_f[y], c=colors[i_c])
-        i_c = i_c + 1
+
+    for i, subdata in data.groupby("strategy"):
+        g1.ax_joint.scatter(x=x, y=y, data=subdata, color=colors[i])
+        sns.kdeplot(subdata.iloc[:, 4], ax=g1.ax_marg_x, legend=False, color=colors[i], bw_adjust=.2)
+        sns.kdeplot(subdata.iloc[:, 5], ax=g1.ax_marg_y, legend=False, vertical=True, color=colors[i], bw_adjust=.2)
 
     plt.show()
+    plt.close(1)
+
+
+def density_plot(x, hue, data, exp_params):
+
+    title = "Density plot for different strategies (window={start}->{end}; freeze={freeze})".format(
+        freeze=exp_params.freeze,
+        start=exp_params.windows[0][WINDOW_START], end=exp_params.windows[0][WINDOW_END])
+
+    sns.distplot(data["fraction"], hist=False, kde=True, rug=True, color="black",
+                 kde_kws={'linewidth': 1},
+                 rug_kws={'color': 'black'}
+                 )
+
+    sns.kdeplot(data=data, x=x, hue=hue, legend=True, bw_adjust=.4)
+
+    plt.xlim(0, 1)
+    plt.xlabel(x)
+    plt.ylabel('density')
+    plt.title(title)
+
+    plt.show()
+    plt.close(1)
