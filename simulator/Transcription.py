@@ -6,11 +6,18 @@ WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 
 
 class TranscriptParams(NamedTuple):
-    k_01: float
-    k_10: float
-    k_syn: float            # k_syn = synthesis rate = transcription rate
+    # transcription matrix
+    k_01: float             # part of transition matrix
+    k_10: float             # part of transition matrix
     nr_refractions: int
+
+    # high/low expression
+    k_syn: float            # k_syn = synthesis rate = transcription rate
     k_d: float              # decay is strictly not part of transcription but we include it in the model
+
+    # coordination (prerequisite: same transition matrix)
+    coord_group: int
+
     name: str
 
 
@@ -168,8 +175,10 @@ class StrategyReader:
 
         self.read_strategies()
 
-        params_list = [TranscriptParams(k_01=item.k_01, k_10=item.k_10, k_syn=item.k_syn, k_d=item.k_d,
-                                        nr_refractions=2, name=item['name'])
+        params_list = [TranscriptParams(k_01=item.k_01, k_10=item.k_10, nr_refractions=2,
+                                        k_syn=item.k_syn, k_d=item.k_d,
+                                        coord_group=item.coord_group,
+                                        name=item['name'])
                        for id_dummy, item in self.df_strategies.iterrows()]
         return params_list
 
@@ -194,11 +203,12 @@ class StrategyReader:
 
     def read_strategies(self):
         if self.df_strategies is None:
-            self.df_strategies = pd.read_csv(self.filename, sep="\t", comment="#")
+            self.df_strategies = pd.read_csv(self.filename, sep=";", comment="#")
 
     @staticmethod
     def convert_to_params(df_strategy):
-        params = TranscriptParams(k_01=df_strategy.k_01.item(), k_10=df_strategy.k_10.item(),
+        params = TranscriptParams(k_01=df_strategy.k_01.item(), k_10=df_strategy.k_10.item(), nr_refractions=2,
                                   k_syn=df_strategy.k_syn.item(), k_d=df_strategy.k_d.item(),
-                                  nr_refractions=2, name=df_strategy.name.item())
+                                  coord_group=df_strategy.coord_group.item(),
+                                  name=df_strategy.name.item())
         return params

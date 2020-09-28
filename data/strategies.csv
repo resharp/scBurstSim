@@ -1,5 +1,7 @@
-# named strategies for the simulator/Transcription class (tab separated!)
-name	k_01	k_10	k_syn	k_d
-frequent	0.02	0.02	0.16	0.01
-large_swing	0.005	0.01	0.16	0.005
-real_bursty	0.005	0.02	0.32	0.02
+# named strategies for the simulator/Transcription class (; separated!)
+name;k_01;k_10;coord_group;k_syn;k_d
+# two strategies with the same burst coordination
+frequent;0.02;0.02;1;0.16;0.01
+# frequent_high;0.02;0.02;1;0.8;0.01
+large_swing;0.005;0.01;;0.16;0.005
+real_bursty;0.005;0.02;;0.32;0.02
