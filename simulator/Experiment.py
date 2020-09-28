@@ -63,10 +63,13 @@ class Experiment:
 
                     # within every cell the coordinated allele groups should have the same dtmc trace
                     # only change trace when there is a new group
-                    if allele_group_id != old_group_id:
-                        dtmc_list = None
-                    counts, transcripts, dtmc_list = self.run_and_count(allele_group_id, allele_id, cell_id, counts,
-                                                                        transcripts, dtmc_list)
+                    if allele_group_id == old_group_id:
+                        new_dtmc_trace = False
+                    else:
+                        new_dtmc_trace = True
+
+                    counts, transcripts = self.run_and_count(allele_group_id, allele_id, cell_id, counts,
+                                                             transcripts, new_dtmc_trace=new_dtmc_trace)
                     old_group_id = allele_group_id
 
         df_counts = pd.DataFrame(
@@ -80,15 +83,15 @@ class Experiment:
 
         return df_counts
 
-    def run_and_count(self, allele_group_id, allele_id, cell_id, counts, transcripts, dtmc_list=None):
+    def run_and_count(self, allele_group_id, allele_id, cell_id, counts, transcripts, new_dtmc_trace=False):
 
-        if dtmc_list is None:
+        if new_dtmc_trace:
             self.trace_id = self.trace_id + 1
 
         # the first run will create a DTMC trace, for every next tracy copy we will use that trace
-        df_dtmc, df_events, dtmc_list = self.trans.run_bursts(max_minutes=self.params.freeze,
-                                                              windows=self.params.windows,
-                                                              dtmc_list=dtmc_list)
+        df_dtmc, df_events = self.trans.run_bursts(max_minutes=self.params.freeze,
+                                                   windows=self.params.windows,
+                                                   new_dtmc_trace=new_dtmc_trace)
         df_labeled_events = self.trans.df_labeled_events
         df_unlabeled_events = self.trans.df_unlabeled_events
 
@@ -114,7 +117,7 @@ class Experiment:
             counts.append([cell_id, allele_group_id, allele_id, self.trace_id,
                            self.trans.params.name, label, perc_burst_time, count, count_un])
 
-        return counts, transcripts, dtmc_list
+        return counts, transcripts
 
     def calculate_count(self, par_label, df_labeled_events):
 

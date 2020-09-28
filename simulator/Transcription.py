@@ -27,6 +27,8 @@ class Transcription:
     df_labeled_events = []
     df_unlabeled_events = None
 
+    dtmc_list = []  # dtmc list should be stored in Transcription
+
     def __init__(self, params):
 
         self.params = params
@@ -66,15 +68,15 @@ class Transcription:
         else:
             self.state = "0"
 
-    def run_bursts(self, max_minutes, windows, dtmc_list=None) -> (pd.DataFrame, pd.DataFrame, list):
+    def run_bursts(self, max_minutes, windows, new_dtmc_trace=True) -> (pd.DataFrame, pd.DataFrame):
 
-        if dtmc_list is None:
-            dtmc_list = self.create_dtmc_list(max_minutes)
+        if new_dtmc_trace:
+            self.dtmc_list = self.create_dtmc_list(max_minutes)
 
-        self.df_dtmc = pd.DataFrame(data=dtmc_list,
+        self.df_dtmc = pd.DataFrame(data=self.dtmc_list,
                                     columns=["state", "begin_time", "end_time", "state_time"])
 
-        self.df_transcripts = self.create_transcripts(dtmc_list, windows)
+        self.df_transcripts = self.create_transcripts(windows)
 
         # we will now put the arrivals and decays in one table self.df_events and sort by time ..
         self.df_events = self.sort_events()
@@ -84,7 +86,7 @@ class Transcription:
 
         self.sum_unlabeled_events()
 
-        return self.df_dtmc, self.df_events, dtmc_list
+        return self.df_dtmc, self.df_events
 
     def create_dtmc_list(self, max_minutes):
         dtmc_list = []
@@ -116,9 +118,9 @@ class Transcription:
             self.switch_state()
         return dtmc_list
 
-    def create_transcripts(self, dtmc_list, windows):
+    def create_transcripts(self, windows):
         poisson_arrivals = []
-        for dtmc in dtmc_list:
+        for dtmc in self.dtmc_list:
             state = dtmc[0]
             if state == "1":
                 current_time = dtmc[1]
