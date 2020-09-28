@@ -97,12 +97,6 @@ def regression_plot(x, y, data, exp_params):
 
     g1 = sns.jointplot(x=x, y=y, data=data, kind="reg", scatter=False)
 
-    # g0 = sns.lmplot(x=x, y=y,
-    #                 # maybe
-    #                 hue="strategy",
-    #                 # hue_order=["level_1", "level_2", "level_3"],
-    #                 data=data,
-    #                 height=5, aspect=1.5)
     plt.ylim(-0.1, 1.1)
     plt.xlim(-0.1, 1.1)
     title = "window={start}->{end}; freeze={freeze}".format(
@@ -153,5 +147,32 @@ def density_plot(x, hue, data, exp_params):
     plt.ylabel('density')
     plt.title(title)
 
+    plt.show()
+    plt.close(1)
+
+
+def lmplot(x, y, data, exp_params):
+
+    g0 = sns.lmplot(x=x, y=y,
+                    # maybe
+                    hue="strategy_group",
+                    # hue_order=["level_1", "level_2", "level_3"],
+                    data=data,
+                    height=5, aspect=1.5)
+    # plt.ylim(-0.1, 1.1)
+    # plt.xlim(-0.1, 1.1)
+    title = "window={start}->{end}; freeze={freeze}".format(
+        freeze=exp_params.freeze,
+        start=exp_params.windows[0][WINDOW_START], end=exp_params.windows[0][WINDOW_END])
+
+    plt.xlabel("{x} ({title})".format(x=x, title=title))
+    plt.ylabel(y)
+
+    plt.show()
+    plt.close(1)
+
+
+def cluster_map(data):
+    g = sns.clustermap(data, cmap="vlag", row_cluster=False,  figsize=(7, 5))
     plt.show()
     plt.close(1)
