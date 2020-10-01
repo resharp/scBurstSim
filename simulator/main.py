@@ -27,7 +27,7 @@ sr = StrategyReader(work_dir + dir_sep + "strategies.csv" )
 trans_params = sr.get_random()
 half_life = int(np.log(2) / trans_params.k_d); mean_life = int(1 / trans_params.k_d)
 
-nr_cells = 100
+nr_cells = 40
 nr_coordinated_groups = 2
 nr_trace_copies = 2
 
@@ -57,16 +57,17 @@ df_counts_eu = df_counts[df_counts.label == label]
 # TODO: df_all_arrivals can be used for sampling (it still contains information on single molecule level)
 df_all_transcripts = exp.df_all_transcripts
 
+# what is the distribution of fractions?
+# density_plot("fraction", "strategy", df_counts_eu, exp_params)
+
 # try_out_logistic_regression(perc="50", df_counts_label=df_counts_eu)
 
 # regression_plot("perc_label_on", "fraction", df_counts_eu, exp_params)
 
-density_plot("fraction", "strategy", df_counts_eu, exp_params)
 # density_plot("perc_label_on", "strategy", df_counts_eu, exp_params)
 # regression_plot("real_count_unlabeled", "real_count", df_counts_eu, exp_params)
 
 # show_distribution_real_counts(df_counts, nr_cells)
-
 
 df_counts_unstack = df_counts[["cell_id", "allele_id", "strategy_group", "label", "fraction"]][df_counts.label.notna()]
 df_counts_unstack = df_counts_unstack.set_index(["cell_id", "allele_id", "strategy_group", "label"])['fraction'].unstack()
@@ -75,7 +76,7 @@ df_counts_unstack = df_counts_unstack.reset_index().fillna(0)
 df_counts_unstack["allele_label"] = df_counts_unstack.allele_id.map(str) + "_" + df_counts_unstack.strategy_group
 
 # Cluster hierarchically based on 1 label
-label = "4SU"  # EU is 1st label, you can also choose 2nd label 4SU
+label = "EU"  # EU is 1st label, you can also choose 2nd label 4SU
 df_counts_unstack = df_counts_unstack.set_index(["cell_id", "allele_label"])[label].unstack()
 
 cluster_map(df_counts_unstack)

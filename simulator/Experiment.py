@@ -23,6 +23,7 @@ class Experiment:
     trans = None
 
     trace_id = 0
+    transcripts = []
 
     def __init__(self, params, strategies_file):
 
@@ -38,7 +39,6 @@ class Experiment:
     # cell_id ; allele_id ; label; perc_label_on; real_count; real_count_unlabeled
     def run(self) -> pd.DataFrame:
 
-        transcripts = []
         counts = []
 
         self.read_strategies()
@@ -68,22 +68,22 @@ class Experiment:
                     else:
                         new_dtmc_trace = True
 
-                    counts, transcripts = self.run_and_count(allele_group_id, allele_id, cell_id, counts,
-                                                             transcripts, new_dtmc_trace=new_dtmc_trace)
+                    counts = self.run_and_count(allele_group_id, allele_id, cell_id, counts,
+                                                new_dtmc_trace=new_dtmc_trace)
                     old_group_id = allele_group_id
 
         df_counts = pd.DataFrame(
             counts, columns=["cell_id", "allele_group_id", "allele_id", "trace_id",
                              "strategy", "label", "perc_label_on", "real_count", "real_count_unlabeled"])
 
-        self.df_all_transcripts = pd.concat(transcripts)
+        self.df_all_transcripts = pd.concat(self.transcripts)
 
         df_counts["fraction"] = df_counts["real_count"] / (df_counts["real_count"] + df_counts["real_count_unlabeled"])
         df_counts["strategy_group"] = df_counts.strategy + "_" + df_counts.allele_group_id.map(str)
 
         return df_counts
 
-    def run_and_count(self, allele_group_id, allele_id, cell_id, counts, transcripts, new_dtmc_trace=False):
+    def run_and_count(self, allele_group_id, allele_id, cell_id, counts, new_dtmc_trace=False):
 
         if new_dtmc_trace:
             self.trace_id = self.trace_id + 1
@@ -102,7 +102,7 @@ class Experiment:
         df_transcripts = self.trans.df_transcripts
         df_transcripts["cell_id"] = cell_id
         df_transcripts["allele_id"] = allele_id
-        transcripts.append(df_transcripts)
+        self.transcripts.append(df_transcripts)
 
         # calculate unlabeled counts
         count_un = self.calculate_unlabeled_count(df_unlabeled_events)
@@ -117,7 +117,7 @@ class Experiment:
             counts.append([cell_id, allele_group_id, allele_id, self.trace_id,
                            self.trans.params.name, label, perc_burst_time, count, count_un])
 
-        return counts, transcripts
+        return counts
 
     def calculate_count(self, par_label, df_labeled_events):
 
