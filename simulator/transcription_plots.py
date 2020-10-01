@@ -16,15 +16,15 @@ def plot_events(df_dtmc, df_events):
     plt.scatter(decay_list, y_decays, color='r', marker="o", s=9)
 
 
-def plot_dynamics(title, df_events, freeze, max_minutes, windows=[], df_labeled_arrivals=[]):
+def plot_dynamics(title, df_events, freeze, max_minutes, windows=[], dfs_labeled_events=[]):
 
     plt.title(title)
 
     plt.step(df_events["arrival"], df_events["cum_count"], where="post", color="tab:blue")
 
     colors = ["darkgreen", "peru"]; color = 0
-    for label, df_label_arrival in df_labeled_arrivals:
-        plt.step(df_label_arrival["arrival"], df_label_arrival["cum_count"], where="post", color=colors[color])
+    for label, df_labeled_events in dfs_labeled_events:
+        plt.step(df_labeled_events["arrival"], df_labeled_events["cum_count"], where="post", color=colors[color])
         color = color + 1
 
     plt.xlim(0, max_minutes)

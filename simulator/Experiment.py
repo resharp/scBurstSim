@@ -23,7 +23,9 @@ class Experiment:
     trans = None
 
     trace_id = 0
+
     transcripts = []
+    counts = []
 
     def __init__(self, params, strategies_file):
 
@@ -38,8 +40,6 @@ class Experiment:
     # returns (per label so we can easily generalize to two types of labels):
     # cell_id ; allele_id ; label; perc_label_on; real_count; real_count_unlabeled
     def run(self) -> pd.DataFrame:
-
-        counts = []
 
         self.read_strategies()
 
@@ -68,13 +68,12 @@ class Experiment:
                     else:
                         new_dtmc_trace = True
 
-                    counts = self.run_and_count(allele_group_id, allele_id, cell_id, counts,
-                                                new_dtmc_trace=new_dtmc_trace)
+                    self.run_and_count(allele_group_id, allele_id, cell_id, new_dtmc_trace=new_dtmc_trace)
                     old_group_id = allele_group_id
 
         df_counts = pd.DataFrame(
-            counts, columns=["cell_id", "allele_group_id", "allele_id", "trace_id",
-                             "strategy", "label", "perc_label_on", "real_count", "real_count_unlabeled"])
+            self.counts, columns=["cell_id", "allele_group_id", "allele_id", "trace_id",
+                                  "strategy", "label", "perc_label_on", "real_count", "real_count_unlabeled"])
 
         self.df_all_transcripts = pd.concat(self.transcripts)
 
@@ -83,52 +82,52 @@ class Experiment:
 
         return df_counts
 
-    def run_and_count(self, allele_group_id, allele_id, cell_id, counts, new_dtmc_trace=False):
+    # run and count is on allele_id level
+    def run_and_count(self, allele_group_id, allele_id, cell_id, new_dtmc_trace=False):
 
         if new_dtmc_trace:
             self.trace_id = self.trace_id + 1
 
-        # the first run will create a DTMC trace, for every next tracy copy we will use that trace
         df_dtmc, df_events = self.trans.run_bursts(max_minutes=self.params.freeze,
                                                    windows=self.params.windows,
                                                    new_dtmc_trace=new_dtmc_trace)
-        df_labeled_events = self.trans.df_labeled_events
-        df_unlabeled_events = self.trans.df_unlabeled_events
-
         df_events["cell_id"] = cell_id
         df_events["allele_id"] = allele_id
 
-        # TODO: we should remember all the individual poisson arrivals and decays on single transcript level
+        # save real transcripts
         df_transcripts = self.trans.df_transcripts
         df_transcripts["cell_id"] = cell_id
         df_transcripts["allele_id"] = allele_id
         self.transcripts.append(df_transcripts)
 
+        # now count on the real transcripts (preprocessed in Transcription)
+        # TODO: refactor and count on the sampled transcripts
+        dfs_labeled_events = self.trans.dfs_labeled_events
+        df_unlabeled_events = self.trans.df_unlabeled_events
+
         # calculate unlabeled counts
         count_un = self.calculate_unlabeled_count(df_unlabeled_events)
-        counts.append([cell_id, allele_group_id, allele_id, self.trace_id,
-                       self.trans.params.name, "", 0, count_un, count_un])
+        self.counts.append([cell_id, allele_group_id, allele_id, self.trace_id,
+                            self.trans.params.name, "", 0, count_un, count_un])
 
         # calculate labeled counts
         for window in self.params.windows:
             label = window[WINDOW_LABEL]
-            count = self.calculate_count(label, df_labeled_events)
+            count = self.calculate_count(label, dfs_labeled_events)
             perc_burst_time = self.perc_burst_time(df_dtmc, label)
-            counts.append([cell_id, allele_group_id, allele_id, self.trace_id,
-                           self.trans.params.name, label, perc_burst_time, count, count_un])
+            self.counts.append([cell_id, allele_group_id, allele_id, self.trace_id,
+                                self.trans.params.name, label, perc_burst_time, count, count_un])
 
-        return counts
-
-    def calculate_count(self, par_label, df_labeled_events):
+    def calculate_count(self, par_label, dfs_labeled_events):
 
         cum_count = 0
         detected = False
 
-        for label, df_labeled_event in df_labeled_events:
+        for label, df_labeled_events in dfs_labeled_events:
             if label == par_label:
                 detected = True
-                if len(df_labeled_event) > 0:
-                    df_before_freeze = df_labeled_event[df_labeled_event.arrival < self.params.freeze]
+                if len(df_labeled_events) > 0:
+                    df_before_freeze = df_labeled_events[df_labeled_events.arrival < self.params.freeze]
                     if len(df_before_freeze) > 0:
                         cum_count = df_before_freeze.iloc[-1]["cum_count"]
                     else:

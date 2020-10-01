@@ -31,7 +31,7 @@ class Transcription:
     df_transcripts = None
     df_events = None
 
-    df_labeled_events = []
+    dfs_labeled_events = []
     df_unlabeled_events = None
 
     dtmc_list = []  # dtmc list should be stored in Transcription
@@ -152,12 +152,12 @@ class Transcription:
 
     def sum_labeled_events(self, windows):
 
-        self.df_labeled_events = []
+        self.dfs_labeled_events = []
         for window in windows:
             df_labeled = (self.df_events[self.df_events.label == window[WINDOW_LABEL]]).\
                 copy(deep=True)
             df_labeled['cum_count'] = df_labeled['count_s'].cumsum()
-            self.df_labeled_events.append([window[WINDOW_LABEL], df_labeled])
+            self.dfs_labeled_events.append([window[WINDOW_LABEL], df_labeled])
 
     def sum_unlabeled_events(self):
         self.df_unlabeled_events = (self.df_events[self.df_events.label == ""]).copy(deep=True)

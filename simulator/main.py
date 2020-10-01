@@ -11,7 +11,7 @@ else:
     dir_sep = "/"
     work_dir = "."
 
-run_sim = False # setting run_sim to False results in use of locally stored data set
+run_sim = True # setting run_sim to False results in use of locally stored data set
 
 start_windows = 600; length_window = 60; between_window = 15
 window_eu = [start_windows, start_windows + length_window, 'EU'] # e.g. 120 minutes of EU labeling
@@ -76,7 +76,7 @@ df_counts_unstack = df_counts_unstack.reset_index().fillna(0)
 df_counts_unstack["allele_label"] = df_counts_unstack.allele_id.map(str) + "_" + df_counts_unstack.strategy_group
 
 # Cluster hierarchically based on 1 label
-label = "EU"  # EU is 1st label, you can also choose 2nd label 4SU
+label = "4SU"  # EU is 1st label, you can also choose 2nd label 4SU
 df_counts_unstack = df_counts_unstack.set_index(["cell_id", "allele_label"])[label].unstack()
 
 cluster_map(df_counts_unstack)

@@ -31,7 +31,7 @@ def run_example(params):
     df_dtmc, df_events = trans.run_bursts(max_minutes, windows)
 
     df_unlabeled_events = trans.df_unlabeled_events
-    df_labeled_events = trans.df_labeled_events
+    dfs_labeled_events = trans.dfs_labeled_events
 
     # calculate average burst size
     nr_bursts = len(df_dtmc[df_dtmc.state == "1"])
@@ -42,7 +42,7 @@ def run_example(params):
                                         k_01=params.k_01, k_10=params.k_10, k_syn=params.k_syn, k_d=params.k_d)
     plot_events(df_dtmc, df_events)
     plot_dynamics(title=title, df_events=df_unlabeled_events, freeze=freeze, max_minutes=max_minutes,
-                  windows=windows, df_labeled_arrivals=df_labeled_events)
+                  windows=windows, dfs_labeled_events=dfs_labeled_events)
 
     # show distribution of time in burst and of time until burst (in minutes)
     # plot_waiting_time_distribution(df_dtmc)
