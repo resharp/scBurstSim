@@ -147,9 +147,6 @@ class Transcription:
                 new_arrivals = self.new_poisson_arrivals(current_time, state_time, windows)
                 poisson_arrivals = poisson_arrivals + new_arrivals
 
-        # TODO: remove unnecessary transcripts; all transcripts have been used for the complete event trace,
-        # which has been used for the plot (for which we have the cumulative sum at *any* moment)
-        # however, we don't need them all we only need the ones that are alive at the freeze moment
         df_transcripts = pd.DataFrame(poisson_arrivals,
                                       columns=["label", "arrival", "count_s", "decay", "count_d"])
 

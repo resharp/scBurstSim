@@ -28,12 +28,10 @@ trans_params = sr.get_random()
 half_life = int(np.log(2) / trans_params.k_d); mean_life = int(1 / trans_params.k_d)
 
 nr_cells = 100
-nr_coordinated_groups = 2   # TODO: only used in old version of exp.run(), remove later please
 nr_syn_within_strategy = 2
 nr_non_syn_within_strategy = 2
 
 exp_params = ExperimentParams(nr_cells=nr_cells,
-                              nr_coordinated_groups=nr_coordinated_groups,
                               nr_syn_within_strategy=nr_syn_within_strategy,
                               nr_non_syn_within_strategy=nr_non_syn_within_strategy,
                               windows=windows, freeze=freeze)
@@ -43,9 +41,8 @@ exp = Experiment(exp_params, strategies_file)
 
 filename = "{wd}{dir_sep}df_counts".format(wd=work_dir, dir_sep=dir_sep)
 if run_sim:
-    # df_counts = exp.run()
 
-    df_counts = exp.run_alt()
+    df_counts = exp.run()
     df_counts.to_csv(path_or_buf=filename, sep='\t', index=False)
 else:
     df_counts = pd.read_csv(filename, sep='\t')
