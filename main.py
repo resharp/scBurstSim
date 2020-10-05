@@ -3,9 +3,13 @@ from simulator.Experiment import *
 from simulator.data_analysis import *
 import logging
 import sys
+import argparse
 
 # get the fully-qualified logger (here: `root.__main__`)
 logger = logging.getLogger(__name__)
+
+run_sim = True  # setting run_sim to False results in use of locally stored data set
+nr_cells = 30
 
 if os.name == 'nt':
     dir_sep = "\\"
@@ -27,13 +31,11 @@ freeze = windows[-1][WINDOW_END] + 0  # freeze 0 minutes after end of last windo
 run_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
 
 strategies_file = run_dir + dir_sep + "strategies.csv"
-run_sim = False # setting run_sim to False results in use of locally stored data set
-nr_cells = 10
 
 # see strategy names in data\strategies.csv
 
 
-def main():
+def main(args_in):
 
     logging.basicConfig(filename=work_dir + dir_sep + 'main_scBurstSim.log', filemode='w',
                         # format='%(asctime)s - %(message)s',
@@ -43,14 +45,18 @@ def main():
     logger.info("scBurstSim started")
 
     # TODO: Add argparse
+    parser = argparse.ArgumentParser()
 
-    nr_cells = 100
-    nr_syn_within_strategy = 10
-    nr_non_syn_within_strategy = 10
+    parser.add_argument("-nc", "--nr_cells", dest="nr_cells", type=int,
+                        help="Nr of cells for which to run simulation", metavar="[number of cells]", required=True)
+    args = parser.parse_args(args_in)
 
-    logger.info("scBurstSim started for {nr_cells} cells".format(nr_cells=nr_cells))
+    logger.info("scBurstSim started for {nr_cells} cells".format(nr_cells=args.nr_cells))
 
-    exp_params = ExperimentParams(nr_cells=nr_cells,
+    nr_syn_within_strategy = 2
+    nr_non_syn_within_strategy = 2
+
+    exp_params = ExperimentParams(nr_cells=args.nr_cells,
                                   nr_syn_within_strategy=nr_syn_within_strategy,
                                   nr_non_syn_within_strategy=nr_non_syn_within_strategy,
                                   windows=windows, freeze=freeze)
@@ -66,7 +72,6 @@ def main():
     else:
         df_counts = pd.read_csv(filename, sep='\t')
 
-    print("Experiment run. Number of counts: {counts}.".format(counts=len(df_counts)))
     logging.info("Experiment run. Number of counts: {counts}.".format(counts=len(df_counts)))
 
     label = "EU"
@@ -80,7 +85,7 @@ def main():
     df_all_transcripts = exp.df_all_transcripts
 
     # what is the distribution of fractions?
-    density_plot("fraction", "strategy", df_counts_eu, exp_params)
+    # density_plot("fraction", "strategy", df_counts_eu, exp_params)
 
     # try_out_logistic_regression(perc="50", df_counts_label=df_counts_eu)
 
@@ -92,10 +97,14 @@ def main():
     # show_distribution_real_counts(df_counts, nr_cells)
 
     # cluster map creates plot cluster_map.svg in run directory if you do not provide a plot name
-    label = "EU"
-    cluster_map(df_counts, label=label, plot_name=work_dir + dir_sep + "cluster_map_{label}.svg".format(label=label))
+    labels = ["EU", "4SU"]
+    for label in labels:
+        cluster_map(df_counts, label=label,
+                    plot_name=work_dir + dir_sep + "cluster_map_{label}.svg".format(label=label))
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main(sys.argv[1:])
+
+main((["-nc", str(nr_cells)]))
 
