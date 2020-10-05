@@ -1,18 +1,19 @@
-from simulator.Experiment import *
-from simulator.Transcription import *
-from simulator.data_analysis import *
 import os
-import pandas as pd
+from simulator.Experiment import *
+from simulator.data_analysis import *
+import logging
+import sys
+
+# get the fully-qualified logger (here: `root.__main__`)
+logger = logging.getLogger(__name__)
+
 if os.name == 'nt':
     dir_sep = "\\"
     # TODO: set your own working directory for locally storing data sets
-    work_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\source\scBurstSim\data"
+    work_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
 else:
     dir_sep = "/"
     work_dir = "."
-
-print("Start program")
-run_sim = True # setting run_sim to False results in use of locally stored data set
 
 start_windows = 600; length_window = 60; between_window = 15
 window_eu = [start_windows, start_windows + length_window, 'EU'] # e.g. 120 minutes of EU labeling
@@ -22,68 +23,79 @@ windows = [window_eu, window_4su]
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 freeze = windows[-1][WINDOW_END] + 0  # freeze 0 minutes after end of last window
 
-sr = StrategyReader(work_dir + dir_sep + "strategies.csv" )
-# see strategy names in data\strategies.csv
-# params = sr.get(strategy="frequent")
-trans_params = sr.get_random()
-half_life = int(np.log(2) / trans_params.k_d); mean_life = int(1 / trans_params.k_d)
+# under this run_dir we should also create a plot directory
+run_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
 
+strategies_file = run_dir + dir_sep + "strategies.csv"
+run_sim = False # setting run_sim to False results in use of locally stored data set
 nr_cells = 10
-nr_syn_within_strategy = 2
-nr_non_syn_within_strategy = 2
 
-exp_params = ExperimentParams(nr_cells=nr_cells,
-                              nr_syn_within_strategy=nr_syn_within_strategy,
-                              nr_non_syn_within_strategy=nr_non_syn_within_strategy,
-                              windows=windows, freeze=freeze)
+# see strategy names in data\strategies.csv
 
-strategies_file = work_dir + dir_sep + "strategies.csv"
-exp = Experiment(exp_params, strategies_file)
 
-filename = "{wd}{dir_sep}df_counts".format(wd=work_dir, dir_sep=dir_sep)
-if run_sim:
+def main():
 
-    df_counts = exp.run()
-    df_counts.to_csv(path_or_buf=filename, sep='\t', index=False)
-else:
-    df_counts = pd.read_csv(filename, sep='\t')
+    logging.basicConfig(filename=work_dir + dir_sep + 'main_scBurstSim.log', filemode='w',
+                        # format='%(asctime)s - %(message)s',
+                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                        level=logging.INFO)
+    logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+    logger.info("scBurstSim started")
 
-print("Experiment run. Number of counts: {counts}.".format(counts=len(df_counts)))
+    # TODO: Add argparse
 
-label = "4SU"
-df_counts_eu = df_counts[df_counts.label == label]
+    nr_cells = 100
+    nr_syn_within_strategy = 10
+    nr_non_syn_within_strategy = 10
 
-# df_counts_eu = violin_plot_fraction(0.8, "80", df_counts_eu)
+    logger.info("scBurstSim started for {nr_cells} cells".format(nr_cells=nr_cells))
 
-# do_kolmogorov_smirnov_tests_for_percentages_on(df_counts_eu)
+    exp_params = ExperimentParams(nr_cells=nr_cells,
+                                  nr_syn_within_strategy=nr_syn_within_strategy,
+                                  nr_non_syn_within_strategy=nr_non_syn_within_strategy,
+                                  windows=windows, freeze=freeze)
 
-# TODO: df_all_arrivals can be used for sampling (it still contains information on single molecule level)
-df_all_transcripts = exp.df_all_transcripts
+    strategies_file = work_dir + dir_sep + "strategies.csv"
+    exp = Experiment(exp_params, strategies_file)
 
-# what is the distribution of fractions?
-# density_plot("fraction", "strategy", df_counts_eu, exp_params)
+    filename = "{wd}{dir_sep}df_counts".format(wd=work_dir, dir_sep=dir_sep)
+    if run_sim:
 
-# try_out_logistic_regression(perc="50", df_counts_label=df_counts_eu)
+        df_counts = exp.run()
+        df_counts.to_csv(path_or_buf=filename, sep='\t', index=False)
+    else:
+        df_counts = pd.read_csv(filename, sep='\t')
 
-# regression_plot("perc_label_on", "fraction", df_counts_eu, exp_params)
+    print("Experiment run. Number of counts: {counts}.".format(counts=len(df_counts)))
+    logging.info("Experiment run. Number of counts: {counts}.".format(counts=len(df_counts)))
 
-# density_plot("perc_label_on", "strategy", df_counts_eu, exp_params)
-# regression_plot("real_count_unlabeled", "real_count", df_counts_eu, exp_params)
+    label = "EU"
+    df_counts_eu = df_counts[df_counts.label == label]
 
-# show_distribution_real_counts(df_counts, nr_cells)
+    # df_counts_eu = violin_plot_fraction(0.8, "80", df_counts_eu)
 
-df_counts_unstack = df_counts[["cell_id", "allele_id", "allele_label", "strategy_group",
-                               "label", "fraction"]][df_counts.label.notna()]
-df_counts_unstack = df_counts_unstack.set_index(["cell_id", "allele_id", "allele_label", "strategy_group",
-                                                 "label"])['fraction'].unstack()
+    # do_kolmogorov_smirnov_tests_for_percentages_on(df_counts_eu)
 
-df_counts_unstack = df_counts_unstack.reset_index().fillna(0)
+    # TODO: df_all_arrivals can be used for sampling (it still contains information on single molecule level)
+    df_all_transcripts = exp.df_all_transcripts
 
-# Cluster hierarchically based on 1 label
-label = "EU"  # EU is 1st label, you can also choose 2nd label 4SU
-df_counts_unstack = df_counts_unstack.set_index(["cell_id", "allele_label"])[label].unstack()
-# df_counts_unstack = df_counts_unstack.reset_index().fillna(0)
+    # what is the distribution of fractions?
+    density_plot("fraction", "strategy", df_counts_eu, exp_params)
 
-df_counts_unstack = df_counts_unstack.fillna(0)
-cluster_map(df_counts_unstack)
+    # try_out_logistic_regression(perc="50", df_counts_label=df_counts_eu)
+
+    # regression_plot("perc_label_on", "fraction", df_counts_eu, exp_params)
+
+    # density_plot("perc_label_on", "strategy", df_counts_eu, exp_params)
+    # regression_plot("real_count_unlabeled", "real_count", df_counts_eu, exp_params)
+
+    # show_distribution_real_counts(df_counts, nr_cells)
+
+    # cluster map creates plot cluster_map.svg in run directory if you do not provide a plot name
+    label = "EU"
+    cluster_map(df_counts, label=label, plot_name=work_dir + dir_sep + "cluster_map_{label}.svg".format(label=label))
+
+
+if __name__ == "__main__":
+    main()
 

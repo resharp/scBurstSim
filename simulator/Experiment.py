@@ -2,6 +2,7 @@ from simulator.Transcription import *
 import pandas as pd
 import math
 from typing import NamedTuple
+import logging
 
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 
@@ -45,12 +46,15 @@ class Experiment:
     # cell_id ; allele_id ; label; perc_label_on; real_count; real_count_unlabeled
     def run(self) -> pd.DataFrame:
 
+        logging.info("start Experiment.run()")
         # run_alt is a complete different implementation of run() to be able
         # - to split run and count
         # - insert a sampling step between run and count on cell level
         # - share DTMC traces for different (k_syn, k_d) within a coordination group
 
         self.read_strategies()
+
+        logging.info("nr. of strategies read: {nr}".format(nr=len(self.strategies)))
 
         trans = []  # array of Transcription instances
         alleles = []
@@ -74,12 +78,16 @@ class Experiment:
         df_alleles = pd.DataFrame(alleles, columns=['allele_id', 'strategy', 'tm_id', 'group_id', 'tran'])
         df_alleles.drop('tran', axis=1, inplace=True)
 
+        logging.info("nr. of alleles: {nr_all}".format(nr_all=len(df_alleles)))
+
         for i_c in range(self.params.nr_cells):
             cell_id = i_c + 1
 
             old_group_id = -1
             dtmc_list = []
             self.transcripts = []
+
+            logging.info("start simulation for cell: {cell_id}".format(cell_id=cell_id))
 
             for allele_id, strategy, tm_id, group_id, tran in alleles:
                 if not math.isnan(group_id):
@@ -104,6 +112,8 @@ class Experiment:
             df_sampled_transcripts = self.sample_transcripts(df_cell_transcripts)
 
             # TODO: Add both real and sampled transcripts
+
+            logging.info("start counting for cell: {cell_id}".format(cell_id=cell_id))
             df_counts_cell = self.count_transcripts(cell_id, df_cell_transcripts)
             # df_counts_cell = self.count_transcripts(cell_id, df_sampled_transcripts)
             self.cell_counts.append(df_counts_cell)

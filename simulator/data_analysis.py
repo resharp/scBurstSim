@@ -172,7 +172,21 @@ def lmplot(x, y, data, exp_params):
     plt.close(1)
 
 
-def cluster_map(data):
-    g = sns.clustermap(data, cmap="vlag", row_cluster=False,  figsize=(7, 5))
-    plt.show()
+def cluster_map(df_counts, label, plot_name="cluster_map.svg"):
+
+    df_counts_unstack = df_counts[["cell_id", "allele_id", "allele_label", "strategy_group",
+                                   "label", "fraction"]][df_counts.label.notna()]
+    df_counts_unstack = df_counts_unstack.set_index(["cell_id", "allele_id", "allele_label", "strategy_group",
+                                                     "label"])['fraction'].unstack()
+
+    df_counts_unstack = df_counts_unstack.reset_index().fillna(0)
+
+    # Cluster hierarchically based on 1 label
+    df_counts_unstack = df_counts_unstack.set_index(["cell_id", "allele_label"])[label].unstack()
+
+    df_counts_unstack = df_counts_unstack.fillna(0)
+
+    g = sns.clustermap(df_counts_unstack, cmap="vlag", row_cluster=False,  figsize=(7, 5))
+    plt.savefig(plot_name)
     plt.close(1)
+
