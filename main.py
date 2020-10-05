@@ -11,6 +11,7 @@ else:
     dir_sep = "/"
     work_dir = "."
 
+print("Start program")
 run_sim = True # setting run_sim to False results in use of locally stored data set
 
 start_windows = 600; length_window = 60; between_window = 15
@@ -27,7 +28,7 @@ sr = StrategyReader(work_dir + dir_sep + "strategies.csv" )
 trans_params = sr.get_random()
 half_life = int(np.log(2) / trans_params.k_d); mean_life = int(1 / trans_params.k_d)
 
-nr_cells = 100
+nr_cells = 10
 nr_syn_within_strategy = 2
 nr_non_syn_within_strategy = 2
 
