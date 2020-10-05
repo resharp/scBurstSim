@@ -9,6 +9,7 @@ class TranscriptParams(NamedTuple):
     # transcription matrix
     k_01: float             # part of transition matrix
     k_10: float             # part of transition matrix
+    tm_id: int              # id for every unique transcription matrix
     nr_refractions: int
 
     # high/low expression
@@ -75,25 +76,36 @@ class Transcription:
         else:
             self.state = "0"
 
-    def run_bursts(self, max_minutes, windows, new_dtmc_trace=True) -> (pd.DataFrame, pd.DataFrame):
+    def run_bursts(self, max_minutes, windows, new_dtmc_trace=True, dtmc_list=[], complete_trace=False) -> \
+            (pd.DataFrame, dtmc_list):
 
         if new_dtmc_trace:
             self.dtmc_list = self.create_dtmc_list(max_minutes)
+        else:
+            self.dtmc_list = dtmc_list
 
         self.df_dtmc = pd.DataFrame(data=self.dtmc_list,
                                     columns=["state", "begin_time", "end_time", "state_time"])
 
         self.df_transcripts = self.create_transcripts(windows)
 
-        # we will now put the arrivals and decays in one table self.df_events and sort by time ..
-        self.df_events = self.sort_events()
+        # a complete trace is only relevant for a plot, not for counting at freeze moment
+        # uses all transcripts in self.df_transcripts
+        if complete_trace:
+            # we will now put the arrivals and decays in one table self.df_events and sort by time ..
+            self.df_events = self.sort_events()
 
-        # .. enable cumulative sums
-        self.sum_labeled_events(windows)
+            # .. enable cumulative sums
+            self.sum_labeled_events(windows)
 
-        self.sum_unlabeled_events()
+            self.sum_unlabeled_events()
 
-        return self.df_dtmc, self.df_events
+        # now we can filter the transcripts because we are only interested in the transcripts alive at
+        # the moment freeze
+        self.df_transcripts = self.df_transcripts[(self.df_transcripts.arrival <= max_minutes) &
+                                                  (self.df_transcripts.decay >= max_minutes)]
+
+        return self.df_dtmc, self.dtmc_list
 
     def create_dtmc_list(self, max_minutes):
         dtmc_list = []
@@ -134,8 +146,13 @@ class Transcription:
                 state_time = dtmc[3]
                 new_arrivals = self.new_poisson_arrivals(current_time, state_time, windows)
                 poisson_arrivals = poisson_arrivals + new_arrivals
+
+        # TODO: remove unnecessary transcripts; all transcripts have been used for the complete event trace,
+        # which has been used for the plot (for which we have the cumulative sum at *any* moment)
+        # however, we don't need them all we only need the ones that are alive at the freeze moment
         df_transcripts = pd.DataFrame(poisson_arrivals,
                                       columns=["label", "arrival", "count_s", "decay", "count_d"])
+
         return df_transcripts
 
     # here we put (time of) arrivals and decays in the same column to sort and to enable cumulative sums
@@ -176,6 +193,7 @@ class StrategyReader:
         self.read_strategies()
 
         params_list = [TranscriptParams(k_01=item.k_01, k_10=item.k_10, nr_refractions=2,
+                                        tm_id=item.tm_id,
                                         k_syn=item.k_syn, k_d=item.k_d,
                                         coord_group=item.coord_group,
                                         name=item['name'])
@@ -205,9 +223,24 @@ class StrategyReader:
         if self.df_strategies is None:
             self.df_strategies = pd.read_csv(self.filename, sep=";", comment="#")
 
+            # we sort on transcription matrix (k_01, k_10), coordination group for synchronization
+            # and finally the synthesis and decay rate to be able to share DTMC traces
+            # between alleles with different (k_syn, k_d) in the same coordination group
+            self.df_strategies.sort_values(by=['k_01', 'k_10', 'coord_group', 'k_syn', 'k_d'], inplace=True)
+
+            # add a unique transition matrix id for every unique combination of (k_01, k_10)
+            df_tms = self.df_strategies.groupby(['k_01', 'k_10']).max().reset_index()[['k_01', 'k_10']]
+            df_tms['count'] = 1
+            df_tms['tm_id'] = df_tms['count'].cumsum()
+            df_tms.drop('count', axis=1, inplace=True)
+            self.df_strategies = pd.merge(self.df_strategies, df_tms, how='left',
+                                          left_on=['k_01', 'k_10'],
+                                          right_on=['k_01', 'k_10'])
+
     @staticmethod
     def convert_to_params(df_strategy):
         params = TranscriptParams(k_01=df_strategy.k_01.item(), k_10=df_strategy.k_10.item(), nr_refractions=2,
+                                  tm_id=df_strategy.tm_id.item(),
                                   k_syn=df_strategy.k_syn.item(), k_d=df_strategy.k_d.item(),
                                   coord_group=df_strategy.coord_group.item(),
                                   name=df_strategy.name.item())

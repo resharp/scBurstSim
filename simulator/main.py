@@ -27,12 +27,15 @@ sr = StrategyReader(work_dir + dir_sep + "strategies.csv" )
 trans_params = sr.get_random()
 half_life = int(np.log(2) / trans_params.k_d); mean_life = int(1 / trans_params.k_d)
 
-nr_cells = 40
-nr_coordinated_groups = 2
-nr_trace_copies = 2
+nr_cells = 100
+nr_coordinated_groups = 2   # TODO: only used in old version of exp.run(), remove later please
+nr_syn_within_strategy = 2
+nr_non_syn_within_strategy = 2
 
 exp_params = ExperimentParams(nr_cells=nr_cells,
-                              nr_coordinated_groups=nr_coordinated_groups, nr_trace_copies=nr_trace_copies,
+                              nr_coordinated_groups=nr_coordinated_groups,
+                              nr_syn_within_strategy=nr_syn_within_strategy,
+                              nr_non_syn_within_strategy=nr_non_syn_within_strategy,
                               windows=windows, freeze=freeze)
 
 strategies_file = work_dir + dir_sep + "strategies.csv"
@@ -40,7 +43,9 @@ exp = Experiment(exp_params, strategies_file)
 
 filename = "{wd}{dir_sep}df_counts".format(wd=work_dir, dir_sep=dir_sep)
 if run_sim:
-    df_counts = exp.run()
+    # df_counts = exp.run()
+
+    df_counts = exp.run_alt()
     df_counts.to_csv(path_or_buf=filename, sep='\t', index=False)
 else:
     df_counts = pd.read_csv(filename, sep='\t')
@@ -69,15 +74,18 @@ df_all_transcripts = exp.df_all_transcripts
 
 # show_distribution_real_counts(df_counts, nr_cells)
 
-df_counts_unstack = df_counts[["cell_id", "allele_id", "strategy_group", "label", "fraction"]][df_counts.label.notna()]
-df_counts_unstack = df_counts_unstack.set_index(["cell_id", "allele_id", "strategy_group", "label"])['fraction'].unstack()
+df_counts_unstack = df_counts[["cell_id", "allele_id", "allele_label", "strategy_group",
+                               "label", "fraction"]][df_counts.label.notna()]
+df_counts_unstack = df_counts_unstack.set_index(["cell_id", "allele_id", "allele_label", "strategy_group",
+                                                 "label"])['fraction'].unstack()
 
 df_counts_unstack = df_counts_unstack.reset_index().fillna(0)
-df_counts_unstack["allele_label"] = df_counts_unstack.allele_id.map(str) + "_" + df_counts_unstack.strategy_group
 
 # Cluster hierarchically based on 1 label
-label = "4SU"  # EU is 1st label, you can also choose 2nd label 4SU
+label = "EU"  # EU is 1st label, you can also choose 2nd label 4SU
 df_counts_unstack = df_counts_unstack.set_index(["cell_id", "allele_label"])[label].unstack()
+# df_counts_unstack = df_counts_unstack.reset_index().fillna(0)
 
+df_counts_unstack = df_counts_unstack.fillna(0)
 cluster_map(df_counts_unstack)
 

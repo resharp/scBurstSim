@@ -28,8 +28,11 @@ def run_example(params):
 
     trans = Transcription(params)
 
-    df_dtmc, df_events = trans.run_bursts(max_minutes, windows)
+    df_dtmc, dtmc_list = trans.run_bursts(max_minutes, windows, new_dtmc_trace=True, complete_trace=True)
 
+    # only set when complete_trace = True:
+    # df_events, df_unlabeled_events and dfs_labeled_events
+    df_events = trans.df_events
     df_unlabeled_events = trans.df_unlabeled_events
     dfs_labeled_events = trans.dfs_labeled_events
 
