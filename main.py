@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 run_sim = True  # setting run_sim to False results in use of locally stored data set
 nr_cells = 40
-efficiency = 0.05
+efficiency = 0.2
 
 # under this run_dir we should also create a plot directory
 out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
@@ -110,9 +110,13 @@ def main(args_in):
                     plot_name=args.out_dir + dir_sep + "cluster_map_{label}.svg".format(label=label))
 
 
+# TODO: uncomment for production mode with parameters from the command line
 # if __name__ == "__main__":
 #     main(sys.argv[1:])
 
-main(["-nc", str(nr_cells), "-e", str(efficiency), "-o", out_dir, "-sf", strategies_file])
+main(["-nc", str(nr_cells),
+      "-e", str(efficiency),
+      "-o", out_dir,
+      "-sf", strategies_file])
 # main(["-h"])
 # main([])

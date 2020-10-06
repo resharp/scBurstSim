@@ -184,6 +184,7 @@ class Experiment:
 
         return dtmc_list
 
+    # TODO: integrate in the count table
     def perc_burst_time(self, df_dtmc, label) -> int:
 
         for window in self.params.windows:
