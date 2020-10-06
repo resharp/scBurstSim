@@ -9,7 +9,8 @@ import argparse
 logger = logging.getLogger(__name__)
 
 run_sim = True  # setting run_sim to False results in use of locally stored data set
-nr_cells = 30
+nr_cells = 200
+efficiency = 0.1
 
 if os.name == 'nt':
     dir_sep = "\\"
@@ -49,6 +50,10 @@ def main(args_in):
 
     parser.add_argument("-nc", "--nr_cells", dest="nr_cells", type=int,
                         help="Nr of cells for which to run simulation", metavar="[number of cells]", required=True)
+    parser.add_argument("-e", "--efficiency", dest="efficiency", type=float, default=0.1,
+                        help="Efficiency of RNA retrieval on single cell level",
+                        metavar="[efficiency of RNA retrieval]", required=False)
+
     args = parser.parse_args(args_in)
 
     logger.info("scBurstSim started for {nr_cells} cells".format(nr_cells=args.nr_cells))
@@ -59,6 +64,7 @@ def main(args_in):
     exp_params = ExperimentParams(nr_cells=args.nr_cells,
                                   nr_syn_within_strategy=nr_syn_within_strategy,
                                   nr_non_syn_within_strategy=nr_non_syn_within_strategy,
+                                  efficiency=args.efficiency,
                                   windows=windows, freeze=freeze)
 
     strategies_file = work_dir + dir_sep + "strategies.csv"
@@ -97,14 +103,14 @@ def main(args_in):
     # show_distribution_real_counts(df_counts, nr_cells)
 
     # cluster map creates plot cluster_map.svg in run directory if you do not provide a plot name
-    labels = ["EU", "4SU"]
-    for label in labels:
-        cluster_map(df_counts, label=label,
+    for window in windows:
+        label = window[WINDOW_LABEL]
+        cluster_map(df_counts, label=label, exp_params=exp_params,
                     plot_name=work_dir + dir_sep + "cluster_map_{label}.svg".format(label=label))
 
 
 # if __name__ == "__main__":
 #     main(sys.argv[1:])
 
-main((["-nc", str(nr_cells)]))
+main(["-nc", str(nr_cells), "-e", str(efficiency)])
 

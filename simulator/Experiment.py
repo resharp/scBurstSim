@@ -12,6 +12,9 @@ class ExperimentParams(NamedTuple):
 
     nr_syn_within_strategy: int
     nr_non_syn_within_strategy: int
+
+    efficiency: float
+
     windows: list
     freeze: int
 
@@ -46,7 +49,7 @@ class Experiment:
     # cell_id ; allele_id ; label; perc_label_on; real_count; real_count_unlabeled
     def run(self) -> pd.DataFrame:
 
-        logging.info("start Experiment.run()")
+        logging.info("start Experiment.run with efficiency {eff}".format(eff=self.params.efficiency))
         # run_alt is a complete different implementation of run() to be able
         # - to split run and count
         # - insert a sampling step between run and count on cell level
@@ -114,8 +117,9 @@ class Experiment:
             # TODO: Add both real and sampled transcripts
 
             logging.info("start counting for cell: {cell_id}".format(cell_id=cell_id))
-            df_counts_cell = self.count_transcripts(cell_id, df_cell_transcripts)
-            # df_counts_cell = self.count_transcripts(cell_id, df_sampled_transcripts)
+            # df_counts_cell = self.count_transcripts(cell_id, df_cell_transcripts)
+            df_counts_cell = self.count_transcripts(cell_id, df_sampled_transcripts)
+
             self.cell_counts.append(df_counts_cell)
 
         df_counts = pd.concat(self.cell_counts)
@@ -150,10 +154,8 @@ class Experiment:
         df_counts["cell_id"] = cell_id
         return df_counts
 
-    @staticmethod
-    def sample_transcripts(df_cell_transcripts):
-        efficiency = 0.1  # TODO: parametrize
-        len_sample_transcripts = int(efficiency * len(df_cell_transcripts))
+    def sample_transcripts(self, df_cell_transcripts):
+        len_sample_transcripts = int(self.params.efficiency * len(df_cell_transcripts))
         selected_transcripts = df_cell_transcripts.sample(len_sample_transcripts, replace=False)
         return selected_transcripts
 
