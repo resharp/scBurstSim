@@ -10,7 +10,10 @@ logger = logging.getLogger(__name__)
 
 run_sim = True  # setting run_sim to False results in use of locally stored data set
 nr_cells = 40
-efficiency = 0.2
+efficiency = 0.1
+
+nr_syn_within_strategy = 2
+nr_non_syn_within_strategy = 2
 
 # under this run_dir we should also create a plot directory
 out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
@@ -63,9 +66,6 @@ def main(args_in):
 
     logger.info("scBurstSim started for {nr_cells} cells. Output in {out_dir}".
                 format(nr_cells=args.nr_cells, out_dir=args.out_dir))
-
-    nr_syn_within_strategy = 2
-    nr_non_syn_within_strategy = 2
 
     exp_params = ExperimentParams(nr_cells=args.nr_cells,
                                   strategies_file=args.strategies_file,
