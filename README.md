@@ -16,7 +16,7 @@ optional arguments:
                         Output directory for scBurstSim
   -sf [strategies_file], --strategies_file [strategies_file]
 
-
+```
 # Dependencies 
 
 See file requirements.txt for dependency on Python packages.
@@ -24,7 +24,7 @@ See file requirements.txt for dependency on Python packages.
 
 # Strategies
                         Strategies file with burst parameters for alleles
-```
+
 An example of the strategies file:
 
 ```                        
