@@ -9,7 +9,7 @@ WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 
 class ExperimentParams(NamedTuple):
     nr_cells: int
-
+    strategies_file: str
     nr_syn_within_strategy: int
     nr_non_syn_within_strategy: int
 
@@ -25,7 +25,6 @@ class Experiment:
 
     df_all_transcripts = None
     strategies = []
-    strategies_file = ""
     tran = None
 
     trace_id = 0
@@ -35,13 +34,12 @@ class Experiment:
     counts = []
     cell_counts = []
 
-    def __init__(self, params, strategies_file):
+    def __init__(self, params):
 
         self.params = params
-        self.strategies_file = strategies_file
 
     def read_strategies(self):
-        sr = StrategyReader(self.strategies_file)
+        sr = StrategyReader(self.params.strategies_file)
         self.strategies = sr.select_all()
 
     # run should return count matrix + percentage of time of gene being ON or OFF during labeling window(s)
@@ -57,7 +55,8 @@ class Experiment:
 
         self.read_strategies()
 
-        logging.info("nr. of strategies read: {nr}".format(nr=len(self.strategies)))
+        logging.info("nr. of strategies read from {file}: {nr}"
+                     .format(nr=len(self.strategies), file=self.params.strategies_file))
 
         trans = []  # array of Transcription instances
         alleles = []
@@ -81,7 +80,7 @@ class Experiment:
         df_alleles = pd.DataFrame(alleles, columns=['allele_id', 'strategy', 'tm_id', 'group_id', 'tran'])
         df_alleles.drop('tran', axis=1, inplace=True)
 
-        logging.info("nr. of alleles: {nr_all}".format(nr_all=len(df_alleles)))
+        logging.info("nr. of alleles generated from strategies: {nr_all}".format(nr_all=len(df_alleles)))
 
         for i_c in range(self.params.nr_cells):
             cell_id = i_c + 1

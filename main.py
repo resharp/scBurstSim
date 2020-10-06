@@ -9,16 +9,19 @@ import argparse
 logger = logging.getLogger(__name__)
 
 run_sim = True  # setting run_sim to False results in use of locally stored data set
-nr_cells = 200
-efficiency = 0.1
+nr_cells = 40
+efficiency = 0.05
+
+# under this run_dir we should also create a plot directory
+out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
 
 if os.name == 'nt':
     dir_sep = "\\"
-    # TODO: set your own working directory for locally storing data sets
-    work_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
 else:
     dir_sep = "/"
-    work_dir = "."
+
+# see strategy names in data\strategies.csv
+strategies_file = out_dir + dir_sep + "strategies.csv"
 
 start_windows = 600; length_window = 60; between_window = 15
 window_eu = [start_windows, start_windows + length_window, 'EU'] # e.g. 120 minutes of EU labeling
@@ -28,49 +31,50 @@ windows = [window_eu, window_4su]
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 freeze = windows[-1][WINDOW_END] + 0  # freeze 0 minutes after end of last window
 
-# under this run_dir we should also create a plot directory
-run_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
-
-strategies_file = run_dir + dir_sep + "strategies.csv"
-
-# see strategy names in data\strategies.csv
-
 
 def main(args_in):
 
-    logging.basicConfig(filename=work_dir + dir_sep + 'main_scBurstSim.log', filemode='w',
-                        # format='%(asctime)s - %(message)s',
-                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                        level=logging.INFO)
-    logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
-    logger.info("scBurstSim started")
-
-    # TODO: Add argparse
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-nc", "--nr_cells", dest="nr_cells", type=int,
                         help="Nr of cells for which to run simulation", metavar="[number of cells]", required=True)
     parser.add_argument("-e", "--efficiency", dest="efficiency", type=float, default=0.1,
-                        help="Efficiency of RNA retrieval on single cell level",
+                        help="Efficiency of RNA retrieval on single cell level (default 0.1)",
                         metavar="[efficiency of RNA retrieval]", required=False)
+    parser.add_argument("-o", "--out_dir", dest="out_dir",
+                        help="Output directory for scBurstSim",
+                        metavar="[out_dir]", required=False)
+    parser.add_argument("-sf", "--strategies_file", dest="strategies_file",
+                        help="Strategies file with burst parameters for alleles",
+                        metavar="[strategies_file]", required=True)
 
     args = parser.parse_args(args_in)
 
-    logger.info("scBurstSim started for {nr_cells} cells".format(nr_cells=args.nr_cells))
+    if not args.out_dir:
+        args.out_dir = os.getcwd()  # by default, the output will be written to the dir where you run from
+
+    logging.basicConfig(filename=out_dir + dir_sep + 'main_scBurstSim.log', filemode='w',
+                        # format='%(asctime)s - %(message)s',
+                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                        level=logging.INFO)
+    logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+
+    logger.info("scBurstSim started for {nr_cells} cells. Output in {out_dir}".
+                format(nr_cells=args.nr_cells, out_dir=args.out_dir))
 
     nr_syn_within_strategy = 2
     nr_non_syn_within_strategy = 2
 
     exp_params = ExperimentParams(nr_cells=args.nr_cells,
+                                  strategies_file=args.strategies_file,
                                   nr_syn_within_strategy=nr_syn_within_strategy,
                                   nr_non_syn_within_strategy=nr_non_syn_within_strategy,
                                   efficiency=args.efficiency,
                                   windows=windows, freeze=freeze)
 
-    strategies_file = work_dir + dir_sep + "strategies.csv"
-    exp = Experiment(exp_params, strategies_file)
+    exp = Experiment(exp_params)
 
-    filename = "{wd}{dir_sep}df_counts".format(wd=work_dir, dir_sep=dir_sep)
+    filename = "{od}{dir_sep}df_counts".format(od=args.out_dir, dir_sep=dir_sep)
     if run_sim:
 
         df_counts = exp.run()
@@ -86,9 +90,6 @@ def main(args_in):
     # df_counts_eu = violin_plot_fraction(0.8, "80", df_counts_eu)
 
     # do_kolmogorov_smirnov_tests_for_percentages_on(df_counts_eu)
-
-    # TODO: df_all_arrivals can be used for sampling (it still contains information on single molecule level)
-    df_all_transcripts = exp.df_all_transcripts
 
     # what is the distribution of fractions?
     # density_plot("fraction", "strategy", df_counts_eu, exp_params)
@@ -106,11 +107,12 @@ def main(args_in):
     for window in windows:
         label = window[WINDOW_LABEL]
         cluster_map(df_counts, label=label, exp_params=exp_params,
-                    plot_name=work_dir + dir_sep + "cluster_map_{label}.svg".format(label=label))
+                    plot_name=args.out_dir + dir_sep + "cluster_map_{label}.svg".format(label=label))
 
 
 # if __name__ == "__main__":
 #     main(sys.argv[1:])
 
-main(["-nc", str(nr_cells), "-e", str(efficiency)])
-
+main(["-nc", str(nr_cells), "-e", str(efficiency), "-o", out_dir, "-sf", strategies_file])
+# main(["-h"])
+# main([])
