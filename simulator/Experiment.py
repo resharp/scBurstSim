@@ -131,6 +131,7 @@ class Experiment:
 
         df_counts.fillna("", inplace=True)
         df_counts["fraction"] = df_counts["real_count"] / df_counts["count_all"]
+        df_counts.fraction = df_counts.fraction.round(4)
         df_counts["strategy_group"] = df_counts.strategy + "_" + df_counts.group_id.map(str)
         df_counts["allele_label"] = df_counts.allele_id.map(str) + "_" + df_counts.strategy_group
 

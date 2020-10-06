@@ -38,15 +38,17 @@ def main(args_in):
 
     parser.add_argument("-nc", "--nr_cells", dest="nr_cells", type=int,
                         help="Nr of cells for which to run simulation", metavar="[number of cells]", required=True)
+    parser.add_argument("-sf", "--strategies_file", dest="strategies_file",
+                        help="Strategies file with burst parameters for alleles",
+                        metavar="[strategies_file]", required=True)
+
+    # optional arguments
     parser.add_argument("-e", "--efficiency", dest="efficiency", type=float, default=0.1,
                         help="Efficiency of RNA retrieval on single cell level (default 0.1)",
                         metavar="[efficiency of RNA retrieval]", required=False)
     parser.add_argument("-o", "--out_dir", dest="out_dir",
                         help="Output directory for scBurstSim",
                         metavar="[out_dir]", required=False)
-    parser.add_argument("-sf", "--strategies_file", dest="strategies_file",
-                        help="Strategies file with burst parameters for alleles",
-                        metavar="[strategies_file]", required=True)
 
     args = parser.parse_args(args_in)
 
@@ -74,13 +76,13 @@ def main(args_in):
 
     exp = Experiment(exp_params)
 
-    filename = "{od}{dir_sep}df_counts".format(od=args.out_dir, dir_sep=dir_sep)
+    filename = "{od}{dir_sep}df_counts.csv".format(od=args.out_dir, dir_sep=dir_sep)
     if run_sim:
 
         df_counts = exp.run()
-        df_counts.to_csv(path_or_buf=filename, sep='\t', index=False)
+        df_counts.to_csv(path_or_buf=filename, sep=';', index=False)
     else:
-        df_counts = pd.read_csv(filename, sep='\t')
+        df_counts = pd.read_csv(filename, sep=';')
 
     logging.info("Experiment run. Number of counts: {counts}.".format(counts=len(df_counts)))
 

@@ -1,29 +1,50 @@
 # scBurstSim
 Single cell transcriptional bursts and noise simulator
 
+Stochastic modeling of transcription and sampling noise on single cell level. 
+
+# usage 
+
 ``` 
-usage: main.py [-h] -nc [number of cells] [-e [efficiency of RNA retrieval]]
-               [-o [out_dir]] -sf [strategies_file]
+usage: main.py [-h] -nc [number of cells] -sf [strategies_file]
+               [-e [efficiency of RNA retrieval]] [-o [out_dir]]
 
 optional arguments:
   -h, --help            show this help message and exit
   -nc [number of cells], --nr_cells [number of cells]
                         Nr of cells for which to run simulation
+  -sf [strategies_file], --strategies_file [strategies_file]
+                        Strategies file with burst parameters for alleles
   -e [efficiency of RNA retrieval], --efficiency [efficiency of RNA retrieval]
                         Efficiency of RNA retrieval on single cell level
                         (default 0.1)
   -o [out_dir], --out_dir [out_dir]
                         Output directory for scBurstSim
-  -sf [strategies_file], --strategies_file [strategies_file]
-
 ```
+
+Example for running from command line
+```
+python3 "[your source location]/scBurstSim/main.py" -nc 10  -sf "[your path]/strategies.csv" -o "[your output dir]"
+```
+An example strategies.csv file is in the data folder. See explanation of file below.
+
+Output: A resulting file df_counts.csv is put in the output directory, when
+no output directory is specified it is put in the directory you run your 
+script from.
+
+Also some plots for clustering will be placed here (for now only some simple 
+clustering based on the fraction of count of one label as compared to the total counts)  
+
+For now, further parameters, e.g. the labeling window(s) can be set by adapting main.py.
+
 # Dependencies 
 
 See file requirements.txt for dependency on Python packages.
  
 
 # Strategies
-                        Strategies file with burst parameters for alleles
+
+Strategies file with burst parameters for alleles
 
 An example of the strategies file:
 
@@ -62,3 +83,13 @@ In the above example alleles with the strategy
 frequent_coor and frequent_high are synchronized by a shared coordination group 1.
 This is only possible if the transition matrix is identical, so k_01 and k_10 
 should be identical for coordinated strategies.  
+
+
+# Example traces 
+run single_allele_example.py for plotting example traces of 
+specific strategies (see further documentation inline)
+
+single_allele_example.py uses the Transcription class that is also
+used by Experiment.py
+
+

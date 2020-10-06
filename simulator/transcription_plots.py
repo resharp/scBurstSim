@@ -22,13 +22,15 @@ def plot_dynamics(title, df_events, freeze, max_minutes, windows=[], dfs_labeled
 
     plt.step(df_events["arrival"], df_events["cum_count"], where="post", color="tab:blue")
 
-    colors = ["darkgreen", "peru"]; color = 0
+    colors = ["darkgreen", "peru"]; color = 0  # TODO: select from your favorite color palette (> 2 colors)
+
     for label, df_labeled_events in dfs_labeled_events:
         plt.step(df_labeled_events["arrival"], df_labeled_events["cum_count"], where="post", color=colors[color])
         color = color + 1
 
     plt.xlim(0, max_minutes)
     plt.xlabel("minutes")
+    # TODO: Fix axis (scale disappears because of plot_events()
     plt.ylabel("nr of transcripts")
 
     for window in windows:

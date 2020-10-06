@@ -2,6 +2,9 @@ from simulator.Transcription import *
 from simulator.transcription_plots import *
 
 import os
+
+# script to display single cell single allele example traces
+
 if os.name == 'nt':
     dir_sep = "\\"
     # TODO: set your own working directory for locally storing data sets
@@ -28,6 +31,7 @@ def run_example(params):
 
     trans = Transcription(params)
 
+    # set complete_trace=True to retrieve the complete trace of transcripts counts (for plotting)
     df_dtmc, dtmc_list = trans.run_bursts(max_minutes, windows, new_dtmc_trace=True, complete_trace=True)
 
     # only set when complete_trace = True:
@@ -60,12 +64,15 @@ def run_all_strategies():
 sr = StrategyReader(work_dir + dir_sep + "strategies.csv" )
 
 # see strategy names in data\strategies.csv
-# params = sr.get(strategy="frequent")
+
+# we can select a strategy by name
+# params = sr.get(strategy="frequent_high")
+
+# or retrieve a random strategy
 params = sr.get_random()
+run_example(params)
 
-# params = sr.get_random()
-# run_example(params)
-
-run_all_strategies()
+# or run an example of all strategies
+# run_all_strategies()
 
 
