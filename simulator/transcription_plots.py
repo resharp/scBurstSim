@@ -16,7 +16,7 @@ def plot_events(df_dtmc, df_events):
     plt.scatter(decay_list, y_decays, color='r', marker="o", s=9)
 
 
-def plot_dynamics(title, df_events, freeze, max_minutes, windows=[], dfs_labeled_events=[]):
+def plot_dynamics(title, df_events, fix_time, max_minutes, windows=[], dfs_labeled_events=[]):
 
     plt.title(title)
 
@@ -40,7 +40,7 @@ def plot_dynamics(title, df_events, freeze, max_minutes, windows=[], dfs_labeled
         plt.axvline(start_window, label='labeling window', c="r")
         plt.axvline(end_window, c="r")
 
-    plt.axvline(freeze, linestyle='--', color='black', label="freeze")
+    plt.axvline(fix_time, linestyle='--', color='black', label="fix-time")
 
     plt.legend()
 

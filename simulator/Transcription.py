@@ -92,7 +92,7 @@ class Transcription:
 
         self.df_transcripts = self.create_transcripts(windows)
 
-        # a complete trace is only relevant for a plot, not for counting at freeze moment
+        # a complete trace is only relevant for a plot, not for counting at fix moment
         # uses all transcripts in self.df_transcripts
         if complete_trace:
             # we will now put the arrivals and decays in one table self.df_events and sort by time ..
@@ -104,7 +104,7 @@ class Transcription:
             self.sum_unlabeled_events()
 
         # now we can filter the transcripts because we are only interested in the transcripts alive at
-        # the moment freeze
+        # the fix moment
         self.df_transcripts = self.df_transcripts[(self.df_transcripts.arrival <= max_minutes) &
                                                   (self.df_transcripts.decay >= max_minutes)]
 

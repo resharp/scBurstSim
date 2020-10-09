@@ -24,7 +24,7 @@ window_4su = [start_windows + length_window + between_window,
               start_windows + 2*length_window + between_window, '4SU'] # e.g. 120 minutes of EU labeling
 windows = [window_eu, window_4su]
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
-freeze = windows[-1][WINDOW_END] + 0  # freeze 30 minutes after end of last window
+fix_time = windows[-1][WINDOW_END] + 0  # fix_time 30 minutes after end of last window
 
 
 def run_example(params):
@@ -48,7 +48,7 @@ def run_example(params):
             "burst freq: {freq}".format(name=params.name, freq=burst_frequency,
                                         k_01=params.k_01, k_10=params.k_10, k_syn=params.k_syn, k_d=params.k_d)
     plot_events(df_dtmc, df_events)
-    plot_dynamics(title=title, df_events=df_unlabeled_events, freeze=freeze, max_minutes=max_minutes,
+    plot_dynamics(title=title, df_events=df_unlabeled_events, fix_time=fix_time, max_minutes=max_minutes,
                   windows=windows, dfs_labeled_events=dfs_labeled_events)
 
     # show distribution of time in burst and of time until burst (in minutes)

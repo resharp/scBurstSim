@@ -33,7 +33,7 @@ window_4su = [start_windows + length_window + between_window,
               start_windows + 2*length_window + between_window, '4SU'] # e.g. 120 minutes of EU labeling
 windows = [window_eu, window_4su]
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
-freeze = windows[-1][WINDOW_END] + 0  # freeze 0 minutes after end of last window
+fix_time = windows[-1][WINDOW_END] + 0  # fix_time 0 minutes after end of last window
 
 
 def arg_parse(args_in):
@@ -79,7 +79,7 @@ def main(args_in):
                                   nr_syn_within_strategy=nr_syn_within_strategy,
                                   nr_non_syn_within_strategy=nr_non_syn_within_strategy,
                                   efficiency=args.efficiency,
-                                  windows=windows, freeze=freeze)
+                                  windows=windows, fix_time=fix_time)
 
     exp = Experiment(exp_params)
 

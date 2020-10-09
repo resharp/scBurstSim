@@ -99,8 +99,8 @@ def regression_plot(x, y, data, exp_params):
 
     plt.ylim(-0.1, 1.1)
     plt.xlim(-0.1, 1.1)
-    title = "window={start}->{end}; freeze={freeze}".format(
-        freeze=exp_params.freeze,
+    title = "window={start}->{end}; fix time={fix}".format(
+        fix=exp_params.fix_time,
         start=exp_params.windows[0][WINDOW_START], end=exp_params.windows[0][WINDOW_END])
 
     plt.xlabel("{x} ({title})".format(x=x, title=title))
@@ -131,8 +131,8 @@ def regression_plot(x, y, data, exp_params):
 
 def density_plot(x, hue, data, exp_params):
 
-    title = "Density plot for different strategies (window={start}->{end}; freeze={freeze})".format(
-        freeze=exp_params.freeze,
+    title = "Density plot for different strategies (window={start}->{end}; fix time={fix})".format(
+        fix=exp_params.fix_time,
         start=exp_params.windows[0][WINDOW_START], end=exp_params.windows[0][WINDOW_END])
 
     sns.distplot(data["fraction"], hist=False, kde=True, rug=True, color="black",
@@ -161,8 +161,8 @@ def lmplot(x, y, data, exp_params):
                     height=5, aspect=1.5)
     # plt.ylim(-0.1, 1.1)
     # plt.xlim(-0.1, 1.1)
-    title = "window={start}->{end}; freeze={freeze}".format(
-        freeze=exp_params.freeze,
+    title = "window={start}->{end}; fix time={fix}".format(
+        fix=exp_params.fix_time,
         start=exp_params.windows[0][WINDOW_START], end=exp_params.windows[0][WINDOW_END])
 
     plt.xlabel("{x} ({title})".format(x=x, title=title))

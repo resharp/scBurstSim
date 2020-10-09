@@ -16,7 +16,7 @@ class ExperimentParams(NamedTuple):
     efficiency: float
 
     windows: list
-    freeze: int
+    fix_time: int
 
 
 class Experiment:
@@ -165,7 +165,7 @@ class Experiment:
         if new_dtmc_trace:
             self.trace_id = self.trace_id + 1
 
-        df_dtmc, dtmc_list = self.tran.run_bursts(max_minutes=self.params.freeze,
+        df_dtmc, dtmc_list = self.tran.run_bursts(max_minutes=self.params.fix_time,
                                                   windows=self.params.windows,
                                                   new_dtmc_trace=new_dtmc_trace,
                                                   dtmc_list=dtmc_list
