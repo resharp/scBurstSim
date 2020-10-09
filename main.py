@@ -28,6 +28,7 @@ strategies_file = out_dir + dir_sep + "strategies.csv"
 
 start_windows = 600; length_window = 60; between_window = 15
 window_eu = [start_windows, start_windows + length_window, 'EU'] # e.g. 120 minutes of EU labeling
+# window_4su = [start_windows, start_windows + length_window, '4SU']
 window_4su = [start_windows + length_window + between_window,
               start_windows + 2*length_window + between_window, '4SU'] # e.g. 120 minutes of EU labeling
 windows = [window_eu, window_4su]
@@ -35,7 +36,7 @@ WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 freeze = windows[-1][WINDOW_END] + 0  # freeze 0 minutes after end of last window
 
 
-def main(args_in):
+def arg_parse(args_in):
 
     parser = argparse.ArgumentParser()
 
@@ -58,8 +59,14 @@ def main(args_in):
     if not args.out_dir:
         args.out_dir = os.getcwd()  # by default, the output will be written to the dir where you run from
 
+    return args
+
+
+def main(args_in):
+
+    args = arg_parse(args_in)
+
     logging.basicConfig(filename=out_dir + dir_sep + 'main_scBurstSim.log', filemode='w',
-                        # format='%(asctime)s - %(message)s',
                         format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                         level=logging.INFO)
     logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))

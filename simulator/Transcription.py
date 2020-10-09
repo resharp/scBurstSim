@@ -60,13 +60,16 @@ class Transcription:
             arrival_time = start_time + last_arrival
 
             if last_arrival < interval:
+
+                within_window = False
                 for window in windows:
                     if window[WINDOW_START] < arrival_time < window[WINDOW_END]:
+                        within_window = True
                         label = window[WINDOW_LABEL]
-                        break
-                    else:
-                        label = ""
-                poisson_list.append([label, arrival_time, 1, decay_time, -1])
+                        poisson_list.append([label, arrival_time, 1, decay_time, -1])
+                if not within_window:
+                    label = ""
+                    poisson_list.append([label, arrival_time, 1, decay_time, -1])
 
         return poisson_list
 
