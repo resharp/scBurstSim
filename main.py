@@ -12,8 +12,8 @@ run_sim = True  # setting run_sim to False results in use of locally stored data
 nr_cells = 40
 efficiency = 0.1
 
-nr_syn_within_strategy = 2
-nr_non_syn_within_strategy = 2
+nr_syn_within_strategy = 1
+nr_non_syn_within_strategy = 1
 
 # under this run_dir we should also create a plot directory
 out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
@@ -24,7 +24,7 @@ else:
     dir_sep = "/"
 
 # see strategy names in data\strategies.csv
-strategies_file = out_dir + dir_sep + "strategies.csv"
+strategies_file = out_dir + dir_sep + "strategies_generated.csv"
 
 start_windows = 600; length_window = 60; between_window = 15
 window_eu = [start_windows, start_windows + length_window, 'EU'] # e.g. 120 minutes of EU labeling
