@@ -1,3 +1,5 @@
+from simulator.StrategyGenerator import *
+from simulator.StrategyReader import StrategyReader
 from simulator.Transcription import *
 from simulator.transcription_plots import *
 import os
