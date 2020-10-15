@@ -1,26 +1,25 @@
-from simulator.StrategyGenerator import *
+import logging
+import os
+
 from simulator.StrategyReader import StrategyReader
 from simulator.Transcription import *
 from simulator.transcription_plots import *
-import os
-import logging
 
 # script to display single cell single allele example traces
 
 if os.name == 'nt':
     dir_sep = "\\"
-    # TODO: set your own working directory for locally storing data sets
-    work_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\source\scBurstSim\data"
+    # TODO: set your own out directory
+    out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
 else:
     dir_sep = "/"
-    work_dir = "."
+    out_dir = ""
 
 nr_days = 1
-max_minutes = 1440*nr_days # 24 hours = 1440 minutes
-# part of Experiment (Uridine analog windows)
+max_minutes = 1440*nr_days  # 24 hours = 1440 minutes
 
 # windows = [[400, 460, 'EU'], [520, 580, '4SU']] # e.g. 120 minutes of EU labeling
-start_windows = 600; length_window = 120; between_window = 15
+start_windows = 600; length_window = 60; between_window = 0
 window_eu = [start_windows, start_windows + length_window, 'EU'] # e.g. 120 minutes of EU labeling
 window_4su = [start_windows + length_window + between_window,
               start_windows + 2*length_window + between_window, '4SU'] # e.g. 120 minutes of EU labeling
@@ -63,54 +62,23 @@ def run_all_strategies():
         run_example(params)
 
 
-sr = StrategyReader(work_dir + dir_sep + "strategies.csv" )
-
-# see strategy names in data\strategies.csv
-
-# we can select a strategy by name
-# params = sr.get(strategy="frequent_high")
-
-# or retrieve a random strategy
-params = sr.get_random()
-# run_example(params)
-
-# or run an example of all strategies
-# run_all_strategies()
-
 logger = logging.getLogger(__name__)
 out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
 logging.basicConfig(filename=out_dir + dir_sep + 'single_allele_example.log', filemode='w',
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     level=logging.INFO)
 
-range_k_01 = "0.005;0.1"
-range_k_10 = "0.005;0.1"
-range_k_syn = "0.016;1.6"
-range_k_d = "0.0019;0.023"
+sr = StrategyReader(out_dir + dir_sep + "strategies_generated.csv" )
 
-filename = out_dir + dir_sep + "strategies_generated.csv"
-sg = StrategyGenerator(range_k_01=range_k_01, range_k_10=range_k_10, range_k_syn=range_k_syn, range_k_d=range_k_d,
-                       filename=filename)
+# see strategy names in data\strategies.csv
 
-sg.generate_and_write_strategies(100)
+# we can select a strategy by name
+# params = sr.get(strategy="generated_95")
 
-params = sg.get_random_parameters()
-
-# values = []
-# for i in range(0, 1000):
-#     params = sg.get_random_parameters()
-#
-#     chance_on = params.k_01 / (params.k_10 + params.k_01)
-#     k_syn_cor = params.k_syn * chance_on
-#     ss_mrna = k_syn_cor / params.k_d
-#
-#     half_life = np.log(2)/params.k_d
-#
-#     values.append(half_life)
-#
-# plt.title("distribution half-lives (minutes)")
-# plt.hist(values, bins=100)
-# plt.ylim(1)
-# plt.show()
+# or retrieve a random strategy
+params = sr.get_random()
 
 run_example(params)
+
+# or run an example of all strategies (NB: be sure you have a small strategy file!)
+# run_all_strategies()
