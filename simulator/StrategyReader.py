@@ -59,6 +59,11 @@ class StrategyReader:
                                           left_on=['k_01', 'k_10'],
                                           right_on=['k_01', 'k_10'])
 
+            self.df_strategies["fraction_ON"] = self.df_strategies.k_01 / \
+                                                ( self.df_strategies.k_01 + self.df_strategies.k_10 )
+            self.df_strategies["fraction_OFF"] = self.df_strategies.k_10 / \
+                                                ( self.df_strategies.k_01 + self.df_strategies.k_10 )
+
     @staticmethod
     def convert_to_params(df_strategy):
         params = TranscriptParams(k_01=df_strategy.k_01.item(), k_10=df_strategy.k_10.item(), nr_refractions=2,

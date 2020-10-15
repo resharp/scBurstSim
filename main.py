@@ -9,7 +9,7 @@ import argparse
 logger = logging.getLogger(__name__)
 
 run_sim = True  # setting run_sim to False results in use of locally stored data set
-nr_cells = 40
+nr_cells = 100
 efficiency = 0.1
 
 nr_syn_within_strategy = 1

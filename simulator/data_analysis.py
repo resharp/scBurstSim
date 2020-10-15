@@ -187,7 +187,7 @@ def cluster_map(df_counts, label, exp_params, plot_name="cluster_map.svg"):
     df_counts_unstack = df_counts_unstack.fillna(0)
 
     g = sns.clustermap(df_counts_unstack, cmap="vlag", row_cluster=False,  figsize=(7, 5)).\
-        fig.suptitle("Counts for label {label} for {nr_cells} cells; efficiency: {eff}".
+        fig.suptitle("Fractions for label {label} for {nr_cells} cells; efficiency: {eff}".
                      format(label=label, nr_cells=exp_params.nr_cells, eff=exp_params.efficiency))
     # plt.show()
     plt.savefig(plot_name)
