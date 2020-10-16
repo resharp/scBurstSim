@@ -26,7 +26,7 @@ else:
 # see strategy names in data\strategies.csv
 strategies_file = out_dir + dir_sep + "strategies_generated.csv"
 
-start_windows = 600; length_window = 60; between_window = 15
+start_windows = 600; length_window = 60; between_window = 0
 window_eu = [start_windows, start_windows + length_window, 'EU'] # e.g. 120 minutes of EU labeling
 # window_4su = [start_windows, start_windows + length_window, '4SU']
 window_4su = [start_windows + length_window + between_window,
