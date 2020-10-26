@@ -1,5 +1,11 @@
 # parse the gene, k_on, k_off and k_syn and mean expression from larsson 2019
-# there are three tabs
+# C57: 6962 alleles
+# CAST: 6935 alleles
+#
+# the rates of Larsson 2019 are initially in relative rates compared compared to k_d (degradation rate)
+#
+# all absolute rates in this script are in h^-1 (per hour)
+# except columns with postfix _m = per minutes
 #
 # C57: 6962 alleles
 # CAST: 6935 alleles
@@ -103,8 +109,8 @@ df_merge["k_off_abs"] = df_merge["k_off"] * df_merge["k_d_calc_h"]
 df_merge["k_syn_abs"] = df_merge["k_syn"] * df_merge["k_d_calc_h"]
 
 
-df_merge["k_on_abs_log10"] = np.log10(df_merge["k_on_abs"])
-df_merge["k_off_abs_log10"] = np.log10(df_merge["k_off_abs"])
+df_merge["k_on_abs_log10"] = np.log10(df_merge["k_on"])
+df_merge["k_off_abs_log10"] = np.log10(df_merge["k_off"])
 
 plt.scatter(df_merge["k_off_abs_log10"], df_merge["k_on_abs_log10"], s=5)
 plt.xlim((-3,3))
@@ -118,6 +124,20 @@ plt.savefig(plot_dir + dir_sep + "abs_k_on_and_k_off_scatter.svg")
 plt.close(1)
 
 
-debug = True
+def hist_plot(measure):
+    plt.hist(np.log10(df_merge[measure]), bins=100)
+    plt.title(measure + " in hours")
+    plt.savefig(plot_dir + dir_sep + "{measure}.svg".format(measure=measure))
+    plt.close(1)
+
+
+hist_plot("k_on_abs")
+hist_plot("k_off_abs")
+hist_plot("k_syn_abs")
+hist_plot("k_d_calc_h")
+
+print("mean k_on_abs: {}".format(df_merge["k_on_abs"].mean().round(4)))
+print("mean k_off_abs: {}".format(df_merge["k_off_abs"].mean().round(4)))
+print("mean k_syn_abs: {}".format(df_merge["k_syn_abs"].mean().round(4)))
 
 
