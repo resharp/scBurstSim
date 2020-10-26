@@ -17,6 +17,9 @@ if os.name == 'nt':
 else:
     dir_sep = "/"
 
+plot_dir = out_dir + dir_sep + "read_larsson_herzog.plots"
+os.makedirs(plot_dir, exist_ok=True)
+
 c57_alleles_file = input_dir + dir_sep + "Larsson 2019 C57 allele.csv"
 cast_alleles_file = input_dir + dir_sep + "Larsson 2019 CAST allele.csv"
 
@@ -59,8 +62,9 @@ print(len(df_all_alleles))
 df_subset_alleles = df_all_alleles[df_all_alleles["k_on"] < 10]
 
 plt.hist(df_subset_alleles["k_on"], bins=30, log=True)
-plt.title("Distribution of relative k_on (in terms of k_d)")
-plt.show()
+plt.title("Larsson 2019 distribution of relative k_on (in terms of k_d)")
+plt.savefig(plot_dir + dir_sep + "dis_relative_k_on.svg")
+plt.close(1)
 
 # Read half-lives from Herzog 2017
 half_life_file = input_dir + dir_sep + "Herzog 2017 table 2.csv"
@@ -81,17 +85,38 @@ df_half_lives["half_life_m"] = df_half_lives["half_life"] * 60
 df_merge = pd.merge(df_all_alleles, df_half_lives, how="inner",
                     left_on="gene", right_on="name")
 
-# plt.hist(df_half_lives["k_d_calc_m"], bins=100)
-# plt.title("Distribution of k_d_calc_m")
-# plt.show()
-
 plt.hist(df_half_lives["half_life_m"], bins=100)
-plt.title("Distribution of half_life_m (minutes)")
-plt.show()
+plt.title("Herzog 2017 distribution of half_life_m (minutes)")
+plt.savefig(plot_dir + dir_sep + "herzog 2017 half lives.svg")
+plt.close(1)
 
-len_intersection = len(df_merge)/2
+len_intersection = int(len(df_merge)/2) + 1
 
 print("intersection of two data sets Larsson 2019 and Herzog 2017: {len} genes".format(len=len_intersection))
+
+# k_on
+# k_off
+# k_syn
+# k_d_calc_h
+df_merge["k_on_abs"] = df_merge["k_on"] * df_merge["k_d_calc_h"]
+df_merge["k_off_abs"] = df_merge["k_off"] * df_merge["k_d_calc_h"]
+df_merge["k_syn_abs"] = df_merge["k_syn"] * df_merge["k_d_calc_h"]
+
+
+df_merge["k_on_abs_log10"] = np.log10(df_merge["k_on_abs"])
+df_merge["k_off_abs_log10"] = np.log10(df_merge["k_off_abs"])
+
+plt.scatter(df_merge["k_off_abs_log10"], df_merge["k_on_abs_log10"], s=5)
+plt.xlim((-3,3))
+plt.ylim((-3,3))
+plt.title("absolute k_on and k_off ( <- Larsson + Herzog)")
+plt.xlabel("log10(x_off_abs)")
+plt.ylabel("log10(x_on_abs)")
+ident = [-2, 2]
+plt.plot(ident, ident)
+plt.savefig(plot_dir + dir_sep + "abs_k_on_and_k_off_scatter.svg")
+plt.close(1)
+
 
 debug = True
 
