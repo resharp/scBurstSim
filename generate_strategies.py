@@ -22,13 +22,13 @@ logging.basicConfig(filename=out_dir + dir_sep + 'generate_strategies.log', file
 
 # generating strategies
 
-range_k_01 = "0.005;0.1"
-range_k_10 = "0.005;0.1"
-range_k_syn = "0.016;1.6"
-range_k_d = "0.0019;0.023"
+range_k_on = [0.005, 0.1]
+range_k_off = [0.005, 0.1]
+range_k_syn = [0.016, 1.6]
+range_k_d = [0.0019, 0.023]
 
 filename = out_dir + dir_sep + "strategies_generated.csv"
-sg = StrategyGenerator(range_k_01=range_k_01, range_k_10=range_k_10, range_k_syn=range_k_syn, range_k_d=range_k_d,
+sg = StrategyGenerator(range_k_on=range_k_on, range_k_off=range_k_off, range_k_syn=range_k_syn, range_k_d=range_k_d,
                        filename=filename)
 
 sg.generate_and_write_strategies(100)

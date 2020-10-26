@@ -7,56 +7,49 @@ from simulator.Transcription import TranscriptParams
 
 
 class StrategyGenerator:
-    range_k_01 = ""
-    range_k_10 = ""
-    range_k_syn = ""
-    range_k_d = ""
 
     filename = ""
 
-    k_01_limits = []
-    k_10_limits = []
-    k_syn_limits = []
-    k_d_limits = []
+    range_k_on = []
+    range_k_off = []
+    range_k_sys = []
+    range_k_d = []
 
     counter = 0
 
-    def __init__(self, range_k_01, range_k_10, range_k_syn, range_k_d, filename):
-        self.range_k_01 = range_k_01
-        self.range_k_10 = range_k_10
-        self.range_k_syn = range_k_syn
-        self.range_k_d = range_k_d
-        self.filename = filename
+    def __init__(self, range_k_on, range_k_off, range_k_syn, range_k_d, filename):
 
-        self.k_01_limits = [float(i) for i in self.range_k_01.split(";")]
-        self.k_10_limits = [float(i) for i in self.range_k_10.split(";")]
-        self.k_syn_limits = [float(i) for i in self.range_k_syn.split(";")]
-        self.k_d_limits = [float(i) for i in self.range_k_d.split(";")]
+        self.range_k_on = range_k_on
+        self.range_k_off = range_k_off
+        self.range_k_sys = range_k_syn
+        self.range_k_d = range_k_d
+
+        self.filename = filename
 
         self.log_parameters()
 
     def log_parameters(self):
         logging.info("StrategyGenerator started with parameters:")
 
-        logging.info("k_01 from {min} to {max} / minute".format(min=self.k_01_limits[0], max=self.k_01_limits[1]))
-        logging.info("k_10 from {min} to {max} / minute".format(min=self.k_10_limits[0], max=self.k_10_limits[1]))
+        logging.info("k_01 from {min} to {max} / minute".format(min=self.range_k_on[0], max=self.range_k_on[1]))
+        logging.info("k_10 from {min} to {max} / minute".format(min=self.range_k_off[0], max=self.range_k_off[1]))
 
-        min_k_01 = self.k_01_limits[0]
-        max_k_01 = self.k_01_limits[1]
-        min_k_10 = self.k_10_limits[0]
-        max_k_10 = self.k_10_limits[1]
+        min_k_01 = self.range_k_on[0]
+        max_k_01 = self.range_k_on[1]
+        min_k_10 = self.range_k_off[0]
+        max_k_10 = self.range_k_off[1]
 
         max_chance_on = round(100 * max_k_01 / (max_k_01 + min_k_10 ), 3)
         min_chance_on = round(100 * min_k_01 / ( min_k_01 + max_k_10), 3)
         logging.info("percentage ON from {min} to {max} percent".format(min=min_chance_on, max=max_chance_on))
 
-        logging.info("k_syn from {min} to {max} / minute".format(min=self.k_syn_limits[0], max=self.k_syn_limits[1]))
-        k_syn_limits_hours = [limit * 60 for limit in self.k_syn_limits]
+        logging.info("k_syn from {min} to {max} / minute".format(min=self.range_k_sys[0], max=self.range_k_sys[1]))
+        k_syn_limits_hours = [limit * 60 for limit in self.range_k_sys]
         logging.info("k_syn from {min} to {max} / hour".format(min=k_syn_limits_hours[0], max=k_syn_limits_hours[1]))
 
-        logging.info("k_d from {min} to {max} / minute".format(min=self.k_d_limits[0], max=self.k_d_limits[1]))
+        logging.info("k_d from {min} to {max} / minute".format(min=self.range_k_d[0], max=self.range_k_d[1]))
 
-        half_lives = [round(np.log(2)/limit, 2) for limit in self.k_d_limits]
+        half_lives = [round(np.log(2)/limit, 2) for limit in self.range_k_d]
 
         logging.info("half-lives from {min} to {max} minutes".format(min=half_lives[0], max=half_lives[1]))
 
@@ -74,15 +67,15 @@ class StrategyGenerator:
         # we want the ON times shorter than the OFF times: average length ON ~ 1/k_10 < 1/k_01
         # => k_10 > k_01
         # TODO QUESTION: Is it possible having ON times larger than OFF times?
-        k_01 = self.sample_value(self.k_01_limits)
-        min_k_10 = max(k_01, self.k_10_limits[0])
-        k_10 = self.sample_value([min_k_10, self.k_10_limits[1]])
+        k_01 = self.sample_value(self.range_k_on)
+        min_k_10 = max(k_01, self.range_k_off[0])
+        k_10 = self.sample_value([min_k_10, self.range_k_off[1]])
 
         # it makes sense that k_syn > k_10 always (because there would be no burst)
-        min_k_syn = max(k_10, self.k_syn_limits[0])
-        k_syn = self.sample_value([min_k_syn, self.k_syn_limits[1]], exponential=True)
+        min_k_syn = max(k_10, self.range_k_sys[0])
+        k_syn = self.sample_value([min_k_syn, self.range_k_sys[1]], exponential=True)
 
-        k_d = self.sample_value(self.k_d_limits)
+        k_d = self.sample_value(self.range_k_d)
 
         self.counter = self.counter + 1
         name = "generated_" + str(self.counter)
