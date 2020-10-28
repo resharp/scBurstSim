@@ -47,9 +47,9 @@ def run_example(params):
     nr_bursts = len(df_dtmc[df_dtmc.state == "1"])
     burst_frequency = round(nr_bursts / max_minutes, 3)
 
-    title = "strategy={name}; k_01={k_01}; k_10={k_10};k_syn={k_syn}; k_d={k_d} -> " \
+    title = "strategy={name}; k_on={k_on}; k_off={k_off};k_syn={k_syn}; k_d={k_d} -> " \
             "burst freq: {freq}".format(name=params.name, freq=burst_frequency,
-                                        k_01=params.k_01, k_10=params.k_10, k_syn=params.k_syn, k_d=params.k_d)
+                                        k_on=params.k_on, k_off=params.k_off, k_syn=params.k_syn, k_d=params.k_d)
     plot_events(df_dtmc, df_events)
     plot_dynamics(title=title, df_events=df_unlabeled_events, fix_time=fix_time, max_minutes=max_minutes,
                   windows=windows, dfs_labeled_events=dfs_labeled_events)
