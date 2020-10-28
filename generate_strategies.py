@@ -14,6 +14,8 @@ if os.name == 'nt':
 else:
     dir_sep = "/"
     out_dir = ""
+plot_dir = out_dir + dir_sep + "generate_strategies.plots"
+os.makedirs(plot_dir, exist_ok=True)
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename=out_dir + dir_sep + 'generate_strategies.log', filemode='w',
@@ -26,41 +28,53 @@ range_k_off_exp = [-2.5, 2.7]
 range_k_syn_exp = [-1, 3]
 range_k_d_exp = [-1.4, 0.2]
 
-# convert to rates per minute by taking the 10^k and dividing by 60
-# range_k_on = [10**k/60 for k in range_k_on_exp]
-# range_k_off = [10**k/60 for k in range_k_off_exp]
-# range_k_syn = [10**k/60 for k in range_k_syn_exp]
-# range_k_d = [10**k/60 for k in range_k_d_exp]
-
-# generating strategies (per minute)
-range_k_on = [0.005, 0.1]
-range_k_off = [0.005, 0.1]
-range_k_syn = [0.016, 1.6]
-range_k_d = [0.0019, 0.023]
+# # generating strategies (per minute)
+# range_k_on = [0.005, 0.1]
+# range_k_off = [0.005, 0.1]
+# range_k_syn = [0.016, 1.6]
+# range_k_d = [0.0019, 0.023]
 
 filename = out_dir + dir_sep + "strategies_generated.csv"
-sg = StrategyGenerator(range_k_on=range_k_on, range_k_off=range_k_off, range_k_syn=range_k_syn, range_k_d=range_k_d,
+sg = StrategyGenerator(range_k_on_exp=range_k_on_exp, range_k_off_exp=range_k_off_exp,
+                       range_k_syn_exp=range_k_syn_exp, range_k_d_exp=range_k_d_exp,
                        filename=filename)
 
-sg.generate_and_write_strategies(100)
+k_on_first = False
+sg.generate_and_write_strategies(100, k_on_first)
 
 sr = StrategyReader(out_dir + dir_sep + "strategies_generated.csv" )
 
 strategies = sr.select_all()
 
-values = []
-for params in strategies:
+df_strategies = sr.df_strategies
 
-    chance_on = params.k_on / (params.k_off + params.k_on)
-    k_syn_cor = params.k_syn * chance_on
-    ss_mrna = k_syn_cor / params.k_d
+df_strategies["burst_time_log10"] = np.log10(1 / df_strategies["k_on"])
+df_strategies["silent_time_log10"] = np.log10(1 / df_strategies["k_off"])
+df_strategies["half_life_log10"] = np.log10(np.log(2)/df_strategies.k_d)
+df_strategies["chance_on"] = df_strategies.k_on / (df_strategies.k_off + df_strategies.k_on)
 
-    half_life = np.log(2)/params.k_d
+df_strategies["chance_on_log10"] = np.log10(df_strategies["chance_on"])
+df_strategies["k_syn_effective"] = df_strategies.k_syn * df_strategies.chance_on
+df_strategies["k_syn_effective_log10"] = np.log10(df_strategies.k_syn_effective)
+df_strategies["nr_steady_state_log10"] = np.log10(df_strategies.k_syn_effective / df_strategies.k_d)
 
-    values.append(half_life)
+measures = ["burst_time_log10", "silent_time_log10", "half_life_log10"
+            , "chance_on_log10", "chance_on_log10", "k_syn_effective_log10", "nr_steady_state_log10"]
 
-plt.title("distribution half-lives (minutes)")
-plt.hist(values, bins=30)
-plt.ylim(1)
-plt.show()
 
+def show_distribution(measure):
+
+    units = "minutes"
+    if measure == "nr_steady_state_log10":
+        units = ""
+    plt.title("distribution {measure}({units})".format(measure=measure, units=units))
+    plt.hist(df_strategies[measure], bins=30)
+    plt.xlabel(measure)
+    plot_name = plot_dir + dir_sep + "distrib_{measure}_k_on_first_{k_on_first}.svg".format(
+        measure=measure, k_on_first=k_on_first)
+    plt.savefig(plot_name)
+    plt.close(1)
+
+
+for measure in measures:
+    show_distribution(measure)

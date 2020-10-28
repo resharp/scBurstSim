@@ -70,8 +70,8 @@ logging.basicConfig(filename=out_dir + dir_sep + 'single_allele_example.log', fi
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     level=logging.INFO)
 
-# sr = StrategyReader(out_dir + dir_sep + "strategies_generated.csv" )
-sr = StrategyReader(in_dir + dir_sep + "strategies.csv" )
+sr = StrategyReader(out_dir + dir_sep + "strategies_generated.csv" )
+# sr = StrategyReader(in_dir + dir_sep + "strategies.csv" )
 
 # see strategy names in data\strategies.csv
 
@@ -79,7 +79,7 @@ sr = StrategyReader(in_dir + dir_sep + "strategies.csv" )
 # params = sr.get(strategy="generated_95")
 
 # or retrieve a random strategy
-params = sr.get("one_example")
+params = sr.get_random()
 
 run_example(params)
 
