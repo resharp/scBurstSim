@@ -24,7 +24,7 @@ sr = StrategyReader(out_dir + dir_sep + "strategies_generated.csv" )
 sr.read_strategies()
 df_strategies = sr.df_strategies
 
-# plt.scatter(df_strategies.k_10, df_strategies.k_01)
+# plt.scatter(df_strategies.k_off, df_strategies.k_on)
 # plt.show()
 nr_cells = 100
 efficiency = 100

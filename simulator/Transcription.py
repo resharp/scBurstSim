@@ -7,8 +7,8 @@ WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 
 class TranscriptParams(NamedTuple):
     # transcription matrix
-    k_01: float             # part of transition matrix
-    k_10: float             # part of transition matrix
+    k_on: float             # part of transition matrix
+    k_off: float             # part of transition matrix
     tm_id: int              # id for every unique transcription matrix
     nr_refractions: int
 
@@ -118,7 +118,7 @@ class Transcription:
             state_time = 0
 
             if self.state == "0":
-                k = self.params.k_01
+                k = self.params.k_on
                 # we could get a peaked distribution of waiting times by repeating (setting alpha > 1)
                 # see alpha in https://homepage.divms.uiowa.edu/~mbognar/applets/gamma.html
                 # this is a simple way to simulate multiple refractory states?
@@ -127,7 +127,7 @@ class Transcription:
                 for i in range(alpha):
                     state_time = state_time + np.random.exponential(scale=1.0, size=None) / k
             else:
-                k = self.params.k_10
+                k = self.params.k_off
                 state_time = np.random.exponential(scale=1.0, size=None) / k
 
             end_time = current_time + state_time

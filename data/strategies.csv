@@ -1,5 +1,5 @@
 # named strategies for the simulator/Transcription class (; separated!)
-name;k_01;k_10;coord_group;k_syn;k_d
+name;k_on;k_off;coord_group;k_syn;k_d
 # two strategies with the same burst coordination
 frequent_coor;0.02;0.02;1;0.16;0.01
 frequent_uncoor;0.02;0.02;;0.16;0.01

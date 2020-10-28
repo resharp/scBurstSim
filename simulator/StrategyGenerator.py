@@ -31,16 +31,16 @@ class StrategyGenerator:
     def log_parameters(self):
         logging.info("StrategyGenerator started with parameters:")
 
-        logging.info("k_01 from {min} to {max} / minute".format(min=self.range_k_on[0], max=self.range_k_on[1]))
-        logging.info("k_10 from {min} to {max} / minute".format(min=self.range_k_off[0], max=self.range_k_off[1]))
+        logging.info("k_on from {min} to {max} / minute".format(min=self.range_k_on[0], max=self.range_k_on[1]))
+        logging.info("k_off from {min} to {max} / minute".format(min=self.range_k_off[0], max=self.range_k_off[1]))
 
-        min_k_01 = self.range_k_on[0]
-        max_k_01 = self.range_k_on[1]
-        min_k_10 = self.range_k_off[0]
-        max_k_10 = self.range_k_off[1]
+        min_k_on = self.range_k_on[0]
+        max_k_on = self.range_k_on[1]
+        min_k_off = self.range_k_off[0]
+        max_k_off = self.range_k_off[1]
 
-        max_chance_on = round(100 * max_k_01 / (max_k_01 + min_k_10 ), 3)
-        min_chance_on = round(100 * min_k_01 / ( min_k_01 + max_k_10), 3)
+        max_chance_on = round(100 * max_k_on / (max_k_on + min_k_off ), 3)
+        min_chance_on = round(100 * min_k_on / ( min_k_on + max_k_off), 3)
         logging.info("percentage ON from {min} to {max} percent".format(min=min_chance_on, max=max_chance_on))
 
         logging.info("k_syn from {min} to {max} / minute".format(min=self.range_k_sys[0], max=self.range_k_sys[1]))
@@ -55,24 +55,24 @@ class StrategyGenerator:
 
     def get_random_parameters(self):
 
-        name, k_01, k_10, group_id, k_syn, k_d = self.get_random()
+        name, k_on, k_off, group_id, k_syn, k_d = self.get_random()
 
-        tp = TranscriptParams(k_01=k_01, k_10=k_10, k_syn=k_syn, k_d=k_d,
+        tp = TranscriptParams(k_on=k_on, k_off=k_off, k_syn=k_syn, k_d=k_d,
                               nr_refractions=2, name="generated", coord_group=0, tm_id=0)
 
         return tp
 
     def get_random(self):
 
-        # we want the ON times shorter than the OFF times: average length ON ~ 1/k_10 < 1/k_01
-        # => k_10 > k_01
+        # we want the ON times shorter than the OFF times: average length ON ~ 1/k_off < 1/k_on
+        # => k_off > k_on
         # TODO QUESTION: Is it possible having ON times larger than OFF times?
-        k_01 = self.sample_value(self.range_k_on)
-        min_k_10 = max(k_01, self.range_k_off[0])
-        k_10 = self.sample_value([min_k_10, self.range_k_off[1]])
+        k_on = self.sample_value(self.range_k_on)
+        min_k_off = max(k_on, self.range_k_off[0])
+        k_off = self.sample_value([min_k_off, self.range_k_off[1]])
 
-        # it makes sense that k_syn > k_10 always (because there would be no burst)
-        min_k_syn = max(k_10, self.range_k_sys[0])
+        # it makes sense that k_syn > k_off always (because there would be no burst)
+        min_k_syn = max(k_off, self.range_k_sys[0])
         k_syn = self.sample_value([min_k_syn, self.range_k_sys[1]], exponential=True)
 
         k_d = self.sample_value(self.range_k_d)
@@ -80,11 +80,11 @@ class StrategyGenerator:
         self.counter = self.counter + 1
         name = "generated_" + str(self.counter)
 
-        return [name, k_01, k_10, np.nan, k_syn, k_d]
+        return [name, k_on, k_off, np.nan, k_syn, k_d]
 
     def generate_and_write_strategies(self, nr_of_alleles):
 
-        columns = ['name', 'k_01', 'k_10', 'coord_group', 'k_syn', 'k_d']
+        columns = ['name', 'k_on', 'k_off', 'coord_group', 'k_syn', 'k_d']
 
         data = []
 

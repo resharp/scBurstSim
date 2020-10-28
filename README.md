@@ -50,7 +50,7 @@ An example of the strategies file:
 
 ```                        
 # named strategies for the simulator/Transcription class (; separated!)
-name;k_01;k_10;coord_group;k_syn;k_d
+name;k_on;k_off;coord_group;k_syn;k_d
 # two strategies with the same burst coordination
 frequent_coor;0.02;0.02;1;0.16;0.01
 frequent_uncoor;0.02;0.02;;0.16;0.01
@@ -64,8 +64,8 @@ All parameters are per minute.
 
 The first column name is the name of a strategy e.g. for displaying in plots.
 
-k_01 and k_10 are parameters of the **transition matrix**. k_01 is the probability of
-switching from a silent (OFF) state to an active (ON) state and k_10 is for
+k_on and k_off are parameters of the **transition matrix**. k_on is the probability of
+switching from a silent (OFF) state to an active (ON) state and k_off is for
 switching from active to silent.
 
 k_syn and k_d are the **synthesis (transcription)** and **decay rate** respectively.
@@ -81,7 +81,7 @@ by assigning the same coord_group id to the strategy.
 
 In the above example alleles with the strategy 
 frequent_coor and frequent_high are synchronized by a shared coordination group 1.
-This is only possible if the transition matrix is identical, so k_01 and k_10 
+This is only possible if the transition matrix is identical, so k_on and k_off 
 should be identical for coordinated strategies.  
 
 
