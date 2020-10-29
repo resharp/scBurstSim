@@ -13,7 +13,7 @@ if os.name == 'nt':
     out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
 else:
     dir_sep = "/"
-    out_dir = ""
+    out_dir = "~/sc_runs"
 plot_dir = out_dir + dir_sep + "generate_strategies.plots"
 os.makedirs(plot_dir, exist_ok=True)
 
