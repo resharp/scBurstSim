@@ -13,14 +13,19 @@ if os.name == 'nt':
     out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
 else:
     dir_sep = "/"
-    out_dir = "~/sc_runs"
+    out_dir = "sc_runs"
+
 plot_dir = out_dir + dir_sep + "generate_strategies.plots"
+print("creating plot_dir: {plot_dir}".format(plot_dir=plot_dir))
 os.makedirs(plot_dir, exist_ok=True)
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename=out_dir + dir_sep + 'generate_strategies.log', filemode='w',
+
+logfile_name = out_dir + dir_sep + 'generate_strategies.log'
+logging.basicConfig(filename=logfile_name, filemode='w',
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     level=logging.INFO)
+print("logging in: {file_name}".format(file_name=logfile_name))
 
 # ranges of 10^k are taken from plots generated in read_larsson2019.py
 range_k_on_exp = [-3.5, 0.3]
