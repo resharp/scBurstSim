@@ -148,14 +148,14 @@ def main(args_in):
 
 
 # TODO: uncomment for production mode with parameters from the command line
-if __name__ == "__main__":
-    main(sys.argv[1:])
+# if __name__ == "__main__":
+#     main(sys.argv[1:])
 
-# main(["-nc", str(nr_cells),
-#       "-g", str(gap),
-#       "-w", str(length_window),
-#       "-e", str(efficiency),
-#       "-o", out_dir,
-#       "-sf", strategies_file])
+main(["-nc", str(nr_cells),
+      "-g", str(gap),
+      "-w", str(length_window),
+      "-e", str(efficiency),
+      "-o", out_dir,
+      "-sf", strategies_file])
 # main(["-h"])
 # main([])

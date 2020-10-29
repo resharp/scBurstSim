@@ -20,14 +20,21 @@ in_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\source\scBurstSim\da
 nr_days = 1
 max_minutes = 1440*nr_days  # 24 hours = 1440 minutes
 
+
 # windows = [[400, 460, 'EU'], [520, 580, '4SU']] # e.g. 120 minutes of EU labeling
-start_windows = 600; length_window = 60; gap = 0
-window_eu = [start_windows, start_windows + length_window, 'EU'] # e.g. 120 minutes of EU labeling
-window_4su = [start_windows + length_window + gap,
-              start_windows + 2 * length_window + gap, '4SU'] # e.g. 120 minutes of EU labeling
-windows = [window_eu, window_4su]
-WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
-fix_time = windows[-1][WINDOW_END] + 0  # fix_time 30 minutes after end of last window
+def get_windows_and_fix_time(length_window=60, gap=0):
+
+    start_windows = 600
+    window_eu = [start_windows, start_windows + length_window, 'EU'] # e.g. 120 minutes of EU labeling
+    window_4su = [start_windows + length_window + gap,
+                  start_windows + 2 * length_window + gap, '4SU'] # e.g. 120 minutes of EU labeling
+    windows = [window_eu, window_4su]
+    fix_time = windows[-1][WINDOW_END] + 0  # fix_time 0 minutes after end of last window
+
+    return windows, fix_time
+
+
+windows, fix_time = get_windows_and_fix_time(length_window=60, gap=0)
 
 
 def run_example(params):
@@ -76,10 +83,10 @@ sr = StrategyReader(out_dir + dir_sep + "strategies_generated.csv" )
 # see strategy names in data\strategies.csv
 
 # we can select a strategy by name
-# params = sr.get(strategy="generated_95")
+params = sr.get(strategy="generated_8")
 
 # or retrieve a random strategy
-params = sr.get_random()
+# params = sr.get_random()
 
 run_example(params)
 
