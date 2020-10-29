@@ -8,7 +8,8 @@ import argparse
 # get the fully-qualified logger (here: `root.__main__`)
 logger = logging.getLogger(__name__)
 
-run_sim = True  # setting run_sim to False results in use of locally stored data set
+run_sim = False # setting run_sim to False results in use of locally stored data set
+create_cluster_map = True
 nr_cells = 100
 efficiency = 0.1
 
@@ -26,11 +27,12 @@ else:
 # see strategy names in data\strategies.csv
 strategies_file = out_dir + dir_sep + "strategies_generated.csv"
 
-start_windows = 600; length_window = 60; between_window = 0
+# TODO: parametrize window size and gap
+start_windows = 600; length_window = 60; gap = 0
 window_eu = [start_windows, start_windows + length_window, 'EU'] # e.g. 120 minutes of EU labeling
 # window_4su = [start_windows, start_windows + length_window, '4SU']
-window_4su = [start_windows + length_window + between_window,
-              start_windows + 2*length_window + between_window, '4SU'] # e.g. 120 minutes of EU labeling
+window_4su = [start_windows + length_window + gap,
+              start_windows + 2 * length_window + gap, '4SU'] # e.g. 120 minutes of EU labeling
 windows = [window_eu, window_4su]
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 fix_time = windows[-1][WINDOW_END] + 0  # fix_time 0 minutes after end of last window
@@ -112,11 +114,18 @@ def main(args_in):
 
     # show_distribution_real_counts(df_counts, nr_cells)
 
-    # cluster map creates plot cluster_map.svg in run directory if you do not provide a plot name
-    for window in windows:
-        label = window[WINDOW_LABEL]
-        cluster_map(df_counts, label=label, exp_params=exp_params,
-                    plot_name=args.out_dir + dir_sep + "cluster_map_{label}.svg".format(label=label))
+    if create_cluster_map:
+        df_counts["real_count_log10"] = np.log10(df_counts["real_count"])
+        df_counts["count_all_log10"] = np.log10(df_counts["count_all"])
+
+        # cluster map creates plot cluster_map.svg in run directory if you do not provide a plot name
+        for window in windows:
+            label = window[WINDOW_LABEL]
+            measures = ["fraction", "real_count_log10", "count_all_log10"]
+            for measure in measures:
+                cluster_map(df_counts, measure=measure, label=label, exp_params=exp_params,
+                            plot_name=args.out_dir + dir_sep + "{measure}_cluster_map_{label}.svg".
+                            format(label=label, measure=measure))
 
 
 # TODO: uncomment for production mode with parameters from the command line
