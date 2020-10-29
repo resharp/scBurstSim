@@ -27,12 +27,13 @@ df_strategies = sr.df_strategies
 # plt.scatter(df_strategies.k_off, df_strategies.k_on)
 # plt.show()
 nr_cells = 100
-efficiency = 100
+efficiency = 10
 label = "4SU"  # 2nd window
 len_win = 60
 gap = 0
 
-filename_counts = out_dir + dir_sep + "df_counts_{eff}.csv".format(eff=efficiency)
+filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
+    len_win=len_win, gap=gap, eff=efficiency)
 
 df_counts = pd.read_csv(filename_counts, sep=';')
 

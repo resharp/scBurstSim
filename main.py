@@ -99,7 +99,8 @@ def main(args_in):
 
     exp = Experiment(exp_params)
 
-    filename = "{od}{dir_sep}df_counts.csv".format(od=args.out_dir, dir_sep=dir_sep)
+    filename = "{od}{dir_sep}df_counts_W{window}_G{gap}.csv".format(
+        od=args.out_dir, dir_sep=dir_sep, gap=args.gap, window=args.length_window)
     if run_sim:
 
         df_counts = exp.run()

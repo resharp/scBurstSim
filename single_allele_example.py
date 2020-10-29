@@ -21,10 +21,10 @@ nr_days = 1
 max_minutes = 1440*nr_days  # 24 hours = 1440 minutes
 
 # windows = [[400, 460, 'EU'], [520, 580, '4SU']] # e.g. 120 minutes of EU labeling
-start_windows = 600; length_window = 60; between_window = 0
+start_windows = 600; length_window = 60; gap = 0
 window_eu = [start_windows, start_windows + length_window, 'EU'] # e.g. 120 minutes of EU labeling
-window_4su = [start_windows + length_window + between_window,
-              start_windows + 2*length_window + between_window, '4SU'] # e.g. 120 minutes of EU labeling
+window_4su = [start_windows + length_window + gap,
+              start_windows + 2 * length_window + gap, '4SU'] # e.g. 120 minutes of EU labeling
 windows = [window_eu, window_4su]
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 fix_time = windows[-1][WINDOW_END] + 0  # fix_time 30 minutes after end of last window
