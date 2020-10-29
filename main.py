@@ -80,7 +80,7 @@ def main(args_in):
 
     args = arg_parse(args_in)
 
-    logging.basicConfig(filename=out_dir + dir_sep + 'main_scBurstSim.log', filemode='w',
+    logging.basicConfig(filename=args.out_dir + dir_sep + 'main_scBurstSim.log', filemode='w',
                         format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                         level=logging.INFO)
     logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
