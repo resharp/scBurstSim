@@ -7,6 +7,7 @@ Stochastic modeling of transcription and sampling noise on single cell level.
 
 ``` 
 usage: main.py [-h] -nc [number of cells] -sf [strategies_file]
+               [-g [gap minutes)]] [-w [window length(minutes]]
                [-e [efficiency of RNA retrieval]] [-o [out_dir]]
 
 optional arguments:
@@ -15,6 +16,10 @@ optional arguments:
                         Nr of cells for which to run simulation
   -sf [strategies_file], --strategies_file [strategies_file]
                         Strategies file with burst parameters for alleles
+  -g [gap (minutes)], --gap [gap (minutes)]
+                        Length of gap (in minutes); default 0
+  -w [window length(minutes)], --length_window [window length(minutes)]
+                        Length of windows (in minutes); default 60
   -e [efficiency of RNA retrieval], --efficiency [efficiency of RNA retrieval]
                         Efficiency of RNA retrieval on single cell level
                         (default 0.1)
