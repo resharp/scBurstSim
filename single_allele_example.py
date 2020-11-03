@@ -1,6 +1,7 @@
 import logging
 import os
 
+from simulator.Experiment import Experiment
 from simulator.StrategyReader import StrategyReader
 from simulator.Transcription import *
 from simulator.transcription_plots import *
@@ -43,6 +44,13 @@ def run_example(params):
 
     # set complete_trace=True to retrieve the complete trace of transcripts counts (for plotting)
     df_dtmc, dtmc_list = trans.run_bursts(max_minutes, windows, new_dtmc_trace=True, complete_trace=True)
+
+    # example of calculating percentage active
+    label = "4SU"
+    perc = Experiment.perc_active_state(windows, df_dtmc, label)
+    print("Percentage active state: {perc}".format(perc=perc))
+    if perc > 0:
+        print("{label} window contains active state(s)".format(label=label))
 
     # only set when complete_trace = True:
     # df_events, df_unlabeled_events and dfs_labeled_events

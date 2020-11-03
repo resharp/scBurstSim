@@ -187,9 +187,10 @@ class Experiment:
         return dtmc_list
 
     # TODO: integrate in the count table
-    def perc_burst_time(self, df_dtmc, label) -> int:
+    @classmethod
+    def perc_active_state(cls, windows, df_dtmc, label) -> int:
 
-        for window in self.params.windows:
+        for window in windows:
             if window[WINDOW_LABEL] == label:
                 start = window[WINDOW_START]
                 end = window[WINDOW_END]
@@ -200,11 +201,11 @@ class Experiment:
                                 (df_dtmc["end_time"] >= start) &
                                 (df_dtmc["begin_time"] <= end)].copy(deep=True)
 
-        active_states["begin_time"] = np.maximum(active_states["begin_time"], start)
-        active_states["end_time"] = np.minimum(active_states["end_time"], end)
-        active_states["state_time"] = active_states["end_time"] - active_states["begin_time"]
-
         if len(active_states) > 0:
+            active_states["begin_time"] = np.maximum(active_states["begin_time"], start)
+            active_states["end_time"] = np.minimum(active_states["end_time"], end)
+            active_states["state_time"] = active_states["end_time"] - active_states["begin_time"]
+
             sum_state_time = active_states["state_time"].sum()
             perc = sum_state_time / interval
         else:
