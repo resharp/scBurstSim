@@ -1,13 +1,12 @@
 import os
 
-import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
 import seaborn as sns
+from scipy.optimize import curve_fit
 
 from simulator.Experiment import Experiment
 from simulator.Transcription import *
+import numpy as np
 
 if os.name == 'nt':
     dir_sep = "\\"
@@ -22,6 +21,7 @@ df_filename = "counts_infer_parameters_example.csv"
 k_on = 0.005
 
 k_offs = [k * 0.005 for k in range(1, 6)]
+k_off = 0.02
 k_d = 0.002
 k_syn = 1.6
 k_eff = 0.1
@@ -29,10 +29,10 @@ k_eff = 0.1
 window_lengths = [r*15 for r in range(1, 24)]
 
 
-def p_1(t, k_on, k_off):
+def p_1(t, k_on, p_on, p_off):
 
-    p_on = k_on/(k_on + k_off)
-    p_off = k_off/(k_on + k_off)
+    # p_on = k_on/(k_on + k_off)
+    # p_off = k_off/(k_on + k_off)
 
     p_1 = p_on + p_off * (1 - np.exp(-k_on * t))
 
@@ -109,7 +109,6 @@ def get_windows_and_fix_time(length_window=60, gap=0):
 
 def run_active_state_simulations(nr_runs):
 
-    k_off = 0.02
     l_counts = []
 
     for w in window_lengths:
@@ -159,7 +158,7 @@ def run_active_state_simulations(nr_runs):
     return df_counts
 
 
-def show_plot(df_counts):
+def save_plot(df_counts):
 
     plt.plot(df_counts.window, df_counts.active)
     plt.plot(df_counts.window, df_counts.real)
@@ -168,16 +167,45 @@ def show_plot(df_counts):
     plt.ylim(0, nr_runs)
     plt.xlabel("window size (minutes)")
     plt.ylabel("nr of runs with active state")
-    plt.savefig(plot_dir + dir_sep + "counts.svg")
-    # plt.show()
+    plt.savefig(plot_dir + dir_sep + "counts_{k_on}_{k_off}_{k_syn}.svg".format(
+        k_on=k_on, k_off=k_off, k_syn=k_syn))
     plt.close(1)
 
 
-run_sim = False
-nr_runs = 1000
+def round_sig(x, n=4):
+
+    if x < 0:
+        x = np.abs(x)
+        round_to_n = round(x, -int(np.floor(np.log10(x))) + (n - 1))
+        return -round_to_n
+    round_to_n = round(x, -int(np.floor(np.log10(x))) + (n - 1))
+    return round_to_n
+
+
+run_sim = True
+nr_runs = 500
 if run_sim:
     df_counts = run_active_state_simulations(nr_runs)
 else:
     df_counts = pd.read_csv(out_dir + dir_sep + df_filename, sep=';')
 
-show_plot(df_counts)
+save_plot(df_counts)
+
+expected = (0.1, 0.5, 0.5)
+
+# divide by nr_runs for getting chance
+popt, pcov = curve_fit(p_1, df_counts.window, df_counts.active/nr_runs, expected)
+popt_active = popt
+
+popt, pcov = curve_fit(p_1, df_counts.window, df_counts.real/nr_runs, expected)
+popt_real = popt
+
+popt, pcov = curve_fit(p_1, df_counts.window, df_counts.signal/nr_runs, expected)
+popt_signal = popt
+
+print("plotting to hidden state:   k_on={k_on}; p_on={p_on}".format(
+    k_on=round_sig(popt_active[0], 4), p_on=round_sig(popt_active[1], 4)))
+print("plotting to real counts:    k_on={k_on}; p_on={p_on}".format(
+    k_on=round_sig(popt_real[0], 4), p_on=round_sig(popt_real[1], 4)))
+print("plotting to sampled counts: k_on={k_on}; p_on={p_on}".format(
+    k_on=round_sig(popt_signal[0]), p_on=round_sig(popt_signal[1], 4)))
