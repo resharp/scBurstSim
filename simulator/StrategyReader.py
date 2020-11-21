@@ -14,7 +14,7 @@ class StrategyReader:
 
         self.read_strategies()
 
-        params_list = [TranscriptParams(k_on=item.k_on, k_off=item.k_off, nr_refractions=2,
+        params_list = [TranscriptParams(k_on=item.k_on, k_off=item.k_off, nr_refractions=1,
                                         tm_id=item.tm_id,
                                         k_syn=item.k_syn, k_d=item.k_d,
                                         coord_group=item.coord_group,
@@ -66,7 +66,7 @@ class StrategyReader:
 
     @staticmethod
     def convert_to_params(df_strategy):
-        params = TranscriptParams(k_on=df_strategy.k_on.item(), k_off=df_strategy.k_off.item(), nr_refractions=2,
+        params = TranscriptParams(k_on=df_strategy.k_on.item(), k_off=df_strategy.k_off.item(), nr_refractions=1,
                                   tm_id=df_strategy.tm_id.item(),
                                   k_syn=df_strategy.k_syn.item(), k_d=df_strategy.k_d.item(),
                                   coord_group=df_strategy.coord_group.item(),

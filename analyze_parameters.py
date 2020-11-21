@@ -21,7 +21,19 @@ else:
 plot_dir = out_dir + dir_sep + "analyze_parameters.plots"
 os.makedirs(plot_dir, exist_ok=True)
 
-sr = StrategyReader(out_dir + dir_sep + "strategies_generated.csv" )
+in_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\source\scBurstSim\data"
+
+# strategy = "bimodal"
+strategy = "powerlaw"
+nr_cells = 1000
+efficiency = 100
+label = "4SU"  # 2nd window
+len_win = 60
+gap = 0
+
+
+# sr = StrategyReader(out_dir + dir_sep + "strategies_generated.csv" )
+sr = StrategyReader(in_dir + dir_sep + "strategies.csv")
 sr.read_strategies()
 df_strategies = sr.df_strategies
 
@@ -38,12 +50,6 @@ def plot_scatter_k_on_k_off():
 
 # plot_scatter_k_on_k_off()
 
-
-nr_cells = 100
-efficiency = 100
-label = "4SU"  # 2nd window
-len_win = 60
-gap = 0
 
 filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
     len_win=len_win, gap=gap, eff=efficiency)
@@ -166,13 +172,10 @@ def plot_predicted_k_d():
     plt.close(1)
 
 
-plot_predicted_k_d()
-plot_error_k_d()
+# plot_predicted_k_d()
+# plot_error_k_d()
 
-strategy = "one_example"
-# strategy = "generated_27"
 # we would like to make a 2-dim density plot of the two labels
-
 df_counts_unstack = df_counts_unstack[df_counts_unstack.strategy == strategy]
 
 pseudocount = 0.1
@@ -202,5 +205,31 @@ def joint_kde_plot_labels():
     plt.close(1)
 
 
-joint_scatter_plot_labels()
-joint_kde_plot_labels()
+# joint_scatter_plot_labels()
+# joint_kde_plot_labels()
+
+
+def stationary_distribution(df_counts, strategy, nr_cells):
+
+    df_allele_cell_counts = df_counts.groupby(['allele_id', 'strategy', 'cell_id'])['count_all'].max().reset_index()
+
+    df_one_allele_counts = df_allele_cell_counts[df_allele_cell_counts.strategy == strategy]
+
+    df_one_allele_counts = df_one_allele_counts.set_index('cell_id').reindex(range(1, nr_cells + 1)).fillna(0).reset_index()
+
+    df_distribution = df_one_allele_counts.groupby('count_all')['cell_id'].count().to_frame().reset_index()
+
+    df_distribution.count_all = df_distribution.count_all.astype(int)
+
+    max_count = df_distribution.count_all.max()
+
+    df_distribution = df_distribution.set_index('count_all').reindex(range(1, max_count + 1)).fillna(0).reset_index()
+
+    plt.step(df_distribution.count_all, df_distribution.cell_id, where="post")
+    plt.title("Distribution of total real mRNA for strategy '{strategy}'".format(strategy=strategy))
+    plt.show()
+    plt.close(1)
+
+
+stationary_distribution(df_counts, strategy, nr_cells)
+

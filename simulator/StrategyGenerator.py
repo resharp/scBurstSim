@@ -66,7 +66,7 @@ class StrategyGenerator:
         name, k_on, k_off, group_id, k_syn, k_d = self.create_random()
 
         tp = TranscriptParams(k_on=k_on, k_off=k_off, k_syn=k_syn, k_d=k_d,
-                              nr_refractions=2, name="generated", coord_group=0, tm_id=0)
+                              nr_refractions=1, name="generated", coord_group=0, tm_id=0)
 
         return tp
 
