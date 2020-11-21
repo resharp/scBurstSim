@@ -40,7 +40,7 @@ def plot_scatter_k_on_k_off():
 
 
 nr_cells = 100
-efficiency = 10
+efficiency = 100
 label = "4SU"  # 2nd window
 len_win = 60
 gap = 0
@@ -65,29 +65,35 @@ df_cell_counts = pd.merge(df_cell_counts, df_strategies, how="left",
                           right_on=['name'])
 df_cell_counts = df_cell_counts[df_cell_counts.label == label]
 
+
 # plot for mean counts vs k_syn
-plt.scatter(df_means.k_syn, df_means.real_count)
+def plot_mean_vs_k_syn():
 
-plt.title("Correlation between k_syn and mean count of label {label}; efficiency={eff}%".
-          format(label=label, eff=efficiency))
-plt.xlabel("transcription rate")
-plt.ylabel("count transcripts sampled with {eff}% efficiency".format(eff=efficiency))
+    plt.scatter(df_means.k_syn, df_means.real_count)
 
-plot_name = plot_dir + dir_sep + "mean_counts_vs_k_syn_{eff}.svg".format(eff=efficiency)
-plt.savefig(plot_name)
-plt.close(1)
+    plt.title("Correlation between k_syn and mean count of label {label}; efficiency={eff}%".
+              format(label=label, eff=efficiency))
+    plt.xlabel("transcription rate")
+    plt.ylabel("count transcripts sampled with {eff}% efficiency".format(eff=efficiency))
 
-# plots for number of cells vs fraction of time in active state
-plt.scatter(df_cell_counts.fraction_ON, df_cell_counts.real_count)
+    plot_name = plot_dir + dir_sep + "mean_counts_vs_k_syn_{eff}.svg".format(eff=efficiency)
+    plt.savefig(plot_name)
+    plt.close(1)
 
-plt.title("{label} counts (2nd window); efficiency={eff}%".
-          format(label=label, eff=efficiency))
-plt.xlabel("fraction of active time")
-plt.ylabel("# cells with counts ({eff}% efficiency)".format(eff=efficiency))
+    # plots for number of cells vs fraction of time in active state
+    plt.scatter(df_cell_counts.fraction_ON, df_cell_counts.real_count)
 
-plot_name = plot_dir + dir_sep + "nr_cells_vs_active_time_{eff}.svg".format(eff=efficiency)
-plt.savefig(plot_name)
-plt.close(1)
+    plt.title("{label} counts (2nd window); efficiency={eff}%".
+              format(label=label, eff=efficiency))
+    plt.xlabel("fraction of active time")
+    plt.ylabel("# cells with counts ({eff}% efficiency)".format(eff=efficiency))
+
+    plot_name = plot_dir + dir_sep + "nr_cells_vs_active_time_{eff}.svg".format(eff=efficiency)
+    plt.savefig(plot_name)
+    plt.close(1)
+
+
+plot_mean_vs_k_syn()
 
 # example
 t = len_win + gap # length window + gap
@@ -163,7 +169,7 @@ def plot_predicted_k_d():
 plot_predicted_k_d()
 plot_error_k_d()
 
-strategy = "generated_8"
+strategy = "one_example"
 # strategy = "generated_27"
 # we would like to make a 2-dim density plot of the two labels
 
@@ -173,14 +179,28 @@ pseudocount = 0.1
 df_counts_unstack["log10_4SU"] = np.log10(df_counts_unstack["4SU"] + pseudocount)
 df_counts_unstack["log10_EU"] = np.log10(df_counts_unstack["EU"] + pseudocount)
 
-sns.jointplot(x=df_counts_unstack["4SU"],
-              y=df_counts_unstack["EU"],
-              kind='scatter', s=50, color='b')
-plt.show()
-plt.close(1)
 
-sns.set(style="white", color_codes=True)
-sns.jointplot(x=df_counts_unstack["4SU"], y=df_counts_unstack["EU"], kind='kde', color="skyblue"
-              , xlim=(0, max(df_counts_unstack["4SU"] + 5))
-              , ylim=(0, max(df_counts_unstack["EU"] + 5)))
-plt.show()
+def joint_scatter_plot_labels():
+    sns.jointplot(x=df_counts_unstack["EU"],
+                  y=df_counts_unstack["4SU"],
+                  kind='scatter', s=50, color='b')
+    plot_name = plot_dir + dir_sep + "joint_scatter_plot_labels_{eff}.svg".format(eff=efficiency)
+
+    plt.savefig(plot_name)
+
+    plt.close(1)
+
+
+def joint_kde_plot_labels():
+    sns.set(style="white", color_codes=True)
+    sns.jointplot(x=df_counts_unstack["EU"], y=df_counts_unstack["4SU"], kind='kde', color="skyblue"
+                  , xlim=(0, max(df_counts_unstack["EU"] + 5))
+                  , ylim=(0, max(df_counts_unstack["4SU"] + 5)))
+    plot_name = plot_dir + dir_sep + "joint_kde_plot_labels_{eff}.svg".format(eff=efficiency)
+    plt.savefig(plot_name)
+
+    plt.close(1)
+
+
+joint_scatter_plot_labels()
+joint_kde_plot_labels()
