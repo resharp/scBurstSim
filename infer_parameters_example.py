@@ -1,3 +1,8 @@
+# TO DO
+# three categories of k_syn:
+# only change k_on with fixed (k_off, k_syn, k_d)
+
+
 import os
 
 import matplotlib.pyplot as plt
@@ -118,7 +123,7 @@ def run_active_state_simulations(nr_runs):
 
         windows, fix_time = get_windows_and_fix_time(length_window=w, gap=0)
 
-        params = TranscriptParams(k_on=k_on, k_off=k_off, nr_refractions=2,
+        params = TranscriptParams(k_on=k_on, k_off=k_off, nr_refractions=1,
                                   tm_id=np.nan,
                                   k_syn=k_syn, k_d=k_d,
                                   coord_group=0,
@@ -167,8 +172,9 @@ def save_plot(df_counts):
     plt.ylim(0, nr_runs)
     plt.xlabel("window size (minutes)")
     plt.ylabel("nr of runs with active state")
-    plt.savefig(plot_dir + dir_sep + "counts_{k_on}_{k_off}_{k_syn}.svg".format(
-        k_on=k_on, k_off=k_off, k_syn=k_syn))
+    # plt.savefig(plot_dir + dir_sep + "counts_{k_on}_{k_off}_{k_syn}.svg".format(
+    #     k_on=k_on, k_off=k_off, k_syn=k_syn))
+    plt.show()
     plt.close(1)
 
 
@@ -182,7 +188,7 @@ def round_sig(x, n=4):
     return round_to_n
 
 
-run_sim = True
+run_sim = False
 nr_runs = 500
 if run_sim:
     df_counts = run_active_state_simulations(nr_runs)
@@ -209,3 +215,4 @@ print("plotting to real counts:    k_on={k_on}; p_on={p_on}".format(
     k_on=round_sig(popt_real[0], 4), p_on=round_sig(popt_real[1], 4)))
 print("plotting to sampled counts: k_on={k_on}; p_on={p_on}".format(
     k_on=round_sig(popt_signal[0]), p_on=round_sig(popt_signal[1], 4)))
+
