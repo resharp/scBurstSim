@@ -10,16 +10,17 @@ logger = logging.getLogger(__name__)
 
 run_sim = True  # setting run_sim to False results in use of locally stored data set
 create_cluster_map = True
-nr_cells = 100
+nr_cells = 1000
 gap = 0
 length_window = 60
-efficiency = 0.1
+efficiency = 1
 
 nr_syn_within_strategy = 1
 nr_non_syn_within_strategy = 1
 
 # under this run_dir we should also create a plot directory
 out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
+in_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\source\scBurstSim\data"
 
 if os.name == 'nt':
     dir_sep = "\\"
@@ -27,7 +28,8 @@ else:
     dir_sep = "/"
 
 # see strategy names in data\strategies.csv
-strategies_file = out_dir + dir_sep + "strategies_generated.csv"
+# strategies_file = out_dir + dir_sep + "strategie_generated.csv"
+strategies_file = in_dir + dir_sep + "strategies.csv"
 
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 
