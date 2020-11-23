@@ -25,7 +25,7 @@ in_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\source\scBurstSim\da
 
 # strategy = "bimodal"
 strategy = "powerlaw"
-nr_cells = 1000
+nr_cells = 3000
 efficiency = 100
 label = "4SU"  # 2nd window
 len_win = 60
@@ -223,13 +223,20 @@ def stationary_distribution(df_counts, strategy, nr_cells):
 
     max_count = df_distribution.count_all.max()
 
-    df_distribution = df_distribution.set_index('count_all').reindex(range(1, max_count + 1)).fillna(0).reset_index()
+    df_distribution = df_distribution.set_index('count_all').reindex(range(0, max_count + 1)).fillna(0).reset_index()
 
     plt.step(df_distribution.count_all, df_distribution.cell_id, where="post")
+
     plt.title("Distribution of total real mRNA for strategy '{strategy}'".format(strategy=strategy))
-    plt.show()
+
+    plot_name = plot_dir + dir_sep + "stationary_distribution_{strategy}_{nr_cells}.svg".format(
+        strategy=strategy, nr_cells=nr_cells)
+    plt.savefig(plot_name)
     plt.close(1)
 
 
-stationary_distribution(df_counts, strategy, nr_cells)
+strategies = ["first_example", "second_example", "third_example", "bimodal", "powerlaw"]
+
+for strategy in strategies:
+    stationary_distribution(df_counts, strategy, nr_cells)
 
