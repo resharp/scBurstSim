@@ -7,6 +7,7 @@ from simulator.Transcription import *
 from simulator.transcription_plots import *
 
 # script to display single cell single allele example traces
+from utils.utils import round_sig
 
 if os.name == 'nt':
     dir_sep = "\\"
@@ -18,8 +19,12 @@ else:
 
 in_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\source\scBurstSim\data"
 
+plot_dir = out_dir + dir_sep + "single_allele_example.plots"
+os.makedirs(plot_dir, exist_ok=True)
+
 nr_days = 1
 max_minutes = 1440*nr_days  # 24 hours = 1440 minutes
+strategy = "first_example"
 
 
 # windows = [[400, 460, 'EU'], [520, 580, '4SU']] # e.g. 120 minutes of EU labeling
@@ -92,13 +97,57 @@ sr = StrategyReader(in_dir + dir_sep + "strategies.csv" )
 
 # we can select a strategy by name
 # params = sr.get(strategy="generated_8")
-params = sr.get(strategy="powerlaw")
+params = sr.get(strategy=strategy)
 
 
 # or retrieve a random strategy
 # params = sr.get_random()
 
-run_example(params)
+# run_example(params)
+
+
+def run_distribution(params, max_minutes):
+
+    trans = Transcription(params)
+
+    # set complete_trace=True to retrieve the complete trace of transcripts counts (for plotting)
+    # here we set windows = [], because we are only interested in the distribution from a single trace
+    df_dtmc, dtmc_list = trans.run_bursts(max_minutes, windows=[], new_dtmc_trace=True, complete_trace=True)
+
+    df_unlabeled_events = trans.df_unlabeled_events
+
+    interval = 100
+    fix_times = [i * interval for i in range(0, int(max_minutes/interval))]
+    counts = []
+    for fix_time in fix_times:
+        df = df_unlabeled_events[df_unlabeled_events.arrival < fix_time]
+        if len(df) > 0:
+            last = df.tail(1)
+            count = last.cum_count.item()
+        else:
+            count = 0
+        counts.append(count)
+
+    df = pd.DataFrame(data=counts, columns=["mrna"]).reset_index()
+    df.rename(columns={'index': 'snapshot'}, inplace=True)
+    mean_mrna = round_sig(df.mrna.mean(), 4)
+
+    df_distribution = df.groupby('mrna')['snapshot'].count().to_frame().reset_index()
+
+    df_distribution['mrna'] = df_distribution.mrna.astype(int)
+    max_count = df_distribution.mrna.max()
+    df_distribution = df_distribution.set_index('mrna').reindex(range(0, max_count + 1)).fillna(0).reset_index()
+
+    plt.title("mean nr of RNA for strategy {strategy}: {mean}".format(mean=mean_mrna, strategy=strategy))
+    plt.step(df_distribution.mrna, df_distribution.snapshot, where="post")
+    plot_name = plot_dir + dir_sep + "distribution_{strategy}.svg".format(strategy=strategy)
+    plt.savefig(plot_name)
+    plt.close(1)
+
+
+max_minutes = 300000
+
+run_distribution(params, max_minutes)
 
 # or run an example of all strategies (NB: be sure you have a small strategy file!)
 # run_all_strategies()
