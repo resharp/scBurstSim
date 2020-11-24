@@ -5,6 +5,7 @@
 # delta = k_d
 
 from scipy.special import gamma, hyp1f1
+from utils.utils import round_sig
 import matplotlib.pyplot as plt
 import os
 
@@ -40,18 +41,36 @@ def p_stationary(n, k_on, k_off, k_syn, k_d):
     return ret_val
 
 
+# approximation for mean based on high k_syn as compared to other parameters
+def mean_with_high_k_syn(k_on, k_off, k_syn, k_d):
+
+    ret_val = (k_syn / k_d) * k_on / (k_on + k_off)
+    return ret_val
+
+
 def plot_distribution(strategy, k_on, k_off, k_syn, k_d):
 
     y_list = []
-    x_list = range(0, 150)
-    for x in x_list:
-
+    x_list = []
+    x = 0
+    y = 1
+    while y > 1e-5:
         y = p_stationary(x, k_on, k_off, k_syn, k_d)
 
+        x_list.append(x)
         y_list.append(y)
+        x = x + 1
+
+    weighted = [(x*y) for (x, y) in zip(x_list, y_list)]
+
+    mean_approx = mean_with_high_k_syn(k_on, k_off, k_syn, k_d)
+    mean_approx = round_sig(mean_approx, 4)
+    mean_real = round_sig(sum(weighted), 4)
 
     plt.step(x_list, y_list, where="post")
-    plt.title("stationary PMF for strategy " + strategy)
+    plt.title("PMF for strategy '{strategy}'; mean approx={mean_approx}; real mean={mean_real}".format(
+        mean_approx=mean_approx, mean_real=mean_real, strategy=strategy
+    ))
     plot_name = plot_dir + dir_sep + "stationary_{strategy}.svg".format(strategy=strategy)
     plt.savefig(plot_name)
     plt.close(1)

@@ -13,6 +13,8 @@ from simulator.Experiment import Experiment
 from simulator.Transcription import *
 import numpy as np
 
+from utils.utils import round_sig
+
 if os.name == 'nt':
     dir_sep = "\\"
     out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
@@ -176,16 +178,6 @@ def save_plot(df_counts):
     #     k_on=k_on, k_off=k_off, k_syn=k_syn))
     plt.show()
     plt.close(1)
-
-
-def round_sig(x, n=4):
-
-    if x < 0:
-        x = np.abs(x)
-        round_to_n = round(x, -int(np.floor(np.log10(x))) + (n - 1))
-        return -round_to_n
-    round_to_n = round(x, -int(np.floor(np.log10(x))) + (n - 1))
-    return round_to_n
 
 
 run_sim = False

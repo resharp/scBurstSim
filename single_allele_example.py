@@ -92,7 +92,7 @@ sr = StrategyReader(in_dir + dir_sep + "strategies.csv" )
 
 # we can select a strategy by name
 # params = sr.get(strategy="generated_8")
-params = sr.get(strategy="first_example")
+params = sr.get(strategy="powerlaw")
 
 
 # or retrieve a random strategy
