@@ -10,6 +10,7 @@ import seaborn as sns
 # and then join the generated strategies strategies_generated.csv (use df_strategies of StrategyReader)
 # then for each allele we calculate the fraction of cells for which a count is detected
 # (and not detected)
+from utils.utils import round_sig
 
 if os.name == 'nt':
     dir_sep = "\\"
@@ -225,9 +226,14 @@ def stationary_distribution(df_counts, strategy, nr_cells):
 
     df_distribution = df_distribution.set_index('count_all').reindex(range(0, max_count + 1)).fillna(0).reset_index()
 
+    df_distribution['weighted'] = df_distribution.count_all * df_distribution.cell_id
+    sum_weighted = df_distribution['weighted'].sum()
+    real_mean = round_sig(sum_weighted / nr_cells, 4)
+
     plt.step(df_distribution.count_all, df_distribution.cell_id, where="post")
 
-    plt.title("Distribution of total real mRNA for strategy '{strategy}'".format(strategy=strategy))
+    plt.title("Distribution real mRNA for strategy '{strategy}'; mean={real_mean}".
+              format(strategy=strategy, real_mean=real_mean))
 
     plot_name = plot_dir + dir_sep + "stationary_distribution_{strategy}_{nr_cells}.svg".format(
         strategy=strategy, nr_cells=nr_cells)
