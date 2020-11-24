@@ -11,6 +11,16 @@ import os
 # what would we like to put in here?
 from simulator.StrategyReader import StrategyReader
 
+if os.name == 'nt':
+    dir_sep = "\\"
+else:
+    dir_sep = "/"
+
+in_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\source\scBurstSim\data"
+out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
+plot_dir = out_dir + dir_sep + "stationary.plots"
+os.makedirs(plot_dir, exist_ok=True)
+
 
 def p_stationary(n, k_on, k_off, k_syn, k_d):
 
@@ -33,15 +43,17 @@ def p_stationary(n, k_on, k_off, k_syn, k_d):
 def plot_distribution(strategy, k_on, k_off, k_syn, k_d):
 
     y_list = []
-    for x in range(0, 150):
+    x_list = range(0, 150)
+    for x in x_list:
 
         y = p_stationary(x, k_on, k_off, k_syn, k_d)
 
         y_list.append(y)
 
-    plt.plot(y_list)
+    plt.step(x_list, y_list, where="post")
     plt.title("stationary PMF for strategy " + strategy)
-    plt.show()
+    plot_name = plot_dir + dir_sep + "stationary_{strategy}.svg".format(strategy=strategy)
+    plt.savefig(plot_name)
     plt.close(1)
 
 
@@ -54,12 +66,7 @@ plot_distribution("example", k_on, k_off, k_syn, k_d)
 
 
 def plot_strategies_from_file():
-    if os.name == 'nt':
-        dir_sep = "\\"
-    else:
-        dir_sep = "/"
 
-    in_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\source\scBurstSim\data"
     sr = StrategyReader(in_dir + dir_sep + "strategies.csv")
     sr.read_strategies()
 
