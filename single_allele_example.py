@@ -7,6 +7,7 @@ from simulator.Transcription import *
 from simulator.transcription_plots import *
 
 # script to display single cell single allele example traces
+from solution.stationary import create_distribution
 from utils.utils import round_sig
 
 if os.name == 'nt':
@@ -24,7 +25,7 @@ os.makedirs(plot_dir, exist_ok=True)
 
 nr_days = 1
 max_minutes = 1440*nr_days  # 24 hours = 1440 minutes
-strategy = "first_example"
+strategy = "bimodal"
 
 
 # windows = [[400, 460, 'EU'], [520, 580, '4SU']] # e.g. 120 minutes of EU labeling
@@ -138,8 +139,16 @@ def run_distribution(params, max_minutes):
     max_count = df_distribution.mrna.max()
     df_distribution = df_distribution.set_index('mrna').reindex(range(0, max_count + 1)).fillna(0).reset_index()
 
+    nr_snapshots = max_minutes / interval
+    df_distribution["chance"] = df_distribution.snapshot / nr_snapshots
+
     plt.title("mean nr of RNA for strategy {strategy}: {mean}".format(mean=mean_mrna, strategy=strategy))
-    plt.step(df_distribution.mrna, df_distribution.snapshot, where="post")
+
+    plt.step(df_distribution.mrna, df_distribution.chance, where="post")
+
+    x_list, y_list = create_distribution(params.k_on, params.k_off, params.k_syn, params.k_d)
+    plt.step(x_list, y_list, where="post", color="red")
+
     plot_name = plot_dir + dir_sep + "distribution_{strategy}.svg".format(strategy=strategy)
     plt.savefig(plot_name)
     plt.close(1)

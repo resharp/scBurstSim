@@ -50,16 +50,7 @@ def mean_with_high_k_syn(k_on, k_off, k_syn, k_d):
 
 def plot_distribution(strategy, k_on, k_off, k_syn, k_d):
 
-    y_list = []
-    x_list = []
-    x = 0
-    y = 1
-    while y > 1e-5:
-        y = p_stationary(x, k_on, k_off, k_syn, k_d)
-
-        x_list.append(x)
-        y_list.append(y)
-        x = x + 1
+    x_list, y_list = create_distribution(k_on, k_off, k_syn, k_d)
 
     weighted = [(x*y) for (x, y) in zip(x_list, y_list)]
 
@@ -74,6 +65,20 @@ def plot_distribution(strategy, k_on, k_off, k_syn, k_d):
     plot_name = plot_dir + dir_sep + "stationary_{strategy}.svg".format(strategy=strategy)
     plt.savefig(plot_name)
     plt.close(1)
+
+
+def create_distribution(k_on, k_off, k_syn, k_d):
+    y_list = []
+    x_list = []
+    x = 0
+    y = 1
+    while y > 1e-5:
+        y = p_stationary(x, k_on, k_off, k_syn, k_d)
+
+        x_list.append(x)
+        y_list.append(y)
+        x = x + 1
+    return x_list, y_list
 
 
 k_on = 0.01
