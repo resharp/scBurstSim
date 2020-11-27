@@ -1,12 +1,12 @@
 # named strategies for the simulator/Transcription class (; separated!)
 name;k_on;k_off;coord_group;k_syn;k_d
 # two strategies with the same burst coordination
-frequent_coor;0.02;0.02;1;0.32;0.01
-frequent_uncoor;0.02;0.02;;0.16;0.01
-frequent_high;0.02;0.02;1;0.8;0.01
-large_swing;0.005;0.01;;0.16;0.005
-real_bursty_coor;0.005;0.02;2;0.32;0.02
-real_bursty_uncoor;0.005;0.02;;0.32;0.02
+# frequent_coor;0.02;0.02;1;0.32;0.01
+# frequent_uncoor;0.02;0.02;;0.16;0.01
+# frequent_high;0.02;0.02;1;0.8;0.01
+# large_swing;0.005;0.01;;0.16;0.005
+# real_bursty_coor;0.005;0.02;2;0.32;0.02
+# real_bursty_uncoor;0.005;0.02;;0.32;0.02
 first_example;0.03;0.01;0;2;0.02
 second_example;0.024;0.03;0;2;0.02
 third_example;0.02;0.02;0;2;0.02

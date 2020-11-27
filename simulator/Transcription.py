@@ -41,7 +41,7 @@ class Transcription:
 
         self.params = params
 
-        self.state = "0"
+        self.state = "1"
 
     def new_poisson_arrivals(self, start_time, interval, windows=[]) -> list:
         poisson_list = []
