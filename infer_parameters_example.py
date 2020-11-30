@@ -25,15 +25,16 @@ plot_dir = out_dir + dir_sep + "infer_parameters_example.plots"
 os.makedirs(plot_dir, exist_ok=True)
 df_filename = "counts_infer_parameters_example.csv"
 
-k_on = 0.02
-
-k_offs = [k * 0.005 for k in range(1, 6)]
-k_off = 0.02
+k_on = 0.01
+k_off = 0.04
 k_d = 0.02
-k_syn = 1.6
+k_syn = 0.2
 k_eff = 0.1
 
-window_lengths = [r*15 for r in range(1, 24)]
+# window_lengths = [r*15 for r in range(1, 24)]
+window_lengths = [15, 30, 45, 60, 120, 180]
+
+k_offs = [k * 0.005 for k in range(1, 6)]   # for some examples in theoretical plots
 
 
 def p_1(t, k_on, k_off):
@@ -193,8 +194,8 @@ def plot_chance_of_switching_to_active_state(df_counts, nr_runs):
     plt.close(1)
 
 
-run_sim = False
-nr_runs = 100
+run_sim = True
+nr_runs = 500
 if run_sim:
     df_counts = run_active_state_simulations(nr_runs)
 else:
