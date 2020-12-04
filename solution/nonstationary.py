@@ -6,7 +6,6 @@
 import scipy.special as sc
 import numpy as np
 import math
-from utils.utils import round_sig
 import matplotlib.pyplot as plt
 import logging
 import sys
@@ -24,7 +23,7 @@ plot_dir = out_dir + dir_sep + "non_stationary.plots"
 os.makedirs(plot_dir, exist_ok=True)
 logging.basicConfig(filename=out_dir + dir_sep + 'nonstationary.log', filemode='w',
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    level=logging.DEBUG)
+                    level=logging.INFO)
 logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
 
@@ -137,7 +136,8 @@ def p_non_stationary(n, t, k_on, k_off, k_syn, k_d):
         logging.debug("--- part_c: {part_c} for r={r}".format(part_c=part_c, r=r))
         sum_c = sum_c + part_c
 
-    sum_c = factor_c * sum_c
+    # NB: minus sign in front of the third term!
+    sum_c = - factor_c * sum_c
 
     total_sum = sum_a + sum_b + sum_c
 
@@ -176,13 +176,6 @@ def part_of_sum(k_on, k_off, mu, n, r, t):
 
     return part_b
 
-k_on = 0.021
-k_off = 0.021
-k_syn = 0.2
-k_d = 0.02
-
-# plot_distribution("test", k_on, k_off, k_syn, k_d)
-
 
 def create_non_stationary_distribution(time, k_on, k_off, k_syn, k_d):
 
@@ -194,7 +187,7 @@ def create_non_stationary_distribution(time, k_on, k_off, k_syn, k_d):
     n = 0
     p_ns = 1  # initialize at large value
     while p_ns > 1e-6:
-    # for n in range(0, 2):
+    # for n in range(0, 2):   # this alternative is for debugging N=0 and N=1
         logging.info("*********************")
         logging.info("**** start for n={}".format(n))
         logging.info("*********************")
@@ -205,17 +198,25 @@ def create_non_stationary_distribution(time, k_on, k_off, k_syn, k_d):
         total_p = total_p + p_ns
         n = n + 1
 
-    logging.info("total_p : {}".format(total_p))
+    logging.info("*********************")
+    logging.info("total_p for all n: {}".format(total_p))
 
     return x_list, y_list
 
 
+k_on = 0.021
+k_off = 0.021
+k_syn = 0.2
+k_d = 0.02
+
+# plot_distribution("test", k_on, k_off, k_syn, k_d)
+
 times = [2.3, 2.5] + list(range(3, 6, 1))
-# times = list(range(3, 7))
-# times = []
-# times = [1]
+# times = list(range(4, 6))
+# times = [0]
 
 show_plot = True
+show_stationary = True
 for time in times:
 
     x_list, y_list = create_non_stationary_distribution(time, k_on, k_off, k_syn, k_d)
@@ -225,10 +226,10 @@ for time in times:
 
 x_list_stat, y_list_stat = create_distribution(k_on, k_off, k_syn, k_d)
 
-if show_plot:
+if show_plot and show_stationary:
     plt.step(x_list_stat, y_list_stat, where="post", label="stationary")
 
     plt.legend(title='Time:')
-    plt.show()
-    plt.close(1)
+plt.show()
+plt.close(1)
 
