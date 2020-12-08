@@ -11,6 +11,8 @@ import logging
 import sys
 import os
 
+from utils.utils import round_sig
+
 fac = np.math.factorial  # in Python even a function is an object
 
 out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs\non_stationary.plots"
@@ -146,7 +148,7 @@ def p_non_stationary(n, t, k_on, k_off, k_syn, k_d):
     logging.debug("sum_c for n={n}: {sum_c}".format(n=n, sum_c=sum_c))
     logging.info("total_sum for n={n}: {total_sum}".format(n=n, total_sum=total_sum))
 
-    return total_sum
+    return factor_a, total_sum
 
 
 def part_of_sum(k_on, k_off, mu, n, r, t):
@@ -186,20 +188,30 @@ def create_non_stationary_distribution(time, k_on, k_off, k_syn, k_d):
     total_p = 0
     n = 0
     p_ns = 1  # initialize at large value
-    while p_ns > 1e-6:
-    # for n in range(0, 2):   # this alternative is for debugging N=0 and N=1
+    # while p_ns > 1e-6:
+
+    max = int(2 * k_syn / k_d)
+    for n in range(0, max):   # this alternative is for debugging N=0 and/or N=1
         logging.info("*********************")
         logging.info("**** start for n={}".format(n))
         logging.info("*********************")
-        p_ns = p_non_stationary(n, time, k_on, k_off, k_syn, k_d)
+        factor_a, p_ns = p_non_stationary(n, time, k_on, k_off, k_syn, k_d)
 
         x_list.append(n)
         y_list.append(p_ns)
+        # y_list.append(factor_a)   # for debugging factor_a
         total_p = total_p + p_ns
         n = n + 1
 
     logging.info("*********************")
     logging.info("total_p for all n: {}".format(total_p))
+    logging.info("---")
+
+    parameters = "t={time}; k_on={k_on}; k_off={k_off}; k_syn={k_syn}; k_d={k_d}".format(
+        time=time, k_on=k_on, k_off=k_off, k_syn=k_syn, k_d=k_d
+    )
+
+    logging.info(parameters)
 
     return x_list, y_list
 
@@ -212,6 +224,8 @@ k_d = 0.02
 # plot_distribution("test", k_on, k_off, k_syn, k_d)
 
 times = [2.3, 2.5] + list(range(3, 6, 1))
+# times = [0.8] + list(range(1, 4, 1))
+# times = [0.25, 0.3, 0.4]
 # times = list(range(4, 6))
 # times = [0]
 
@@ -221,15 +235,26 @@ for time in times:
 
     x_list, y_list = create_non_stationary_distribution(time, k_on, k_off, k_syn, k_d)
 
+    sum_p = round_sig(sum(y_list), 4)
+
     if show_plot:
-        plt.step(x_list, y_list, where="post", label="t={time}".format(time=time))
+        plt.step(x_list, y_list, where="post", label="t={time}; sum_p={sum_p}".format(time=time, sum_p=sum_p))
 
 x_list_stat, y_list_stat = create_distribution(k_on, k_off, k_syn, k_d)
 
 if show_plot and show_stationary:
-    plt.step(x_list_stat, y_list_stat, where="post", label="stationary")
+    sum_p = round_sig(sum(y_list_stat), 4)
+    plt.step(x_list_stat, y_list_stat, where="post",
+             label="stationary; sum_p={sum_p}".format(sum_p=sum_p)
+             , color="black")
+
+if show_plot:
 
     plt.legend(title='Time:')
-plt.show()
-plt.close(1)
+    parameters = "k_on={k_on}; k_off={k_off}; k_syn={k_syn}; k_d={k_d}".format(
+        k_on=k_on, k_off=k_off, k_syn=k_syn, k_d=k_d
+    )
+    plt.title(parameters)
+    plt.show()
+    plt.close(1)
 
