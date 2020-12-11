@@ -194,7 +194,7 @@ def plot_chance_of_switching_to_active_state(df_counts, nr_runs):
     plt.close(1)
 
 
-run_sim = True
+run_sim = False
 nr_runs = 500
 if run_sim:
     df_counts = run_active_state_simulations(nr_runs)
@@ -224,11 +224,11 @@ def fit_to_model_p1():
     popt_signal = popt
     error_k_on_signal = abs(popt_signal[0] / k_on - 1) * 100
 
-    print("plotting to hidden state:   k_on={k_on}; error={error}%".format(
+    print("fitting to hidden state:   k_on={k_on}; error={error}%".format(
         k_on=round_sig(popt_active[0], 4), error=round_sig(error_k_on_active, 3)))
-    print("plotting to real counts:    k_on={k_on}; error={error}%".format(
+    print("fitting to real counts:    k_on={k_on}; error={error}%".format(
         k_on=round_sig(popt_real[0], 4), error=round_sig(error_k_on_real, 3)))
-    print("plotting to sampled counts: k_on={k_on}; error={error}%".format(
+    print("fitting to sampled counts: k_on={k_on}; error={error}%".format(
         k_on=round_sig(popt_signal[0]), error=round_sig(error_k_on_signal, 3)))
 
 

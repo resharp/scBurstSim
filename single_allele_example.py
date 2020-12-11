@@ -25,7 +25,7 @@ os.makedirs(plot_dir, exist_ok=True)
 
 nr_days = 1
 max_minutes = 1440*nr_days  # 24 hours = 1440 minutes
-strategy = "bimodal"
+strategy = "second_example"
 
 
 # windows = [[400, 460, 'EU'], [520, 580, '4SU']] # e.g. 120 minutes of EU labeling
@@ -144,8 +144,10 @@ def run_distribution(params, max_minutes):
 
     plt.title("mean nr of RNA for strategy {strategy}: {mean}".format(mean=mean_mrna, strategy=strategy))
 
+    # distribution from simulation
     plt.step(df_distribution.mrna, df_distribution.chance, where="post")
 
+    # theoretical distribution
     x_list, y_list = create_distribution(params.k_on, params.k_off, params.k_syn, params.k_d)
     plt.step(x_list, y_list, where="post", color="red")
 
