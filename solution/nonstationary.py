@@ -49,7 +49,10 @@ def create_distribution(k_on, k_off, k_syn, k_d):
     x_list = []
     x = 0
     y = 1
-    while y > 1e-6:
+
+    max = int(1.3 * k_syn / k_d)
+    for n in range(0, max):   # this alternative is for debugging N=0 and/or N=1
+    # while y > 1e-6:
         y = p_stationary(x, k_on, k_off, k_syn, k_d)
 
         x_list.append(x)
@@ -190,7 +193,7 @@ def create_non_stationary_distribution(time, k_on, k_off, k_syn, k_d):
     p_ns = 1  # initialize at large value
     # while p_ns > 1e-6:
 
-    max = int(2 * k_syn / k_d)
+    max = int(1.3 * k_syn / k_d)
     for n in range(0, max):   # this alternative is for debugging N=0 and/or N=1
         logging.info("*********************")
         logging.info("**** start for n={}".format(n))
@@ -216,9 +219,9 @@ def create_non_stationary_distribution(time, k_on, k_off, k_syn, k_d):
     return x_list, y_list
 
 
-k_on = 0.021
-k_off = 0.021
-k_syn = 0.2
+k_on = 0.151
+k_off = 0.151
+k_syn = 2
 k_d = 0.02
 
 # plot_distribution("test", k_on, k_off, k_syn, k_d)
@@ -228,6 +231,9 @@ times = [2.3, 2.5] + list(range(3, 6, 1))
 # times = [0.25, 0.3, 0.4]
 # times = list(range(4, 6))
 # times = [0]
+# times = [2, 3]
+times = [1, 2, 3]
+
 
 show_plot = True
 show_stationary = True
