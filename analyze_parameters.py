@@ -32,7 +32,7 @@ strategy = "second_example"
 nr_cells = 3000
 efficiency = 100
 label = "4SU"  # 2nd window
-len_win = 60
+len_win = 60  # 120, 180, 360, 3600
 gap = 0
 
 
@@ -112,34 +112,33 @@ y_w2 = 100
 x_w1 = 10
 k_d = (np.log(y_w2) - np.log(x_w1)) / t
 
-# we can add strategy to the "index" because it is completely defined by key allele_id
-df_counts_unstack = df_counts.set_index(["cell_id", "allele_id", "strategy", "label"])['real_count'].unstack()
-df_counts_unstack = df_counts_unstack.reset_index().fillna(0)
-
-# what zeroes to include?
-# we want all the counts per cell and allele for label_1
-# where label_2 does not have a zero
-label_1 = "EU"; label_2 = "4SU"
-
 # so we need the mean value of the EU label and the mean value of the 4SU label for every allele
 # however, we may underestimate the 1st label, because there will be no counts for the 0 counts
 # so we should divide the total of the 1st label by the number of counts of the 2nd label?
 # we tried that with the following line, but prediction is actually worse
 # df_counts_unstack = df_counts_unstack[df_counts_unstack[label_2] != 0]
 
+
 # calculate mean expression level
-df_allele_counts = df_counts_unstack[['allele_id', 'strategy', label_1, label_2]].\
-    groupby(['allele_id', 'strategy']).mean().reset_index()
+def mean_expression_level():
 
-df_allele_counts = pd.merge(df_allele_counts, df_strategies, how="left",
-                            left_on=['strategy'],
-                            right_on=['name'])
+    df_allele_counts = df_counts_unstack[['allele_id', 'strategy', label_1, label_2]].\
+        groupby(['allele_id', 'strategy']).mean().reset_index()
 
-k_d = (np.log(y_w2) - np.log(x_w1)) / t
+    df_allele_counts = pd.merge(df_allele_counts, df_strategies, how="left",
+                                left_on=['strategy'],
+                                right_on=['name'])
 
-df_allele_counts['k_d_predicted'] = (np.log(df_allele_counts[label_2]) - np.log(df_allele_counts[label_1]))/t
+    k_d = (np.log(y_w2) - np.log(x_w1)) / t
 
-df_allele_counts['k_d_error'] = df_allele_counts['k_d_predicted'] / df_allele_counts['k_d']
+    df_allele_counts['k_d_predicted'] = (np.log(df_allele_counts[label_2]) - np.log(df_allele_counts[label_1]))/t
+
+    df_allele_counts['k_d_error'] = df_allele_counts['k_d_predicted'] / df_allele_counts['k_d']
+
+    return df_allele_counts
+
+
+# df_allele_counts = mean_expression_level()
 
 
 def plot_error_k_d():
@@ -179,12 +178,30 @@ def plot_predicted_k_d():
 # plot_predicted_k_d()
 # plot_error_k_d()
 
-# we would like to make a 2-dim density plot of the two labels
-df_counts_unstack = df_counts_unstack[df_counts_unstack.strategy == strategy]
 
-pseudocount = 0.1
-df_counts_unstack["log10_4SU"] = np.log10(df_counts_unstack["4SU"] + pseudocount)
-df_counts_unstack["log10_EU"] = np.log10(df_counts_unstack["EU"] + pseudocount)
+def create_df_counts_unstack():
+    # we can add strategy to the "index" because it is completely defined by key allele_id
+    df_counts_unstack = df_counts.set_index(["cell_id", "allele_id", "strategy", "label"])['real_count'].unstack()
+    df_counts_unstack = df_counts_unstack.reset_index().fillna(0)
+
+    # what zeroes to include?
+    # we want all the counts per cell and allele for label_1
+    # where label_2 does not have a zero
+    label_1 = "EU";
+    label_2 = "4SU"
+
+    # we would like to make a 2-dim density plot of the two labels for a chosen strategy
+
+    df_counts_unstack = df_counts_unstack[df_counts_unstack.strategy == strategy]
+
+    pseudocount = 0.1
+    df_counts_unstack["log10_4SU"] = np.log10(df_counts_unstack["4SU"] + pseudocount)
+    df_counts_unstack["log10_EU"] = np.log10(df_counts_unstack["EU"] + pseudocount)
+
+    return df_counts_unstack
+
+
+# df_counts_unstack = create_df_counts_unstack()
 
 
 def joint_scatter_plot_labels():
@@ -265,14 +282,15 @@ def distribution(measure, df_counts, strategy, params, nr_cells, filter_label=Fa
     else:
         title = "Distribution labeled mRNA for strategy '{strategy}'; mean={real_mean}".\
             format(strategy=strategy, real_mean=real_mean)
+        plt.ylim(0, 0.08)
         plt.ylabel("Chance P(N,t)")
     plt.title(title)
 
     if measure == "count_all":
         label = "stationary"
 
-    plot_name = plot_dir + dir_sep + "{label}_distribution_{strategy}_{nr_cells}.svg".format(
-        label=label, strategy=strategy, nr_cells=nr_cells)
+    plot_name = plot_dir + dir_sep + "{label}_distribution_{strategy}_{nr_cells}_{len_win}.svg".format(
+        label=label, strategy=strategy, nr_cells=nr_cells, len_win=len_win)
 
     plt.savefig(plot_name)
     plt.close(1)
