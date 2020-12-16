@@ -32,7 +32,7 @@ strategy = "second_example"
 nr_cells = 3000
 efficiency = 100
 label = "4SU"  # 2nd window
-len_win = 60  # 120, 180, 360, 3600
+len_win = 60  # 60, 120, 180, 240
 gap = 0
 
 
@@ -60,7 +60,7 @@ filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
 
 df_counts = pd.read_csv(filename_counts, sep=';')
 
-# mean expression
+# mean expression #TODO: Check if this is the correct way to calculate mean? What about zeroes?
 df_means = df_counts.groupby(['allele_id', 'strategy', 'label'])['real_count'].mean().reset_index()
 df_means = pd.merge(df_means, df_strategies, how="left",
                     left_on=['strategy'],
@@ -103,7 +103,7 @@ def plot_mean_vs_k_syn():
     plt.close(1)
 
 
-# plot_mean_vs_k_syn()
+plot_mean_vs_k_syn()
 
 # example
 t = len_win + gap # length window + gap
@@ -201,7 +201,7 @@ def create_df_counts_unstack():
     return df_counts_unstack
 
 
-# df_counts_unstack = create_df_counts_unstack()
+df_counts_unstack = create_df_counts_unstack()
 
 
 def joint_scatter_plot_labels():
@@ -240,6 +240,7 @@ def stationary_distribution(df_counts, strategy, params, nr_cells):
     return distribution("count_all", df_counts, strategy, params, nr_cells)
 
 
+# measure may be count_all or real_count (for label)
 def distribution(measure, df_counts, strategy, params, nr_cells, filter_label=False, label=""):
 
     if filter_label:
@@ -249,7 +250,8 @@ def distribution(measure, df_counts, strategy, params, nr_cells, filter_label=Fa
 
     df_one_allele_counts = df_allele_cell_counts[df_allele_cell_counts.strategy == strategy]
 
-    df_one_allele_counts = df_one_allele_counts.set_index('cell_id').reindex(range(1, nr_cells + 1)).fillna(0).reset_index()
+    df_one_allele_counts = df_one_allele_counts.set_index('cell_id').\
+        reindex(range(1, nr_cells + 1)).fillna(0).reset_index()
 
     df_distribution = df_one_allele_counts.groupby(measure)['cell_id'].count().to_frame().reset_index()
 
@@ -259,6 +261,7 @@ def distribution(measure, df_counts, strategy, params, nr_cells, filter_label=Fa
 
     df_distribution = df_distribution.set_index(measure).reindex(range(0, max_count + 1)).fillna(0).reset_index()
 
+    # cell_id contains the number of cells with the "measure" value (measure may be count_all or real_count (for label))
     nr_cells = int(sum(df_distribution.cell_id))
     df_distribution["chance"] = df_distribution.cell_id / nr_cells
 
@@ -296,12 +299,22 @@ def distribution(measure, df_counts, strategy, params, nr_cells, filter_label=Fa
     plt.close(1)
 
 
-strategies = ["first_example", "second_example", "third_example", "bimodal", "powerlaw"]
+def plot_distributions():
+    strategies = ["first_example", "second_example", "third_example", "bimodal", "powerlaw"]
 
-sr = StrategyReader(in_dir + dir_sep + "strategies.csv")
-for strategy in strategies:
-    params = sr.get(strategy=strategy)
+    sr = StrategyReader(in_dir + dir_sep + "strategies.csv")
+    for strategy in strategies:
+        params = sr.get(strategy=strategy)
 
-    stationary_distribution(df_counts, strategy, params, nr_cells)
-    label_distribution("4SU", df_counts, strategy, params, nr_cells)
+        stationary_distribution(df_counts, strategy, params, nr_cells)
+        label_distribution("4SU", df_counts, strategy, params, nr_cells)
+
+
+plot_distributions()
+
+# now we want to calculate the mean and the variance of the number of molecules
+# and see how well it predicts the dynamic parameters
+# x-axis: time
+# y-axis: mean
+
 
