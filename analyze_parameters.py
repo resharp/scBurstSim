@@ -276,7 +276,7 @@ def plot_distribution(measure, df_counts, strategy, nr_cells, filter_label=False
     plt.close(1)
 
 
-def create_simulated_distribution(measure, df_counts, strategy, nr_cells, filter_label, label):
+def create_simulated_distribution(measure, df_counts, strategy, nr_cells, filter_label = False, label=""):
 
     if filter_label:
         df_counts = df_counts[df_counts.label == label]
@@ -321,5 +321,48 @@ plot_distributions()
 # and see how well it predicts the dynamic parameters
 # x-axis: time
 # y-axis: mean
+# df_counts is determined by the right time
 
+strategy = "first_example"
+
+times = [60, 120, 180, 240]
+label_1 = "EU"
+label_2 = "4SU"
+
+strategies = ["first_example", "second_example", "third_example", "bimodal", "powerlaw"]
+for strategy in strategies:
+    real_means_1 = []
+    real_means_2 = []
+
+    for len_win in times:
+
+        filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
+            len_win=len_win, gap=gap, eff=efficiency)
+
+        df_counts = pd.read_csv(filename_counts, sep=';')
+
+        df_distribution, real_mean = create_simulated_distribution("real_count", df_counts, strategy, nr_cells,
+                                                                   True, label_1)
+        real_means_1.append(real_mean)
+        df_distribution, real_mean = create_simulated_distribution("real_count", df_counts, strategy, nr_cells,
+                                                                   True, label_2)
+        real_means_2.append(real_mean)
+        # print("real mean for t={len_win}: {real_mean}".format(len_win=len_win, real_mean=real_mean))
+
+    # stationary distribution
+    df_distribution, real_mean = create_simulated_distribution("count_all", df_counts, strategy, nr_cells)
+    print("stationary real mean: {real_mean}".format(real_mean=real_mean))
+
+    plt.plot(times, real_means_1, 'o-', label="label 1")
+    plt.plot(times, real_means_2, 'o-', label="label 2")
+    plt.title("time dependent mean for strategy: " + strategy)
+    plt.xlim(0,None)
+    plt.xlabel("time in minutes")
+    plt.ylabel("mean nr of molecules")
+    plt.legend()
+
+    plot_name = plot_dir + dir_sep + "mean_vs_time_{strategy}_{nr_cells}.svg".format(
+        strategy=strategy, nr_cells=nr_cells)
+    plt.savefig(plot_name)
+    plt.close(1)
 
