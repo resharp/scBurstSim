@@ -230,46 +230,23 @@ def joint_kde_plot_labels():
 # joint_kde_plot_labels()
 
 
-def label_distribution(label, df_counts, strategy, params, nr_cells):
+def plot_label_distribution(label, df_counts, strategy, nr_cells):
 
-    return distribution("real_count", df_counts, strategy, params, nr_cells, filter_label=True, label=label)
+    return plot_distribution("real_count", df_counts, strategy, nr_cells, filter_label=True, label=label)
 
 
-def stationary_distribution(df_counts, strategy, params, nr_cells):
+def plot_stationary_distribution(df_counts, strategy, nr_cells):
 
-    return distribution("count_all", df_counts, strategy, params, nr_cells)
+    return plot_distribution("count_all", df_counts, strategy, nr_cells)
 
 
 # measure may be count_all or real_count (for label)
-def distribution(measure, df_counts, strategy, params, nr_cells, filter_label=False, label=""):
+def plot_distribution(measure, df_counts, strategy, nr_cells, filter_label=False, label=""):
 
-    if filter_label:
-        df_counts = df_counts[df_counts.label == label]
+    params = sr.get(strategy=strategy)
 
-    df_allele_cell_counts = df_counts.groupby(['allele_id', 'strategy', 'cell_id'])[measure].max().reset_index()
-
-    df_one_allele_counts = df_allele_cell_counts[df_allele_cell_counts.strategy == strategy]
-
-    df_one_allele_counts = df_one_allele_counts.set_index('cell_id').\
-        reindex(range(1, nr_cells + 1)).fillna(0).reset_index()
-
-    df_distribution = df_one_allele_counts.groupby(measure)['cell_id'].count().to_frame().reset_index()
-
-    df_distribution[measure] = df_distribution[measure].astype(int)
-
-    max_count = df_distribution[measure].max()
-
-    df_distribution = df_distribution.set_index(measure).reindex(range(0, max_count + 1)).fillna(0).reset_index()
-
-    # cell_id contains the number of cells with the "measure" value (measure may be count_all or real_count (for label))
-    nr_cells = int(sum(df_distribution.cell_id))
-    df_distribution["chance"] = df_distribution.cell_id / nr_cells
-
-    # total_chance = df_distribution["chance"].sum() # for debugging, should add up to 1
-
-    df_distribution['weighted'] = df_distribution[measure] * df_distribution.cell_id
-    sum_weighted = df_distribution['weighted'].sum()
-    real_mean = round_sig(sum_weighted / nr_cells, 4)
+    df_distribution, real_mean = create_simulated_distribution(measure, df_counts, strategy, nr_cells,
+                                                               filter_label, label)
 
     # distribution from simulation
     plt.step(df_distribution[measure], df_distribution.chance, where="post")
@@ -299,15 +276,43 @@ def distribution(measure, df_counts, strategy, params, nr_cells, filter_label=Fa
     plt.close(1)
 
 
+def create_simulated_distribution(measure, df_counts, strategy, nr_cells, filter_label, label):
+
+    if filter_label:
+        df_counts = df_counts[df_counts.label == label]
+
+    df_allele_cell_counts = df_counts.groupby(['allele_id', 'strategy', 'cell_id'])[measure].max().reset_index()
+    df_one_allele_counts = df_allele_cell_counts[df_allele_cell_counts.strategy == strategy]
+    df_one_allele_counts = df_one_allele_counts.set_index('cell_id'). \
+        reindex(range(1, nr_cells + 1)).fillna(0).reset_index()
+
+    df_distribution = df_one_allele_counts.groupby(measure)['cell_id'].count().to_frame().reset_index()
+    df_distribution[measure] = df_distribution[measure].astype(int)
+
+    max_count = df_distribution[measure].max()
+
+    df_distribution = df_distribution.set_index(measure).reindex(range(0, max_count + 1)).fillna(0).reset_index()
+
+    # cell_id contains the number of cells with the "measure" value (measure may be count_all or real_count (for label))
+    nr_cells = int(sum(df_distribution.cell_id))
+    df_distribution["chance"] = df_distribution.cell_id / nr_cells
+
+    # total_chance = df_distribution["chance"].sum() # for debugging, should add up to 1
+    df_distribution['weighted'] = df_distribution[measure] * df_distribution.cell_id
+    sum_weighted = df_distribution['weighted'].sum()
+    real_mean = round_sig(sum_weighted / nr_cells, 4)
+
+    return df_distribution, real_mean
+
+
 def plot_distributions():
+
     strategies = ["first_example", "second_example", "third_example", "bimodal", "powerlaw"]
 
-    sr = StrategyReader(in_dir + dir_sep + "strategies.csv")
     for strategy in strategies:
-        params = sr.get(strategy=strategy)
 
-        stationary_distribution(df_counts, strategy, params, nr_cells)
-        label_distribution("4SU", df_counts, strategy, params, nr_cells)
+        plot_stationary_distribution(df_counts, strategy, nr_cells)
+        plot_label_distribution("4SU", df_counts, strategy, nr_cells)
 
 
 plot_distributions()
