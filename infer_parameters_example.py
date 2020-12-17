@@ -55,7 +55,7 @@ def p_1_model(t, k_on, p_on, p_off):
     return p_1
 
 
-def nr_molecules(t, k_on, k_off, k_syn, k_d, k_eff):
+def nr_molecules_in_window_no_decay(t, k_on, k_off, k_syn, k_eff):
 
     p_on = k_on/(k_on + k_off)
 
@@ -73,34 +73,37 @@ def plot_theoretical_chance_of_active_state():
     plt.legend(k_offs)
 
     plt.ylim(0, 1)
-    plt.title("k_on={k_on};k_offs={k_offs}".format(k_on=k_on, k_offs=k_offs))
+    plt.title("k_on={k_on}".format(k_on=k_on))
     plt.ylabel("chance of some active state (any length)")
     plt.xlabel("minutes")
 
     plt.vlines(x=window_lengths, ymin=0, ymax=1, linestyles='dashed', colors='black')
 
-    plt.show()
+    plt.savefig(plot_dir + dir_sep + "theoretical_chance_active_{k_on}_{k_off}_{k_syn}.svg".format(
+        k_on=k_on, k_off=k_off, k_syn=k_syn))
+
     plt.close(1)
 
 
-def show_production_of_mrna():
+def plot_production_of_mrna():
     t = np.linspace(0, 400, 100)
 
     max_y = 0
     for k_off in k_offs:
 
-        y = nr_molecules(t, k_on, k_off, k_syn, k_d, k_eff)
-        sns.lineplot(x=t, y=y)
+        y = nr_molecules_in_window_no_decay(t, k_on, k_off, k_syn, k_eff)
+        sns.lineplot(x=t, y=y, label="k_off={k_off}".format(k_off=k_off))
 
-    plt.legend(k_offs)
+    plt.legend()
 
-    plt.title("k_on={k_on};k_offs={k_offs}".format(k_on=k_on, k_offs=k_offs))
-    plt.ylabel("nr of molecules produced")
+    plt.title("k_on={k_on}".format(k_on=k_on))
+    plt.ylabel("average nr of molecules produced")
     plt.xlabel("minutes")
 
     plt.vlines(x=window_lengths, ymin=0, ymax=max(y), linestyles='dashed', colors='black')
 
-    plt.show()
+    plt.savefig(plot_dir + dir_sep + "theoretical_production_mrna_{k_on}_{k_off}_{k_syn}.svg".format(
+        k_on=k_on, k_off=k_off, k_syn=k_syn))
     plt.close(1)
 
 
@@ -114,10 +117,6 @@ def get_windows_and_fix_time(length_window=60, gap=0):
     fix_time = windows[-1][WINDOW_END] + 0  # fix_time 0 minutes after end of last window
 
     return windows, fix_time
-
-
-# plot_theoretical_chance_of_active_state()
-# show_production_of_mrna()
 
 
 def run_active_state_simulations(nr_runs):
@@ -178,19 +177,19 @@ def run_active_state_simulations(nr_runs):
 def plot_chance_of_switching_to_active_state(df_counts, nr_runs):
 
     # we want to convert to
-    plt.plot(df_counts.window, df_counts.active/nr_runs)
-    plt.plot(df_counts.window, df_counts.real/nr_runs)
-    plt.plot(df_counts.window, df_counts.signal/nr_runs)
+    plt.plot(df_counts.window, df_counts.active/nr_runs, label='with active state')
+    plt.plot(df_counts.window, df_counts.real/nr_runs, label='with real counts')
+    plt.plot(df_counts.window, df_counts.signal/nr_runs, label='with detected counts')
 
-    plt.plot(df_counts.window, df_counts.theoretical, color="red")
+    plt.plot(df_counts.window, df_counts.theoretical, color="red", label="theoretical")
 
     plt.xlim(0, max(window_lengths) + 15)
     # plt.ylim(0, 1)
     plt.xlabel("window size (minutes)")
-    plt.ylabel("nr of runs with active state")
-    # plt.savefig(plot_dir + dir_sep + "counts_{k_on}_{k_off}_{k_syn}.svg".format(
-    #     k_on=k_on, k_off=k_off, k_syn=k_syn))
-    plt.show()
+    plt.ylabel("nr of runs")
+    plt.legend()
+    plt.savefig(plot_dir + dir_sep + "counts_{k_on}_{k_off}_{k_syn}.svg".format(
+        k_on=k_on, k_off=k_off, k_syn=k_syn))
     plt.close(1)
 
 
@@ -200,11 +199,6 @@ if run_sim:
     df_counts = run_active_state_simulations(nr_runs)
 else:
     df_counts = pd.read_csv(out_dir + dir_sep + df_filename, sep=';')
-
-
-df_counts["theoretical"] = p_1(df_counts["window"], k_on, k_off)
-
-plot_chance_of_switching_to_active_state(df_counts, nr_runs)
 
 
 def fit_to_model_p1():
@@ -231,5 +225,12 @@ def fit_to_model_p1():
     print("fitting to sampled counts: k_on={k_on}; error={error}%".format(
         k_on=round_sig(popt_signal[0]), error=round_sig(error_k_on_signal, 3)))
 
+
+plot_theoretical_chance_of_active_state()
+plot_production_of_mrna()
+
+df_counts["theoretical"] = p_1(df_counts["window"], k_on, k_off)
+
+plot_chance_of_switching_to_active_state(df_counts, nr_runs)
 
 fit_to_model_p1()
