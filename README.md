@@ -98,3 +98,16 @@ single_allele_example.py uses the Transcription class that is also
 used by Experiment.py
 
 
+# Analyses 
+
+## analyze parameters
+
+## infer parameters example
+
+## infer parameters Poisson
+
+
+
+
+
+

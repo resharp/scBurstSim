@@ -53,7 +53,6 @@ class Transcription:
             last_arrival = last_arrival + arrival
 
             # we immediately determine the decay time once a transcript comes into existence
-            # TODO: check if this is the right distribution for a death process
             decay = np.random.exponential(scale=1.0, size=None) / self.params.k_d
             decay_time = start_time + last_arrival + decay
 
@@ -61,6 +60,10 @@ class Transcription:
 
             if last_arrival < interval:
 
+                # determine label(s): this code takes into account the possibility of overlapping labeling windows
+                # and thus double labeling for the same transcript
+                # however be careful when summing all labeled and unlabeled transcripts in that case
+                # this sum can no longer be used for the total number of transcripts for the stationary distribution
                 within_window = False
                 for window in windows:
                     if window[WINDOW_START] < arrival_time < window[WINDOW_END]:

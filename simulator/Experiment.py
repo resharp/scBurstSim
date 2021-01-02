@@ -49,8 +49,8 @@ class Experiment:
     def run(self) -> pd.DataFrame:
 
         logging.info("start Experiment.run with efficiency {eff}".format(eff=self.params.efficiency))
-        # run_alt is a complete different implementation of run() to be able
-        # - to split run and count
+        # run has to be able to
+        # - split run and count
         # - insert a sampling step between run and count on cell level
         # - share DTMC traces for different (k_syn, k_d) within a coordination group
 
@@ -108,13 +108,13 @@ class Experiment:
                                                  new_dtmc_trace=new_dtmc_trace, dtmc_list=dtmc_list)
                 old_group_id = group_id
 
-            # sample per cell; transcripts -> transcripts_sampled
+            # sample per cell; transcripts -> df_sampled_transcripts
             # transcripts for all cells are in self.transcripts
             df_cell_transcripts = pd.concat(self.transcripts)
 
             df_sampled_transcripts = self.sample_transcripts(df_cell_transcripts)
 
-            # TODO: Add both real and sampled transcripts
+            # TODO: Add both real and sampled transcripts (now we only add the sampled transcripts)
 
             logging.info("start counting for cell: {cell_id}".format(cell_id=cell_id))
             # df_counts_cell = self.count_transcripts(cell_id, df_cell_transcripts)
@@ -131,6 +131,7 @@ class Experiment:
         df_counts.rename(columns={'count_s': 'real_count'}, inplace=True)
 
         df_counts.fillna("", inplace=True)
+        # fraction denotes the fraction of cells
         df_counts["fraction"] = df_counts["real_count"] / df_counts["count_all"]
         df_counts.fraction = df_counts.fraction.round(4)
         df_counts["strategy_group"] = df_counts.strategy + "_" + df_counts.group_id.map(str)
@@ -172,7 +173,9 @@ class Experiment:
                                                   dtmc_list=dtmc_list
                                                   )
         # are we still interested in the percentage that the burst was ON?
-        # we can derive this from df_dtmc
+        # or the percentage of active state (which is different, because you can have active state
+        # without having Poisson arrivals)
+        # we can derive this from df_dtmc in combination with self.params.windows
 
         # save real transcripts
         df_transcripts = self.tran.df_transcripts
