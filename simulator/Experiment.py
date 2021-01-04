@@ -43,17 +43,19 @@ class Experiment:
         sr = StrategyReader(self.params.strategies_file)
         self.strategies = sr.select_all()
 
-    # run should return count matrix + percentage of time of gene being ON or OFF during labeling window(s)
+    # run returns count matrix + percentage of time of gene being ON or OFF during labeling window(s)
     # returns (per label so we can easily generalize to any number of labels):
-    # cell_id ; allele_id ; label; perc_label_on; real_count; real_count_unlabeled
+    # allele_id;trace_id;label;real_count;count_all;cell_id;fraction;perc; [extra allele information]
     def run(self) -> pd.DataFrame:
 
         logging.info("start Experiment.run with efficiency {eff}".format(eff=self.params.efficiency))
-        # run has to be able to
+        # run is able to
         # - split run and count
         # - insert a sampling step between run and count on cell level
         # - share DTMC traces for different (k_syn, k_d) within a coordination group
 
+        percentages = []
+        # to do: extract first part for determining df_alleles
         self.read_strategies()
 
         logging.info("nr. of strategies read from {file}: {nr}"
@@ -82,13 +84,14 @@ class Experiment:
         df_alleles.drop('tran', axis=1, inplace=True)
 
         logging.info("nr. of alleles generated from strategies: {nr_all}".format(nr_all=len(df_alleles)))
+        # to do: end of extract
 
         for i_c in range(self.params.nr_cells):
             cell_id = i_c + 1
 
             old_group_id = -1
-            dtmc_list = []
-            self.transcripts = []
+            dtmc_list = []  # list with discrete time markov chain (active <-> inactive) events
+            self.transcripts = []  # reinitialize transcripts for all alleles for this cell
 
             logging.info("start simulation for cell: {cell_id}".format(cell_id=cell_id))
 
@@ -104,29 +107,42 @@ class Experiment:
                     new_dtmc_trace = True
                     dtmc_list = []
                 self.tran = tran
-                dtmc_list = self.run_transcripts(allele_id, cell_id, tm_id, group_id,
-                                                 new_dtmc_trace=new_dtmc_trace, dtmc_list=dtmc_list)
+
+                df_dtmc, dtmc_list = self.run_transcripts(allele_id, cell_id, tm_id, group_id,
+                                                          new_dtmc_trace=new_dtmc_trace, dtmc_list=dtmc_list)
+                # here we have the dtmc_list per allele for one cell
+                # from it we can determine the percentage "active period" per window label
+                # We join later this information with the labeled Poisson counts
+                # this join cannot be done here yet, because the transcripts are going to be sampled on cell level first
+                for window in self.params.windows:
+                    label = window[WINDOW_LABEL]
+                    perc = Experiment.perc_active_state(self.params.windows, df_dtmc, label)
+
+                    # now we have the percentage and we should store it with cell_id, allele_id, label
+                    # just add to an array and combine with df_counts at the end of the function
+                    percentages.append((cell_id, allele_id, label, perc))
+
                 old_group_id = group_id
 
             # sample per cell; transcripts -> df_sampled_transcripts
-            # transcripts for all cells are in self.transcripts
+            # transcripts for all alleles for this cell are in self.transcripts
             df_cell_transcripts = pd.concat(self.transcripts)
 
             df_sampled_transcripts = self.sample_transcripts(df_cell_transcripts)
 
             # TODO: Add both real and sampled transcripts (now we only add the sampled transcripts)
+            # and put this in real_count (which is now a misleading name for sampled counts)
 
             logging.info("start counting for cell: {cell_id}".format(cell_id=cell_id))
             # df_counts_cell = self.count_transcripts(cell_id, df_cell_transcripts)
-            df_counts_cell = self.count_transcripts(cell_id, df_sampled_transcripts)
+            df_counts_cell = self.count_transcripts_per_allele_per_label_for_cell(cell_id, df_sampled_transcripts)
+
+            # now df_counts_cell contains the counts per label per allele for one cell
+            # (where there is also a row with an empty label (means unlabeled)
 
             self.cell_counts.append(df_counts_cell)
 
         df_counts = pd.concat(self.cell_counts)
-
-        df_counts = pd.merge(df_counts, df_alleles, how="left",
-                             left_on=['allele_id'],
-                             right_on=['allele_id'])
 
         df_counts.rename(columns={'count_s': 'real_count'}, inplace=True)
 
@@ -134,21 +150,38 @@ class Experiment:
         # fraction denotes the fraction of cells
         df_counts["fraction"] = df_counts["real_count"] / df_counts["count_all"]
         df_counts.fraction = df_counts.fraction.round(4)
+
+        df_percentages = pd.DataFrame(percentages, columns=['cell_id', 'allele_id', 'label', 'perc'])
+
+        # join df_percentages and join with df_counts
+        # motivation outer join: there will be missing rows on both sides
+        # df_percentages does not contain the unlabeled (label="") record
+        # and df_counts may miss count records for some (cell_id,allele_id,label) combinations
+        df_counts = pd.merge(df_counts, df_percentages, how="outer",
+                             left_on=['cell_id', 'allele_id', 'label'],
+                             right_on=['cell_id', 'allele_id', 'label']).\
+            sort_values(['cell_id', 'allele_id', 'label'])
+
+        df_counts = pd.merge(df_counts, df_alleles, how="left",
+                             left_on=['allele_id'],
+                             right_on=['allele_id'])
+
+        # for displaying purposes
         df_counts["strategy_group"] = df_counts.strategy + "_" + df_counts.group_id.map(str)
         df_counts["allele_label"] = df_counts.allele_id.map(str) + "_" + df_counts.strategy_group
 
         return df_counts
 
-    # count per cell per allele
     @staticmethod
-    def count_transcripts(cell_id, df_cell_transcripts):
+    def count_transcripts_per_allele_per_label_for_cell(cell_id, df_cell_transcripts):
 
         df_label_counts = df_cell_transcripts.groupby(['allele_id', 'trace_id', 'label'])['count_s'].count().reset_index()
 
-        # now we would like to group on allele_id and count and
+        # now we would like to group on allele_id and count
         df_all_counts = df_cell_transcripts.groupby(['allele_id'])['count_s'].count().reset_index().\
             rename(columns={'count_s': 'count_all'})
 
+        # add allele information
         df_counts = pd.merge(df_label_counts, df_all_counts, how='left',
                              left_on=['allele_id'],
                              right_on=['allele_id'])
@@ -172,12 +205,8 @@ class Experiment:
                                                   new_dtmc_trace=new_dtmc_trace,
                                                   dtmc_list=dtmc_list
                                                   )
-        # are we still interested in the percentage that the burst was ON?
-        # or the percentage of active state (which is different, because you can have active state
-        # without having Poisson arrivals)
-        # we can derive this from df_dtmc in combination with self.params.windows
 
-        # save real transcripts
+        # save real transcripts (to sample later on cell level)
         df_transcripts = self.tran.df_transcripts
         df_transcripts["cell_id"] = cell_id
         df_transcripts["allele_id"] = allele_id
@@ -185,12 +214,12 @@ class Experiment:
         df_transcripts["group_id"] = group_id
         df_transcripts["trace_id"] = self.trace_id
 
+        # add to self.transcripts
         self.transcripts.append(df_transcripts)
 
-        return dtmc_list
+        return df_dtmc, dtmc_list
 
-    # TODO: integrate in the count table
-    @classmethod
+    @classmethod    # this is a class method because it is also used out of context of an instance of Experiment
     def perc_active_state(cls, windows, df_dtmc, label) -> int:
 
         for window in windows:
