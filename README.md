@@ -102,6 +102,11 @@ used by Experiment.py
 
 ## analyze parameters
 
+- compare simulated (time-dependent and stationary) distributions against theoretical stationary distribution
+- examine how quickly the means converge towards the means of the stationary distributions (use multiple window lengths)
+- make two dimensional scatter and density plot for two labels for one strategy (set of dynamical parameters)
+- examine correlation between k_d and inferred k_d from means from label_1 and label_2 (assumes non-changing parameters)
+
 ## infer parameters example
 
 ## infer parameters Poisson
