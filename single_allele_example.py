@@ -6,10 +6,13 @@ from simulator.StrategyReader import StrategyReader
 from simulator.Transcription import *
 from simulator.transcription_plots import *
 
-# script to display single cell single allele example traces
 from solution.stationary import create_distribution
 from utils.utils import round_sig
-
+# goal:
+# 1. plot single cell single allele example traces
+# 2. quickly create stationary distribution for a single allele example (by sampling snapshots from single trace)
+#
+# single_allele_example.py uses the Transcription class that is also used by Experiment.py
 if os.name == 'nt':
     dir_sep = "\\"
     # TODO: set your own out directory
@@ -26,6 +29,21 @@ os.makedirs(plot_dir, exist_ok=True)
 nr_days = 1
 max_minutes = 1440*nr_days  # 24 hours = 1440 minutes
 strategy = "second_example"
+
+logger = logging.getLogger(__name__)
+out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
+logging.basicConfig(filename=out_dir + dir_sep + 'single_allele_example.log', filemode='w',
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    level=logging.INFO)
+
+# sr = StrategyReader(out_dir + dir_sep + "strategies_generated.csv" )
+sr = StrategyReader(in_dir + dir_sep + "strategies.csv" )
+
+# see strategy names in data\strategies.csv
+
+# we can select a strategy by name
+# params = sr.get(strategy="generated_8")
+params = sr.get(strategy=strategy)
 
 
 # windows = [[400, 460, 'EU'], [520, 580, '4SU']] # e.g. 120 minutes of EU labeling
@@ -85,39 +103,20 @@ def run_all_strategies():
         run_example(params)
 
 
-logger = logging.getLogger(__name__)
-out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
-logging.basicConfig(filename=out_dir + dir_sep + 'single_allele_example.log', filemode='w',
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    level=logging.INFO)
+# alternative way to create a distribution from a single trace
+def run_distribution(params, interval, nr_snapshots):
 
-# sr = StrategyReader(out_dir + dir_sep + "strategies_generated.csv" )
-sr = StrategyReader(in_dir + dir_sep + "strategies.csv" )
-
-# see strategy names in data\strategies.csv
-
-# we can select a strategy by name
-# params = sr.get(strategy="generated_8")
-params = sr.get(strategy=strategy)
-
-
-# or retrieve a random strategy
-# params = sr.get_random()
-
-# run_example(params)
-
-
-def run_distribution(params, max_minutes):
+    max_minutes = interval * nr_snapshots
 
     trans = Transcription(params)
 
     # set complete_trace=True to retrieve the complete trace of transcripts counts (for plotting)
-    # here we set windows = [], because we are only interested in the distribution from a single trace
+    # here we set windows = [], because we will create a distribution from snapshots from a single trace
     df_dtmc, dtmc_list = trans.run_bursts(max_minutes, windows=[], new_dtmc_trace=True, complete_trace=True)
 
     df_unlabeled_events = trans.df_unlabeled_events
 
-    interval = 100
+    interval = 100  # minutes between snapshots
     fix_times = [i * interval for i in range(0, int(max_minutes/interval))]
     counts = []
     for fix_time in fix_times:
@@ -156,9 +155,16 @@ def run_distribution(params, max_minutes):
     plt.close(1)
 
 
-max_minutes = 300000
+# or retrieve a random strategy
+# params = sr.get_random()
 
-run_distribution(params, max_minutes)
+# run_example(params)
 
 # or run an example of all strategies (NB: be sure you have a small strategy file!)
 # run_all_strategies()
+
+interval = 100
+nr_snapshots = 300
+
+run_distribution(params, interval, nr_snapshots)
+

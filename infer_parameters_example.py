@@ -141,7 +141,7 @@ def run_active_state_simulations(nr_runs):
         # set complete_trace=True to retrieve the complete trace of transcripts counts (for plotting)
         for run in range(0, nr_runs):
 
-            df_dtmc, dtmc_list = trans.run_bursts(fix_time, windows, new_dtmc_trace=True, complete_trace=True)
+            df_dtmc, dtmc_list = trans.run_bursts(fix_time, windows, new_dtmc_trace=True, complete_trace=False)
 
             label = "4SU"
             df_transcripts = trans.df_transcripts

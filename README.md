@@ -90,13 +90,11 @@ This is only possible if the transition matrix is identical, so k_on and k_off
 should be identical for coordinated strategies.  
 
 
-# Example traces 
-run single_allele_example.py for plotting example traces of 
-specific strategies (see further documentation inline)
+# Examples traces and distributions
 
-single_allele_example.py uses the Transcription class that is also
-used by Experiment.py
-
+## single_allele_example.py 
+1. traces: run single_allele_example.py for plotting example traces of specific strategies (see further documentation inline)
+2. distributions quickly create stationary distribution for a single allele example (by sampling snapshots from single trace)
 
 # Analyses 
 
