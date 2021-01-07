@@ -14,12 +14,14 @@ class SimulatedDistribution:
         self.nr_cells = nr_cells
         self.strategy = strategy
 
-    def create(self, measure, label=None):
+    def create(self, label=None):
 
         if label is None:
             df_counts = self.df_counts
+            measure = "count_all"
         else:
             df_counts = self.df_counts[self.df_counts.label == label]
+            measure = "real_count"
 
         df_allele_cell_counts = df_counts.groupby(['allele_id', 'strategy', 'cell_id'])[measure].max().reset_index()
 

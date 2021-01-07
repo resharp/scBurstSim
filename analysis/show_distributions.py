@@ -52,24 +52,29 @@ df_counts = pd.read_csv(filename_counts, sep=';')
 
 def plot_label_distribution(label, df_counts, strategy, nr_cells):
 
-    return plot_distribution("real_count", df_counts, strategy, nr_cells, label=label)
+    return plot_distribution(df_counts, strategy, nr_cells, label=label)
 
 
 def plot_stationary_distribution(df_counts, strategy, nr_cells):
 
-    return plot_distribution("count_all", df_counts, strategy, nr_cells)
+    return plot_distribution(df_counts, strategy, nr_cells)
 
 
 # goal: compare simulated distribution against theoretical stationary distribution
 # for both labeled transcripts (non stationary) and total number of transcripts (should approach stationary)
 # measure may be count_all or real_count (for label)
-def plot_distribution(measure, df_counts, strategy, nr_cells, label=None):
+def plot_distribution(df_counts, strategy, nr_cells, label=None):
 
     params = sr.get(strategy=strategy)
 
     sim_dis = SimulatedDistribution(df_counts, nr_cells, strategy)
 
-    df_distribution, real_mean = sim_dis.create(measure, label)
+    df_distribution, real_mean = sim_dis.create(label)
+
+    if label is None:
+        measure = "count_all"
+    else:
+        measure = "real_count"
 
     # distribution from simulation
     plt.step(df_distribution[measure], df_distribution.chance, where="post")
@@ -134,14 +139,14 @@ def plot_means_against_time(label_1, label_2):
 
             sim_dis = SimulatedDistribution(df_counts, nr_cells, strategy)
 
-            df_distribution, real_mean = sim_dis.create("real_count", label_1)
+            df_distribution, real_mean = sim_dis.create(label_1)
             real_means_1.append(real_mean)
-            df_distribution, real_mean = sim_dis.create("real_count", label_2)
+            df_distribution, real_mean = sim_dis.create(label_2)
             real_means_2.append(real_mean)
             # print("real mean for t={len_win}: {real_mean}".format(len_win=len_win, real_mean=real_mean))
 
         # stationary distribution
-        df_distribution, stat_mean = sim_dis.create("count_all")
+        df_distribution, stat_mean = sim_dis.create()
 
         plt.plot(times, real_means_1, 'o-', label="label 1")
         plt.plot(times, real_means_2, 'o-', label="label 2")
