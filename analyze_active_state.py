@@ -1,3 +1,7 @@
+# explore the shape of the active state fraction distribution
+# (since we miss the theoretical distribution)
+# build intuition: create distributions for percentage of active state ("active state fraction distribution")
+# explore: try to fit to beta distribution
 import os
 import pandas as pd
 import matplotlib.pyplot as plt

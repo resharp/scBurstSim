@@ -96,16 +96,28 @@ should be identical for coordinated strategies.
 1. traces: run single_allele_example.py for plotting example traces of specific strategies (see further documentation inline)
 2. distributions quickly create stationary distribution for a single allele example (by sampling snapshots from single trace)
 
-# Analyses 
+# Analysis
 
 ## analyze parameters
 
-- compare simulated (time-dependent and stationary) distributions against theoretical stationary distribution
-- examine how quickly the means converge towards the means of the stationary distributions (use multiple window lengths)
-- make two dimensional scatter and density plot for two labels for one strategy (set of dynamical parameters)
-- examine correlation between k_d and inferred k_d from means from label_1 and label_2 (assumes non-changing parameters)
+- compare simulated (time-dependent and stationary) distributions 
+against theoretical stationary distribution
+- examine how quickly the means converge towards the means of the stationary distributions 
+(use multiple window lengths)
+- make two dimensional scatter and density plot for two labels 
+for one strategy (set of dynamical parameters)
+- examine correlation between k_d and inferred k_d from means 
+from label_1 and label_2 (assuming non-changing parameters)
+
+## analyze active state
+explore the shape of the active state fraction distribution 
+(since we miss the theoretical distribution)
+- build intuition: create distributions for percentage of active state ("active state fraction distribution")
+- explore: try to fit to beta distribution
 
 ## infer parameters example
+fit to time dependent function of chance of having activity of any length 
+during a single labeling window
 
 ## infer parameters Poisson
 

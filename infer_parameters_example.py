@@ -1,7 +1,14 @@
+# fit to time dependent function of chance of having activity of any length during a single labeling window
+# infer k_on parameter based on single window for 4SU (though here it is the 2nd window)
+# based on different window lengths
+# window_lengths = [15, 30, 45, 60, 120, 180]
+# fit based on (hidden) presence of active state, on real simulated counts and on sampled simulated counts
+
+
+
 # TO DO
 # three categories of k_syn:
 # only change k_on with fixed (k_off, k_syn, k_d)
-
 
 import os
 
@@ -88,7 +95,6 @@ def plot_theoretical_chance_of_active_state():
 def plot_production_of_mrna():
     t = np.linspace(0, 400, 100)
 
-    max_y = 0
     for k_off in k_offs:
 
         y = nr_molecules_in_window_no_decay(t, k_on, k_off, k_syn, k_eff)
@@ -119,7 +125,7 @@ def get_windows_and_fix_time(length_window=60, gap=0):
     return windows, fix_time
 
 
-def run_active_state_simulations(nr_runs):
+def run_active_state_is_present_simulations(label, nr_runs):
 
     l_counts = []
 
@@ -143,7 +149,6 @@ def run_active_state_simulations(nr_runs):
 
             df_dtmc, dtmc_list = trans.run_bursts(fix_time, windows, new_dtmc_trace=True, complete_trace=False)
 
-            label = "4SU"
             df_transcripts = trans.df_transcripts
 
             df_labeled_transcripts = df_transcripts[df_transcripts.label == label]
@@ -193,15 +198,7 @@ def plot_chance_of_switching_to_active_state(df_counts, nr_runs):
     plt.close(1)
 
 
-run_sim = False
-nr_runs = 500
-if run_sim:
-    df_counts = run_active_state_simulations(nr_runs)
-else:
-    df_counts = pd.read_csv(out_dir + dir_sep + df_filename, sep=';')
-
-
-def fit_to_model_p1():
+def fit_to_model_p1(nr_runs):
 
     expected = (0.1, 0.5, 0.5)
 
@@ -226,11 +223,20 @@ def fit_to_model_p1():
         k_on=round_sig(popt_signal[0]), error=round_sig(error_k_on_signal, 3)))
 
 
+run_sim = False
+nr_runs = 500
+if run_sim:
+    label = "4SU"
+    df_counts = run_active_state_is_present_simulations(label, nr_runs)
+else:
+    df_counts = pd.read_csv(out_dir + dir_sep + df_filename, sep=';')
+
 plot_theoretical_chance_of_active_state()
+
 plot_production_of_mrna()
 
 df_counts["theoretical"] = p_1(df_counts["window"], k_on, k_off)
 
 plot_chance_of_switching_to_active_state(df_counts, nr_runs)
 
-fit_to_model_p1()
+fit_to_model_p1(nr_runs)
