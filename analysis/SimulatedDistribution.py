@@ -5,16 +5,14 @@ class SimulatedDistribution:
 
     df_counts = None
     nr_cells = 0
-    strategy = ""
 
-    def __init__(self, df_counts, nr_cells, strategy):
+    def __init__(self, df_counts, nr_cells):
 
         self.df_counts = df_counts
 
         self.nr_cells = nr_cells
-        self.strategy = strategy
 
-    def create(self, label=None):
+    def create(self, strategy, label=None):
 
         if label is None:
             df_counts = self.df_counts
@@ -26,7 +24,7 @@ class SimulatedDistribution:
         df_allele_cell_counts = df_counts.groupby(['allele_id', 'strategy', 'cell_id'])[measure].max().reset_index()
 
         # TODO: improve; filtering on strategy can be done earlier
-        df_one_allele_counts = df_allele_cell_counts[df_allele_cell_counts.strategy == self.strategy]
+        df_one_allele_counts = df_allele_cell_counts[df_allele_cell_counts.strategy == strategy]
 
         df_one_allele_counts = df_one_allele_counts.set_index('cell_id'). \
             reindex(range(1, self.nr_cells + 1)).fillna(0).reset_index()

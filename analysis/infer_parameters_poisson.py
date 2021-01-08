@@ -1,6 +1,5 @@
-# here we fit a Poisson distribution to dummy data and try to find a global minimum
-# by changing inital conditions
-
+# here we fit a Poisson distribution to simulated data of "real" transcripts
+# based on time dependent counts in one labeling window
 import os
 
 import matplotlib.pyplot as plt
@@ -24,7 +23,7 @@ os.makedirs(plot_dir, exist_ok=True)
 
 in_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\source\scBurstSim\data"
 
-strategy = "third_example"
+strategy = "second_example"
 nr_cells = 3000
 
 len_win = 60
@@ -42,23 +41,25 @@ filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(l
 df_counts = pd.read_csv(filename_counts, sep=';')
 
 
-# simplified model
 def poisson_model(x, mu):
 
     return poisson.pmf(x, mu)
 
 
-def fit_to_poisson_and_display(mu):
+# naive method with one inital guess
+def fit_to_poisson_and_display(strategy, x, y_norm, mu):
 
     expected_guesses = [mu/4]
 
     for expected in expected_guesses:
 
-        popt, pcov = curve_fit(poisson_model, x, y_norm, expected)
+        popt, pcov = curve_fit(poisson.pmf, x, y_norm, p0=expected, maxfev=5000)
 
         estimated_mean = round_sig(popt[0], 3)
+        variance = round_sig(pcov[0, 0], 3)
 
-        plt.title("initial guess={expected}; estimated mean={mean}".format(expected=expected, mean=estimated_mean))
+        plt.title("{strategy};initial guess={expected}; estimated mean={mean};variance={variance}".format(
+            strategy=strategy, expected=expected, mean=estimated_mean, variance=variance))
 
         plt.plot(x, poisson.pmf(x, estimated_mean), label="Poisson")
         plt.plot(x, y_norm, label="real")
@@ -67,31 +68,49 @@ def fit_to_poisson_and_display(mu):
         plt.close(1)
 
 
-def find_fitting_optimum_by_changing_initial_guesses(mu):
+def find_fitting_optimum_by_changing_initial_guesses(strategy, x, y_norm, mu):
 
-    expected_guesses = np.linspace(0, mu * 1.5, 10)
+    # we do not start at 0 or 1 because somehow it gives a very small mean
+    expected_guesses = np.linspace(2, mu * 1.5, 5)
     cov = []
     means = []
     for expected in expected_guesses:
-        popt, pcov = curve_fit(poisson_model, x, y_norm, expected)
+        popt, pcov = curve_fit(poisson.pmf, x, y_norm, p0=expected, maxfev=1400)
+
         estimated_mean = round_sig(popt[0], 3)
-        cov.append(pcov[0])
+
+        cov.append(pcov[0, 0])
         means.append(estimated_mean)
 
-    plt.title("find fitting optimum by changing initial guesses")
-    plt.plot(expected_guesses, cov)
-    plt.xlabel("initial guess")
-    plt.ylabel("variance")
+    # find minimum variance for guesses
+    var, idx = min((var, idx) for (idx, var) in enumerate(cov))
+
+    estimated_mean = round_sig(means[idx], 3)   # and related mean
+    var = round_sig(var, 3)
+    plt.title("{strategy};optimal fitting;variance={variance}".
+              format(strategy=strategy, mean=estimated_mean, variance=var, real_mean=mu))
+    plt.plot(x, poisson.pmf(x, estimated_mean), label="Poisson, mean={}".format(estimated_mean))
+    plt.plot(x, y_norm, label="real, mean={}".format(mu))
+    plt.legend()
     plt.show()
     plt.close(1)
 
 
-sim_dis = SimulatedDistribution(df_counts, nr_cells, strategy)
-df_distribution, real_mean = sim_dis.create(label_2)
+strategies = ["first_example", "second_example", "third_example", "bimodal", "powerlaw"]
 
-x = df_distribution["real_count"]
-y_norm = df_distribution["chance"]
+sim_dis = SimulatedDistribution(df_counts, nr_cells)
 
-fit_to_poisson_and_display(real_mean)
+for strategy in strategies:
 
-# find_fitting_optimum_by_changing_initial_guesses(real_mean)
+    df_distribution, real_mean = sim_dis.create(strategy, label_2)
+
+    # exclude first row from fitting. The first row includes the zero counts
+    df_distribution = df_distribution.iloc[1:]
+
+    x = df_distribution["real_count"]
+    y_norm = df_distribution["chance"]
+
+    # fit_to_poisson_and_display(strategy, x, y_norm, real_mean)
+
+    find_fitting_optimum_by_changing_initial_guesses(strategy, x, y_norm, real_mean)
+
