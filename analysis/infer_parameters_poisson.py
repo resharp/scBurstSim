@@ -112,13 +112,17 @@ def fit_poisson_for_len_win(len_win, create_plot=False):
 
         calculated_mean = round_sig((params.k_on / (params.k_on + params.k_off)) * len_win * params.k_syn, 4)
 
-        fitted_parameters.append((len_win, strategy, estimated_poisson_mean, real_mean, calculated_mean))
+        fitted_parameters.append((len_win, strategy,
+                                  estimated_poisson_mean, var,
+                                  real_mean, calculated_mean))
 
         if create_plot:
             plot_fit_to_poisson(x, y_norm, var, estimated_poisson_mean, strategy, real_mean)
 
     df_return = DataFrame(fitted_parameters,
-                          columns=["len_win", "strategy", "estimated_poisson_mean", "real_mean", "calculated_mean"])
+                          columns=["len_win", "strategy",
+                                   "estimated_poisson_mean", "variance",
+                                   "real_mean", "calculated_mean"])
 
     return df_return
 
@@ -126,6 +130,7 @@ def fit_poisson_for_len_win(len_win, create_plot=False):
 csv_name = plot_dir + dir_sep + "parameter_fits.csv"
 logger.info("Infer parameters based on time dependent distributions from {} cells".format(nr_cells))
 logger.info("Results in {}".format(csv_name))
+
 lengths_window = [15, 30, 45, 60, 120, 180, 240]
 
 list_df_fitted_params = []
@@ -137,7 +142,13 @@ for len_win in lengths_window:
 
 df_fitted_params_all_lengths = pd.concat(list_df_fitted_params)
 
-df_fitted_params_all_lengths.sort_values(by=['strategy', 'len_win'], inplace=True)
+df_fitted_params_all_lengths.sort_values(by=['strategy', 'len_win'], inplace=False)
+
+df_fitted_params_all_lengths = pd.merge(df_fitted_params_all_lengths, df_strategies, how="left",
+                                        left_on=['strategy'],
+                                        right_on=['name'])
+
+df_fitted_params_all_lengths.drop(columns=['name', 'coord_group', 'tm_id', 'fraction_ON', 'fraction_OFF'], inplace=True)
 
 df_fitted_params_all_lengths.to_csv(csv_name, sep=";", index=False)
 
