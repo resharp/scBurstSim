@@ -12,7 +12,8 @@ run_sim = True  # setting run_sim to False results in use of locally stored data
 create_cluster_map = False
 nr_cells = 3000
 gap = 0
-length_window = 60  # 60, 120, 180, 240
+# TODO: 75, 90, 105
+length_window = 60  # 15, 30, 45, 60, ... 120, 180, 240
 efficiency = 1
 
 nr_syn_within_strategy = 1

@@ -29,6 +29,13 @@ def p_stationary(n, k_on, k_off, k_syn, k_d):
     g = k_off/k_d
     mu = k_syn/k_d
 
+    ret_val = p_stationary_dimensionless(n, l, g, mu)
+
+    return ret_val
+
+
+def p_stationary_dimensionless(n, l, g, mu):
+
     part1 = gamma(l + n)/gamma(n + 1)
     part1 = part1 / gamma(l + g + n)
 

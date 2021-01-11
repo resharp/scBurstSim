@@ -13,6 +13,7 @@ from scipy.stats import poisson
 
 from analysis.SimulatedDistribution import *
 from simulator.StrategyReader import StrategyReader
+from solution.stationary import p_stationary_dimensionless
 
 if os.name == 'nt':
     dir_sep = "\\"
@@ -70,6 +71,20 @@ def find_fitting_optimum_to_poisson_dis(x, y_norm, mu):
     return estimated_mean, var
 
 
+def find_fitting_to_stationary_distribution(x, y_norm):
+
+    expected = (0.5, 0.5, 100)
+
+    popt, pcov = curve_fit(p_stationary_dimensionless, x, y_norm, p0=expected, maxfev=1000)
+
+    # dimensionless parameters (divided by k_d)
+    k_on_d = popt[0]
+    k_off_d = popt[1]
+    k_syn_d = popt[2]
+
+    return k_on_d, k_off_d, k_syn_d
+
+
 def plot_fit_to_poisson(x, y_norm, var, estimated_mean, strategy, mu):
 
     plt.title("{strategy};optimal fitting;variance={variance}".
@@ -108,12 +123,15 @@ def fit_poisson_for_len_win(len_win, create_plot=False):
 
         estimated_poisson_mean, var = find_fitting_optimum_to_poisson_dis(x, y_norm, real_mean)
 
+        k_on_d, k_off_d, k_syn_d = find_fitting_to_stationary_distribution(x, y_norm)
+
         params = sr.get(strategy=strategy)
 
         calculated_mean = round_sig((params.k_on / (params.k_on + params.k_off)) * len_win * params.k_syn, 4)
 
         fitted_parameters.append((len_win, strategy,
                                   estimated_poisson_mean, var,
+                                  k_on_d, k_off_d, k_syn_d,
                                   real_mean, calculated_mean))
 
         if create_plot:
@@ -122,37 +140,40 @@ def fit_poisson_for_len_win(len_win, create_plot=False):
     df_return = DataFrame(fitted_parameters,
                           columns=["len_win", "strategy",
                                    "estimated_poisson_mean", "variance",
+                                   "k_on_d_fit", "k_off_d_fit", "k_syn_d_fit",
                                    "real_mean", "calculated_mean"])
 
     return df_return
 
 
-csv_name = plot_dir + dir_sep + "parameter_fits.csv"
-logger.info("Infer parameters based on time dependent distributions from {} cells".format(nr_cells))
-logger.info("Results in {}".format(csv_name))
+def infer_parameters(lengths_window):
+
+    csv_name = plot_dir + dir_sep + "parameter_fits.csv"
+    logger.info("Infer parameters based on time dependent distributions from {} cells".format(nr_cells))
+    logger.info("Results in {}".format(csv_name))
+
+    list_df_fitted_params = []
+
+    for len_win in lengths_window:
+        logger.info("start fitting for data from window length={len_win}".format(len_win=len_win))
+        df_fitted_params = fit_poisson_for_len_win(len_win, create_plot=False)
+        list_df_fitted_params.append(df_fitted_params)
+
+    df_fitted_params_all_lengths = pd.concat(list_df_fitted_params)
+    df_fitted_params_all_lengths.sort_values(by=['strategy', 'len_win'], inplace=True)
+
+    df_strategies["k_on_d"] = df_strategies["k_on"] / df_strategies["k_d"]
+    df_strategies["k_off_d"] = df_strategies["k_off"] / df_strategies["k_d"]
+    df_strategies["k_syn_d"] = df_strategies["k_syn"] / df_strategies["k_d"]
+
+    df_fitted_params_all_lengths = pd.merge(df_fitted_params_all_lengths, df_strategies, how="left",
+                                            left_on=['strategy'],
+                                            right_on=['name'])
+
+    df_fitted_params_all_lengths.drop(columns=['name', 'coord_group', 'tm_id', 'fraction_ON', 'fraction_OFF'], inplace=True)
+
+    df_fitted_params_all_lengths.to_csv(csv_name, sep=";", index=False)
+
 
 lengths_window = [15, 30, 45, 60, 120, 180, 240]
-
-list_df_fitted_params = []
-
-for len_win in lengths_window:
-    logger.info("start fitting for data from window length={len_win}".format(len_win=len_win))
-    df_fitted_params = fit_poisson_for_len_win(len_win, create_plot=False)
-    list_df_fitted_params.append(df_fitted_params)
-
-df_fitted_params_all_lengths = pd.concat(list_df_fitted_params)
-
-df_fitted_params_all_lengths.sort_values(by=['strategy', 'len_win'], inplace=False)
-
-df_fitted_params_all_lengths = pd.merge(df_fitted_params_all_lengths, df_strategies, how="left",
-                                        left_on=['strategy'],
-                                        right_on=['name'])
-
-df_fitted_params_all_lengths.drop(columns=['name', 'coord_group', 'tm_id', 'fraction_ON', 'fraction_OFF'], inplace=True)
-
-df_fitted_params_all_lengths.to_csv(csv_name, sep=";", index=False)
-
-
-
-
-
+infer_parameters(lengths_window)
