@@ -73,6 +73,7 @@ def find_fitting_optimum_to_poisson_dis(x, y_norm, mu):
 
 def find_fitting_to_stationary_distribution(x, y_norm):
 
+    # TODO: How do you vary expected when having three parameters?
     expected = (0.5, 0.5, 100)
 
     popt, pcov = curve_fit(p_stationary_dimensionless, x, y_norm, p0=expected, maxfev=1000)
@@ -99,7 +100,7 @@ def plot_fit_to_poisson(x, y_norm, var, estimated_mean, strategy, mu):
 
 
 # determine fitting parameters for all strategies for this window length
-def fit_poisson_for_len_win(len_win, create_plot=False):
+def fit_distribution_for_len_win(len_win, create_plot=False):
 
     fitted_parameters = []
 
@@ -116,18 +117,21 @@ def fit_poisson_for_len_win(len_win, create_plot=False):
         df_distribution, real_mean = sim_dis.create(strategy, label_2)
 
         # exclude first row from fitting. The first row includes the zero counts
+        # TODO: what about the fit to the stationary distribution? "Powerlaw" seems to fit better when including zeroes
         df_distribution = df_distribution.iloc[1:]
 
         x = df_distribution["real_count"]
         y_norm = df_distribution["chance"]
 
+        # fit to Poisson distribution
         estimated_poisson_mean, var = find_fitting_optimum_to_poisson_dis(x, y_norm, real_mean)
 
         k_on_d, k_off_d, k_syn_d = find_fitting_to_stationary_distribution(x, y_norm)
 
         params = sr.get(strategy=strategy)
 
-        calculated_mean = round_sig((params.k_on / (params.k_on + params.k_off)) * len_win * params.k_syn, 4)
+        calculated_mean = (params.k_on / (params.k_on + params.k_off)) * len_win * params.k_syn
+        calculated_mean = round_sig(calculated_mean, 4)
 
         fitted_parameters.append((len_win, strategy,
                                   estimated_poisson_mean, var,
@@ -156,7 +160,7 @@ def infer_parameters(lengths_window):
 
     for len_win in lengths_window:
         logger.info("start fitting for data from window length={len_win}".format(len_win=len_win))
-        df_fitted_params = fit_poisson_for_len_win(len_win, create_plot=False)
+        df_fitted_params = fit_distribution_for_len_win(len_win, create_plot=False)
         list_df_fitted_params.append(df_fitted_params)
 
     df_fitted_params_all_lengths = pd.concat(list_df_fitted_params)
@@ -175,5 +179,5 @@ def infer_parameters(lengths_window):
     df_fitted_params_all_lengths.to_csv(csv_name, sep=";", index=False)
 
 
-lengths_window = [15, 30, 45, 60, 120, 180, 240]
-infer_parameters(lengths_window)
+window_lenghts = [15, 30, 45, 60, 120, 180, 240]
+infer_parameters(window_lenghts)
