@@ -7,6 +7,7 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from pandas import DataFrame
 from scipy.optimize import curve_fit
 from scipy.stats import poisson
 
@@ -82,9 +83,11 @@ def plot_fit_to_poisson(x, y_norm, var, estimated_mean, strategy, mu):
     plt.close(1)
 
 
+# determine fitting parameters for all strategies for this window length
 def fit_poisson_for_len_win(len_win, create_plot=False):
-    logger.info("length of window = {len_win}".format(len_win=len_win))
-    logger.info("-------------------------------")
+
+    fitted_parameters = []
+
     filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(len_win=len_win, gap=gap)
 
     df_counts = pd.read_csv(filename_counts, sep=';')
@@ -103,20 +106,42 @@ def fit_poisson_for_len_win(len_win, create_plot=False):
         x = df_distribution["real_count"]
         y_norm = df_distribution["chance"]
 
-        estimated_mean, var = find_fitting_optimum_to_poisson_dis(x, y_norm, real_mean)
+        estimated_poisson_mean, var = find_fitting_optimum_to_poisson_dis(x, y_norm, real_mean)
 
-        logger.info("strategy: {strategy}; estimated_mean={estimated_mean}; real_mean={real_mean}".format(
-            strategy=strategy, estimated_mean=estimated_mean, real_mean=real_mean)
-        )
+        params = sr.get(strategy=strategy)
+
+        calculated_mean = round_sig((params.k_on / (params.k_on + params.k_off)) * len_win * params.k_syn, 4)
+
+        fitted_parameters.append((len_win, strategy, estimated_poisson_mean, real_mean, calculated_mean))
 
         if create_plot:
-            plot_fit_to_poisson(x, y_norm, var, estimated_mean, strategy, real_mean)
+            plot_fit_to_poisson(x, y_norm, var, estimated_poisson_mean, strategy, real_mean)
 
-    logger.info("-------------------------------")
+    df_return = DataFrame(fitted_parameters,
+                          columns=["len_win", "strategy", "estimated_poisson_mean", "real_mean", "calculated_mean"])
+
+    return df_return
 
 
-lengths_window = [15, 60, 120, 180]
+csv_name = plot_dir + dir_sep + "parameter_fits.csv"
+logger.info("Infer parameters based on time dependent distributions from {} cells".format(nr_cells))
+logger.info("Results in {}".format(csv_name))
+lengths_window = [15, 30, 45, 60, 120, 180, 240]
+
+list_df_fitted_params = []
 
 for len_win in lengths_window:
-    fit_poisson_for_len_win(len_win, create_plot=True)
+    logger.info("start fitting for data from window length={len_win}".format(len_win=len_win))
+    df_fitted_params = fit_poisson_for_len_win(len_win, create_plot=False)
+    list_df_fitted_params.append(df_fitted_params)
+
+df_fitted_params_all_lengths = pd.concat(list_df_fitted_params)
+
+df_fitted_params_all_lengths.sort_values(by=['strategy', 'len_win'], inplace=True)
+
+df_fitted_params_all_lengths.to_csv(csv_name, sep=";", index=False)
+
+
+
+
 
