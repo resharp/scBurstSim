@@ -100,6 +100,7 @@ def plot_fit_to_poisson(x, y_norm, var, estimated_mean, strategy, mu):
 
 
 # determine fitting parameters for all strategies for this window length
+# fit to (i) Poisson and to (ii) stationary distribution
 def fit_distribution_for_len_win(len_win, create_plot=False):
 
     fitted_parameters = []
@@ -116,6 +117,10 @@ def fit_distribution_for_len_win(len_win, create_plot=False):
 
         df_distribution, real_mean = sim_dis.create(strategy, label_2)
 
+        if len(df_distribution) > 0:
+            zero_count = df_distribution.head(1).cell_id.item()
+            zero_fraction = zero_count / nr_cells
+
         # exclude first row from fitting. The first row includes the zero counts
         # TODO: what about the fit to the stationary distribution? "Powerlaw" seems to fit better when including zeroes
         df_distribution = df_distribution.iloc[1:]
@@ -126,26 +131,50 @@ def fit_distribution_for_len_win(len_win, create_plot=False):
         # fit to Poisson distribution
         estimated_poisson_mean, var = find_fitting_optimum_to_poisson_dis(x, y_norm, real_mean)
 
-        k_on_d, k_off_d, k_syn_d = find_fitting_to_stationary_distribution(x, y_norm)
-
         params = sr.get(strategy=strategy)
 
         calculated_mean = (params.k_on / (params.k_on + params.k_off)) * len_win * params.k_syn
         calculated_mean = round_sig(calculated_mean, 4)
 
+        error_estimated_poisson_mean = np.abs(calculated_mean - estimated_poisson_mean) / calculated_mean
+        error_real_mean = np.abs(calculated_mean - real_mean) / calculated_mean
+        error_estimated_poisson_mean = round_sig(error_estimated_poisson_mean, 4)
+        error_real_mean = round_sig(error_real_mean, 4)
+
+        # fit to stationary distribution
+        k_on_d_fit, k_off_d_fit, k_syn_d_fit = find_fitting_to_stationary_distribution(x, y_norm)
+
+        k_on_d = params.k_on/params.k_d
+        k_off_d = params.k_off/params.k_d
+        k_syn_d = params.k_syn/params.k_d
+
+        error_k_on_d = np.abs(k_on_d - k_on_d_fit) / k_on_d
+        error_k_off_d = np.abs(k_off_d - k_off_d_fit) / k_off_d
+        error_k_syn_d = np.abs(k_syn_d - k_syn_d_fit) / k_syn_d
+        error_stationary_fit = np.sqrt(error_k_on_d**2 + error_k_off_d**2 + error_k_syn_d**2)
+
+        error_k_on_d = round_sig(error_k_on_d, 4)
+        error_k_off_d = round_sig(error_k_off_d, 4)
+        error_k_syn_d = round_sig(error_k_syn_d, 4)
+        error_stationary_fit= round_sig(error_stationary_fit, 4)
+
         fitted_parameters.append((len_win, strategy,
-                                  estimated_poisson_mean, var,
-                                  k_on_d, k_off_d, k_syn_d,
-                                  real_mean, calculated_mean))
+                                  estimated_poisson_mean, var, error_estimated_poisson_mean,
+                                  real_mean, calculated_mean, error_real_mean,
+                                  k_on_d_fit, k_off_d_fit, k_syn_d_fit,
+                                  error_k_on_d, error_k_off_d, error_k_syn_d, error_stationary_fit,
+                                  zero_fraction))
 
         if create_plot:
             plot_fit_to_poisson(x, y_norm, var, estimated_poisson_mean, strategy, real_mean)
 
     df_return = DataFrame(fitted_parameters,
                           columns=["len_win", "strategy",
-                                   "estimated_poisson_mean", "variance",
+                                   "estimated_poisson_mean", "variance", "error_estimated_poisson_mean",
+                                   "real_mean", "calculated_mean", "error_real_mean",
                                    "k_on_d_fit", "k_off_d_fit", "k_syn_d_fit",
-                                   "real_mean", "calculated_mean"])
+                                   "error_k_on_d", "error_k_off_d", "error_k_syn_d", "error_stationary_fit",
+                                   "zero_fraction"])
 
     return df_return
 
@@ -164,6 +193,7 @@ def infer_parameters(lengths_window):
         list_df_fitted_params.append(df_fitted_params)
 
     df_fitted_params_all_lengths = pd.concat(list_df_fitted_params)
+
     df_fitted_params_all_lengths.sort_values(by=['strategy', 'len_win'], inplace=True)
 
     df_strategies["k_on_d"] = df_strategies["k_on"] / df_strategies["k_d"]
@@ -174,7 +204,7 @@ def infer_parameters(lengths_window):
                                             left_on=['strategy'],
                                             right_on=['name'])
 
-    df_fitted_params_all_lengths.drop(columns=['name', 'coord_group', 'tm_id', 'fraction_ON', 'fraction_OFF'], inplace=True)
+    df_fitted_params_all_lengths.drop(columns=['name', 'coord_group', 'tm_id', 'fraction_ON' ], inplace=True)
 
     df_fitted_params_all_lengths.to_csv(csv_name, sep=";", index=False)
 
