@@ -34,7 +34,7 @@ strategy = "second_example"
 nr_cells = 3000
 efficiency = 100
 
-len_win = 60  # 60, 120, 180, 240
+len_win = 60  # 15, 30, 45, 60, 75, .. 120, 180, 240
 gap = 0
 label_1 = "EU"
 label_2 = "4SU"
@@ -93,6 +93,7 @@ def plot_distribution(df_counts, strategy, nr_cells, label=None):
             format(strategy=strategy, real_mean=real_mean)
         plt.ylim(0, 0.08)
         plt.ylabel("Chance P(N,t)")
+        plt.xlabel("Number of transcripts")
     plt.title(title)
 
     if measure == "count_all":
@@ -122,7 +123,7 @@ def plot_distributions(nr_cells):
 # y-axis: mean
 # df_counts is determined by the right time
 def plot_means_against_time(label_1, label_2):
-    times = [60, 120, 180, 240]
+    times = [15, 30, 45, 60, 120, 180, 240]
 
     strategies = ["first_example", "second_example", "third_example", "bimodal", "powerlaw"]
 
@@ -164,8 +165,50 @@ def plot_means_against_time(label_1, label_2):
         plt.close(1)
 
 
+def plot_distributions_against_time(label_2):
+    # times = [15, 30, 45, 60, 75, 120, 180, 240]
+    times = [15, 30, 60]
+
+    strategies = ["first_example", "second_example", "third_example", "bimodal", "powerlaw"]
+
+    for strategy in strategies:
+
+        for len_win in times:
+
+            filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
+                len_win=len_win, gap=gap, eff=efficiency)
+
+            df_counts = pd.read_csv(filename_counts, sep=';')
+
+            sim_dis = SimulatedDistribution(df_counts, nr_cells)
+
+            df_distribution, real_mean = sim_dis.create(strategy, label_2)
+
+            measure = "real_count"
+            plt.step(df_distribution[measure], df_distribution.chance, where="post", label=len_win)
+
+        # theoretical distribution
+        params = sr.get(strategy=strategy)
+        x_list, y_list = create_distribution(params.k_on, params.k_off, params.k_syn, params.k_d)
+        plt.step(x_list, y_list, where="post", color="black", label="stationary")
+
+        plt.title("time depend. distr. for strategy: " + strategy)
+        plt.ylim(0, 0.08)
+        plt.ylabel("Chance P(N,t)")
+        plt.xlabel("Number of transcripts")
+
+        plt.legend()
+
+        plot_name = plot_dir + dir_sep + "distribution_vs_time_{strategy}_{nr_cells}.svg".format(
+            strategy=strategy, nr_cells=nr_cells)
+        plt.savefig(plot_name)
+        plt.close(1)
+
+
 # compare simulated (time-dependent and stationary) distributions against theoretical stationary distribution
 plot_distributions(nr_cells)
 
 # examine how quickly the means converge towards the means of the stationary distributions (use multiple window lengths)
 plot_means_against_time(label_1, label_2)
+
+plot_distributions_against_time(label_2)
