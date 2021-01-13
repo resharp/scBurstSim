@@ -30,6 +30,7 @@ class StrategyGenerator:
 
     def log_parameters(self):
 
+        # convert to ranges expressed in rates per minute
         range_k_on = [10**k/60 for k in self.range_k_on_exp]
         range_k_off = [10**k/60 for k in self.range_k_off_exp]
         range_k_syn = [10**k/60 for k in self.range_k_syn_exp]
@@ -63,7 +64,7 @@ class StrategyGenerator:
     # (not by first writing to a csv file
     def get_random_parameters(self):
 
-        name, k_on, k_off, group_id, k_syn, k_d = self.create_random()
+        k_on, k_off, group_id, k_syn, k_d = self.create_random()
 
         tp = TranscriptParams(k_on=k_on, k_off=k_off, k_syn=k_syn, k_d=k_d,
                               nr_refractions=1, name="generated", coord_group=0, tm_id=0)
@@ -111,10 +112,7 @@ class StrategyGenerator:
         k_d_exp = self.sample_value(self.range_k_d_exp)
         k_d = self.round_sig(10 ** k_d_exp / 60)
 
-        self.counter = self.counter + 1
-        name = "generated_" + str(self.counter)
-
-        return [name, k_on, k_off, np.nan, k_syn, k_d]
+        return [k_on, k_off, np.nan, k_syn, k_d]
 
     def generate_and_write_strategies(self, nr_of_alleles, k_on_first=True):
 
@@ -123,10 +121,31 @@ class StrategyGenerator:
         data = []
 
         for i in range(0, nr_of_alleles):
-            data.append(self.create_random(k_on_first))
+            self.counter = self.counter + 1
+            name = "generated_" + str(self.counter)
+
+            [k_on, k_off, np.nan, k_syn, k_d] = self.create_random(k_on_first)
+
+            while not self.test_restriction(k_on, k_off, k_syn, k_d):
+                [k_on, k_off, np.nan, k_syn, k_d] = self.create_random(k_on_first)
+
+            data.append([name] + [k_on, k_off, np.nan, k_syn, k_d])
 
         df_strategies = pd.DataFrame(data=data, columns=columns)
         df_strategies.to_csv(path_or_buf=self.filename, sep=';', index=False)
+
+    # should return True when passing test
+    def test_restriction(self, k_on, k_off, k_syn, k_d) -> bool:
+
+        # hour production when assuming no decay
+        hour_production = k_syn * 60 * k_on/(k_on + k_off)
+
+        # steady state approximation (valid for high k_syn)
+        mean_ssa = (k_syn/k_d) * k_on/(k_on + k_off)
+
+        ret_val = ((hour_production > 1) & (mean_ssa < 100))
+
+        return ret_val
 
     @staticmethod
     def sample_value(limits, exponential=False):
