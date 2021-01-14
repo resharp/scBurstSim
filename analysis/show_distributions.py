@@ -29,9 +29,7 @@ os.makedirs(plot_dir, exist_ok=True)
 
 in_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\source\scBurstSim\data"
 
-# strategy = "bimodal"
-strategy = "second_example"
-nr_cells = 3000
+nr_cells = 300
 efficiency = 100
 
 len_win = 60  # 15, 30, 45, 60, 75, .. 120, 180, 240
@@ -39,16 +37,10 @@ gap = 0
 label_1 = "EU"
 label_2 = "4SU"
 
-# sr = StrategyReader(out_dir + dir_sep + "strategies_generated.csv" )
-sr = StrategyReader(in_dir + dir_sep + "strategies.csv")
+sr = StrategyReader(out_dir + dir_sep + "strategies_generated.csv" )
+# sr = StrategyReader(in_dir + dir_sep + "strategies.csv")
 sr.read_strategies()
 df_strategies = sr.df_strategies
-
-filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
-    len_win=len_win, gap=gap, eff=efficiency)
-
-df_counts = pd.read_csv(filename_counts, sep=';')
-
 
 def plot_label_distribution(label, df_counts, strategy, nr_cells):
 
@@ -91,7 +83,7 @@ def plot_distribution(df_counts, strategy, nr_cells, label=None):
     else:
         title = "Distribution labeled mRNA for strategy '{strategy}'; mean={real_mean}".\
             format(strategy=strategy, real_mean=real_mean)
-        plt.ylim(0, 0.08)
+        plt.ylim(0, 0.2)
         plt.ylabel("Chance P(N,t)")
         plt.xlabel("Number of transcripts")
     plt.title(title)
@@ -107,9 +99,7 @@ def plot_distribution(df_counts, strategy, nr_cells, label=None):
 
 
 # compare simulated (time-dependent and stationary) distributions against theoretical stationary distribution
-def plot_distributions(nr_cells):
-
-    strategies = ["first_example", "second_example", "third_example", "bimodal", "powerlaw"]
+def plot_distributions(nr_cells, strategies, df_counts):
 
     for strategy in strategies:
 
@@ -122,10 +112,7 @@ def plot_distributions(nr_cells):
 # x-axis: time
 # y-axis: mean
 # df_counts is determined by the right time
-def plot_means_against_time(label_1, label_2):
-    times = [15, 30, 45, 60, 120, 180, 240]
-
-    strategies = ["first_example", "second_example", "third_example", "bimodal", "powerlaw"]
+def plot_means_against_time(label_1, label_2, strategies, times=[15, 30, 45, 60, 75, 90, 105, 120]):
 
     for strategy in strategies:
         real_means_1 = []
@@ -155,6 +142,7 @@ def plot_means_against_time(label_1, label_2):
             stat_mean=stat_mean
         ))
         plt.xlim(0, None)
+        plt.ylim(0, None)
         plt.xlabel("time in minutes")
         plt.ylabel("mean nr of molecules")
         plt.legend()
@@ -205,10 +193,23 @@ def plot_distributions_against_time(label_2):
         plt.close(1)
 
 
+filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
+    len_win=len_win, gap=gap, eff=efficiency)
+
+df_counts = pd.read_csv(filename_counts, sep=';')
+
+# strategies = ["first_example", "second_example", "third_example", "bimodal", "powerlaw"]
+strategies = ["generated_" + str(i) for i in range(1, 21)]
+
+# plot distributions for one window length
 # compare simulated (time-dependent and stationary) distributions against theoretical stationary distribution
-plot_distributions(nr_cells)
+plot_distributions(nr_cells, strategies, df_counts)
 
 # examine how quickly the means converge towards the means of the stationary distributions (use multiple window lengths)
-plot_means_against_time(label_1, label_2)
+times = [15, 30, 45, 60, 75, 90, 105, 120]
+plot_means_against_time(label_1, label_2, strategies, times)
 
-plot_distributions_against_time(label_2)
+
+
+#
+# plot_distributions_against_time(label_2)

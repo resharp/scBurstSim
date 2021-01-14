@@ -10,10 +10,10 @@ logger = logging.getLogger(__name__)
 
 run_sim = True  # setting run_sim to False results in use of locally stored data set
 create_cluster_map = False
-nr_cells = 3000
+nr_cells = 300
 gap = 0
-# TODO: 75, 90, 105
-length_window = 60  # 15, 30, 45, 60, ... 120, 180, 240
+# TODO: time > 120
+length_window = 60  # 15, 30, 45, 60, 75, 90, 105, 120
 efficiency = 1
 
 nr_syn_within_strategy = 1
@@ -29,8 +29,8 @@ else:
     dir_sep = "/"
 
 # see strategy names in data\strategies.csv
-# strategies_file = out_dir + dir_sep + "strategie_generated.csv"
-strategies_file = in_dir + dir_sep + "strategies.csv"
+strategies_file = out_dir + dir_sep + "strategies_generated.csv"
+# strategies_file = in_dir + dir_sep + "strategies.csv"
 
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 
@@ -154,11 +154,12 @@ def main(args_in):
 # if __name__ == "__main__":
 #     main(sys.argv[1:])
 
-main(["-nc", str(nr_cells),
-      "-g", str(gap),
-      "-w", str(length_window),
-      "-e", str(efficiency),
-      "-o", out_dir,
-      "-sf", strategies_file])
+for length_window in [15, 30, 45, 60, 75, 90, 105, 120]:
+    main(["-nc", str(nr_cells),
+          "-g", str(gap),
+          "-w", str(length_window),
+          "-e", str(efficiency),
+          "-o", out_dir,
+          "-sf", strategies_file])
 # main(["-h"])
 # main([])
