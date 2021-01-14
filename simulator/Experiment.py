@@ -22,22 +22,20 @@ class ExperimentParams(NamedTuple):
 
 class Experiment:
 
-    params = None
-
-    df_all_transcripts = None
-    strategies = []
-    tran = None
-
-    trace_id = 0
-
-    transcripts = []
-    transcripts_sampled = []
-    counts = []
-    cell_counts = []
-
     def __init__(self, params):
 
         self.params = params
+
+        self.df_all_transcripts = None
+        self.strategies = []
+        self.tran = None
+
+        self.trace_id = 0
+
+        self.transcripts = []
+        self.transcripts_sampled = []
+        self.counts = []
+        self.cell_counts = []
 
     def read_strategies(self):
         sr = StrategyReader(self.params.strategies_file)
