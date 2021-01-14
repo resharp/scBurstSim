@@ -141,7 +141,9 @@ class StrategyGenerator:
         hour_production = k_syn * 60 * k_on/(k_on + k_off)
 
         # steady state approximation (valid for high k_syn)
-        mean_ssa = (k_syn/k_d) * k_on/(k_on + k_off)
+        # mean_ssa = (k_syn/k_d) * k_on/(k_on + k_off)
+        # steady state approximation if the burst takes long enough to reach it
+        mean_ssa = k_syn/k_d
 
         ret_val = ((hour_production > 1) & (mean_ssa < 100))
 
