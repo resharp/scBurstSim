@@ -154,10 +154,9 @@ class Experiment:
         df_percentages = pd.DataFrame(percentages, columns=['cell_id', 'allele_id', 'label', 'perc'])
 
         # join df_percentages and join with df_counts
-        # motivation outer join: there will be missing rows on both sides
-        # df_percentages does not contain the unlabeled (label="") record
-        # and df_counts may miss count records for some (cell_id,allele_id,label) combinations
-        df_counts = pd.merge(df_counts, df_percentages, how="outer",
+        # TODO: there will be missing rows for percentages
+        # df_counts may miss count records for some (cell_id,allele_id,label) combinations
+        df_counts = pd.merge(df_counts, df_percentages, how="left",
                              left_on=['cell_id', 'allele_id', 'label'],
                              right_on=['cell_id', 'allele_id', 'label']).\
             sort_values(['cell_id', 'allele_id', 'label'])

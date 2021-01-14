@@ -51,6 +51,8 @@ def create_distribution(df_counts, strategy):
 
     bins = np.linspace(0, 1, 100)
 
+    # TODO: correct for counts with zero percentage
+    # df_counts_label should have [nr_cells] rows
     pdf = np.histogram(df_counts_label.perc, bins=bins)[0]
 
     bins = np.delete(bins, 0)  # remove first
