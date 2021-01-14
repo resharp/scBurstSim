@@ -51,7 +51,7 @@ def create_distribution(k_on, k_off, k_syn, k_d):
     y = 1
 
     max = int(1.3 * k_syn / k_d)
-    for n in range(0, max):   # this alternative is for debugging N=0 and/or N=1
+    for n in range(0, max):
     # while y > 1e-6:
         y = p_stationary(x, k_on, k_off, k_syn, k_d)
 
