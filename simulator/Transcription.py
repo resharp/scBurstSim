@@ -41,7 +41,14 @@ class Transcription:
 
         self.params = params
 
-        self.state = "1"
+        # initialize in state based on weights of k_on and k_off parameters
+        elements = ["1", "0"]
+        probabilities = [self.params.k_on  / (self.params.k_on + self.params.k_off),
+                         self.params.k_off / (self.params.k_on + self.params.k_off)]
+
+        state = np.random.choice(elements, 1, p=probabilities)
+
+        self.state = str(state[0])
 
     def new_poisson_arrivals(self, start_time, interval, windows=[]) -> list:
         poisson_list = []
