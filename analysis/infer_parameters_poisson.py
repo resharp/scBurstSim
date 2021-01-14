@@ -10,6 +10,7 @@ import pandas as pd
 from pandas import DataFrame
 from scipy.optimize import curve_fit
 from scipy.stats import poisson
+from scipy.stats import linregress
 
 from analysis.SimulatedDistribution import *
 from simulator.StrategyReader import StrategyReader
@@ -36,14 +37,14 @@ print("logging in: {file_name}".format(file_name=logfile_name))
 
 in_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\source\scBurstSim\data"
 
-nr_cells = 3000
+nr_cells = 300
 
 gap = 0
 
 label_2 = "4SU"
 
-# sr = StrategyReader(out_dir + dir_sep + "strategies_generated.csv" )
-sr = StrategyReader(in_dir + dir_sep + "strategies.csv")
+sr = StrategyReader(out_dir + dir_sep + "strategies_generated.csv" )
+# sr = StrategyReader(in_dir + dir_sep + "strategies.csv")
 sr.read_strategies()
 df_strategies = sr.df_strategies
 
@@ -74,7 +75,7 @@ def find_fitting_optimum_to_poisson_dis(x, y_norm, mu):
 def find_fitting_to_stationary_distribution(x, y_norm):
 
     # TODO: How do you vary expected when having three parameters?
-    expected = (0.5, 0.5, 100)
+    expected = (0.1, 0.1, 10)
 
     popt, pcov = curve_fit(p_stationary_dimensionless, x, y_norm, p0=expected, maxfev=1000)
 
@@ -101,15 +102,13 @@ def plot_fit_to_poisson(x, y_norm, var, estimated_mean, strategy, mu):
 
 # determine fitting parameters for all strategies for this window length
 # fit to (i) Poisson and to (ii) stationary distribution
-def fit_distribution_for_len_win(len_win, create_plot=False):
+def fit_distribution_for_len_win(len_win, strategies, create_plot=False):
 
     fitted_parameters = []
 
     filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(len_win=len_win, gap=gap)
 
     df_counts = pd.read_csv(filename_counts, sep=';')
-
-    strategies = ["first_example", "second_example", "third_example", "bimodal", "powerlaw"]
 
     sim_dis = SimulatedDistribution(df_counts, nr_cells)
 
@@ -179,7 +178,7 @@ def fit_distribution_for_len_win(len_win, create_plot=False):
     return df_return
 
 
-def infer_parameters(lengths_window):
+def infer_parameters(lengths_window, strategies):
 
     csv_name = plot_dir + dir_sep + "parameter_fits.csv"
     logger.info("Infer parameters based on time dependent distributions from {} cells".format(nr_cells))
@@ -189,7 +188,7 @@ def infer_parameters(lengths_window):
 
     for len_win in lengths_window:
         logger.info("start fitting for data from window length={len_win}".format(len_win=len_win))
-        df_fitted_params = fit_distribution_for_len_win(len_win, create_plot=False)
+        df_fitted_params = fit_distribution_for_len_win(len_win, strategies, create_plot=False)
         list_df_fitted_params.append(df_fitted_params)
 
     df_fitted_params_all_lengths = pd.concat(list_df_fitted_params)
@@ -209,5 +208,10 @@ def infer_parameters(lengths_window):
     df_fitted_params_all_lengths.to_csv(csv_name, sep=";", index=False)
 
 
-window_lenghts = [15, 30, 45, 60, 120, 180, 240]
-infer_parameters(window_lenghts)
+# window_lenghts = [15, 30, 45, 60, 120, 180, 240]
+window_lenghts = [15, 30, 45, 60, 75, 90, 105, 120]
+
+# strategies = ["first_example", "second_example", "third_example", "bimodal", "powerlaw"]
+strategies = ["generated_" + str(i) for i in range(1, 21)]
+infer_parameters(window_lenghts, strategies)
+
