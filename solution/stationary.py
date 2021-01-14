@@ -79,21 +79,15 @@ def create_distribution(k_on, k_off, k_syn, k_d):
     x_list = []
     x = 0
     y = 1
-    while y > 1e-5:
+
+    max = int(1.6 * k_syn / k_d)
+    for x in range(0, max):
         y = p_stationary(x, k_on, k_off, k_syn, k_d)
 
         x_list.append(x)
         y_list.append(y)
         x = x + 1
     return x_list, y_list
-
-
-k_on = 0.01
-k_off = 0.01
-k_syn = 2
-k_d = 0.02
-
-plot_distribution("example", k_on, k_off, k_syn, k_d)
 
 
 def plot_strategies_from_file():
@@ -110,4 +104,11 @@ def plot_strategies_from_file():
         plot_distribution(strategy, df.k_on.item(), df.k_off.item(), df.k_syn.item(), df.k_d.item())
 
 
-plot_strategies_from_file()
+# plot_strategies_from_file()
+
+k_on = 0.01
+k_off = 0.01
+k_syn = 2
+k_d = 0.02
+
+# plot_distribution("example", k_on, k_off, k_syn, k_d)
