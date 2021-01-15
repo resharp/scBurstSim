@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from simulator.Transcription import TranscriptParams
+from utils.utils import round_sig
 
 
 class StrategyGenerator:
@@ -71,19 +72,12 @@ class StrategyGenerator:
 
         return tp
 
-    def round_sig(self, x, n=4):
-
-        round_to_n = round(x, -int(np.floor(np.log10(x))) + (n - 1))
-        # round_to_n = round(x, n)
-
-        return round_to_n
-
     def create_random(self, k_on_first=False):
 
         if k_on_first:
             k_on_exp = self.sample_value(self.range_k_on_exp)
 
-            k_on = self.round_sig(10 ** k_on_exp / 60)
+            k_on = round_sig(10 ** k_on_exp / 60)
 
             # we want the ON times shorter than the OFF times: average length ON ~ 1/k_off < 1/k_on
             # => k_off > k_on
@@ -91,26 +85,26 @@ class StrategyGenerator:
 
             k_off_exp = self.sample_value([min_k_off_exp, self.range_k_off_exp[1]])
 
-            k_off = self.round_sig(10 ** k_off_exp / 60)
+            k_off = round_sig(10 ** k_off_exp / 60)
         else:
             k_off_exp = self.sample_value(self.range_k_off_exp)
-            k_off = self.round_sig(10 ** k_off_exp / 60)
+            k_off = round_sig(10 ** k_off_exp / 60)
 
             # we want the ON times shorter than the OFF times: average length ON ~ 1/k_off < 1/k_on
             # => k_on < k_off
             max_k_on_exp = min(k_off_exp, self.range_k_on_exp[1])
             k_on_exp = self.sample_value([self.range_k_off_exp[0], max_k_on_exp])
 
-            k_on = self.round_sig(10 ** k_on_exp / 60)
+            k_on = round_sig(10 ** k_on_exp / 60)
 
         # it makes sense that k_syn > k_off always (because there would be no burst)
         min_k_syn_exp = max(k_off_exp, self.range_k_syn_exp[0])
         k_syn_exp = self.sample_value([min_k_syn_exp, self.range_k_syn_exp[1]])
 
-        k_syn = self.round_sig(10 ** k_syn_exp / 60)
+        k_syn = round_sig(10 ** k_syn_exp / 60)
 
         k_d_exp = self.sample_value(self.range_k_d_exp)
-        k_d = self.round_sig(10 ** k_d_exp / 60)
+        k_d = round_sig(10 ** k_d_exp / 60)
 
         return [k_on, k_off, np.nan, k_syn, k_d]
 
