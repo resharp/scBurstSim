@@ -1,5 +1,5 @@
 # here we fit a Poisson distribution to simulated data of "real" transcripts
-# based on time dependent counts in one labeling window
+# based on time dependent counts in one labeling window, and multiple window lengths
 import logging
 import os
 import sys
@@ -101,7 +101,10 @@ def plot_fit_to_poisson(x, y_norm, var, estimated_mean, strategy, mu):
 
 
 # determine fitting parameters for all strategies for this window length
-# fit to (i) Poisson and to (ii) stationary distribution
+# fit to
+# (i) Poisson
+# (ii) stationary distribution
+# also determine zero fraction, real mean, calculated mean
 def fit_distribution_for_len_win(len_win, strategies, create_plot=False):
 
     fitted_parameters = []
@@ -114,8 +117,11 @@ def fit_distribution_for_len_win(len_win, strategies, create_plot=False):
 
     for strategy in strategies:
 
+        # real mean is determined here because it is used in the fitting
         df_distribution, real_mean = sim_dis.create(strategy, label_2)
 
+        # this seems to be a very complicated way to determine the zero fraction
+        # it is easier to do a set-based operation with a group by
         if len(df_distribution) > 0:
             zero_count = df_distribution.head(1).cell_id.item()
             zero_fraction = zero_count / nr_cells
@@ -130,19 +136,23 @@ def fit_distribution_for_len_win(len_win, strategies, create_plot=False):
         # fit to Poisson distribution
         estimated_poisson_mean, var = find_fitting_optimum_to_poisson_dis(x, y_norm, real_mean)
 
+        # calculations that can be moved to set-based operations
         params = sr.get(strategy=strategy)
 
         calculated_mean = (params.k_on / (params.k_on + params.k_off)) * len_win * params.k_syn
-        calculated_mean = round_sig(calculated_mean, 4)
 
         error_estimated_poisson_mean = np.abs(calculated_mean - estimated_poisson_mean) / calculated_mean
         error_real_mean = np.abs(calculated_mean - real_mean) / calculated_mean
         error_estimated_poisson_mean = round_sig(error_estimated_poisson_mean, 4)
         error_real_mean = round_sig(error_real_mean, 4)
 
+        calculated_mean = round_sig(calculated_mean, 4)  # round here, to prevent divide by zero
+        # end calculations that can be moved to set-based operations
+
         # fit to stationary distribution
         k_on_d_fit, k_off_d_fit, k_syn_d_fit = find_fitting_to_stationary_distribution(x, y_norm)
 
+        # calculations that can be moved to set-based operations
         k_on_d = params.k_on/params.k_d
         k_off_d = params.k_off/params.k_d
         k_syn_d = params.k_syn/params.k_d
@@ -155,7 +165,8 @@ def fit_distribution_for_len_win(len_win, strategies, create_plot=False):
         error_k_on_d = round_sig(error_k_on_d, 4)
         error_k_off_d = round_sig(error_k_off_d, 4)
         error_k_syn_d = round_sig(error_k_syn_d, 4)
-        error_stationary_fit= round_sig(error_stationary_fit, 4)
+        error_stationary_fit = round_sig(error_stationary_fit, 4)
+        # end calculations that can be moved to set-based operations
 
         fitted_parameters.append((len_win, strategy,
                                   estimated_poisson_mean, var, error_estimated_poisson_mean,
@@ -180,7 +191,6 @@ def fit_distribution_for_len_win(len_win, strategies, create_plot=False):
 
 def infer_parameters(lengths_window, strategies):
 
-    csv_name = plot_dir + dir_sep + "parameter_fits.csv"
     logger.info("Infer parameters based on time dependent distributions from {} cells".format(nr_cells))
     logger.info("Results in {}".format(csv_name))
 
@@ -205,13 +215,28 @@ def infer_parameters(lengths_window, strategies):
 
     df_fitted_params_all_lengths.drop(columns=['name', 'coord_group', 'tm_id', 'fraction_ON' ], inplace=True)
 
-    df_fitted_params_all_lengths.to_csv(csv_name, sep=";", index=False)
+    return df_fitted_params_all_lengths
 
 
-# window_lenghts = [15, 30, 45, 60, 120, 180, 240]
 window_lenghts = [15, 30, 45, 60, 75, 90, 105, 120]
 
+run_fitting = False
 # strategies = ["first_example", "second_example", "third_example", "bimodal", "powerlaw"]
-strategies = ["generated_" + str(i) for i in range(1, 21)]
-infer_parameters(window_lenghts, strategies)
+# replace with 100 strategies
+
+csv_name = plot_dir + dir_sep + "parameter_fits.csv"
+if run_fitting:
+    # strategies = ["generated_" + str(i) for i in range(1, 101)]
+    strategies = ["generated_" + str(i) for i in range(1, 21)]
+    df_fitted_params = infer_parameters(window_lenghts, strategies)
+    df_fitted_params.to_csv(csv_name, sep=";", index=False)
+else:
+    df_fitted_params = pd.read_csv(csv_name, sep=';')
+
+
+logging.info("Average error estimated poisson mean: {}".
+             format(np.average(df_fitted_params.error_estimated_poisson_mean)))
+
+logging.info("Average error real mean: {}".
+             format(np.average(df_fitted_params.error_real_mean)))
 
