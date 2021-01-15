@@ -3,15 +3,13 @@ from utils.utils import round_sig
 
 class SimulatedDistribution:
 
-    df_counts = None
-    nr_cells = 0
-
     def __init__(self, df_counts, nr_cells):
 
         self.df_counts = df_counts
 
         self.nr_cells = nr_cells
 
+    # create distribution and calculate mean
     def create(self, strategy, label=None):
 
         if label is None:
@@ -45,6 +43,8 @@ class SimulatedDistribution:
         # total_chance = df_distribution["chance"].sum() # for debugging, should add up to 1
         df_distribution['weighted'] = df_distribution[measure] * df_distribution.cell_id
         sum_weighted = df_distribution['weighted'].sum()
+
+        # the real mean includes the zero contribution
         real_mean = round_sig(sum_weighted / nr_cells, 4)
 
         return df_distribution, real_mean
