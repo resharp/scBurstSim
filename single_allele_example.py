@@ -28,7 +28,6 @@ os.makedirs(plot_dir, exist_ok=True)
 
 nr_days = 1
 max_minutes = 1440*nr_days  # 24 hours = 1440 minutes
-strategy = "second_example"
 
 logger = logging.getLogger(__name__)
 out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
@@ -38,12 +37,6 @@ logging.basicConfig(filename=out_dir + dir_sep + 'single_allele_example.log', fi
 
 # sr = StrategyReader(out_dir + dir_sep + "strategies_generated.csv" )
 sr = StrategyReader(in_dir + dir_sep + "strategies.csv" )
-
-# see strategy names in data\strategies.csv
-
-# we can select a strategy by name
-# params = sr.get(strategy="generated_8")
-params = sr.get(strategy=strategy)
 
 
 # windows = [[400, 460, 'EU'], [520, 580, '4SU']] # e.g. 120 minutes of EU labeling
@@ -155,10 +148,15 @@ def run_distribution(params, interval, nr_snapshots):
     plt.close(1)
 
 
+# we can select a strategy by name
+# see strategy names in data\strategies.csv
+strategy = "second_example"
+params = sr.get(strategy=strategy)
+
 # or retrieve a random strategy
 # params = sr.get_random()
 
-# run_example(params)
+run_example(params)
 
 # or run an example of all strategies (NB: be sure you have a small strategy file!)
 # run_all_strategies()
@@ -166,5 +164,5 @@ def run_distribution(params, interval, nr_snapshots):
 interval = 100
 nr_snapshots = 300
 
-run_distribution(params, interval, nr_snapshots)
+# run_distribution(params, interval, nr_snapshots)
 

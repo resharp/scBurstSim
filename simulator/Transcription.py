@@ -24,31 +24,31 @@ class TranscriptParams(NamedTuple):
 
 class Transcription:
 
-    params = None
-
-    state = "0"
-
-    df_dtmc = None
-    df_transcripts = None
-    df_events = None
-
-    dfs_labeled_events = []
-    df_unlabeled_events = None
-
-    dtmc_list = []  # dtmc list should be stored in Transcription
-
     def __init__(self, params):
+
+        self.df_dtmc = None
+        self.df_transcripts = None
+        self.df_events = None
+
+        self.dfs_labeled_events = []
+        self.df_unlabeled_events = None
+
+        self.dtmc_list = []
 
         self.params = params
 
         # initialize in state based on weights of k_on and k_off parameters
+
+        self.state = self.init_state()
+
+    def init_state(self):
         elements = ["1", "0"]
         probabilities = [self.params.k_on  / (self.params.k_on + self.params.k_off),
                          self.params.k_off / (self.params.k_on + self.params.k_off)]
 
         state = np.random.choice(elements, 1, p=probabilities)
 
-        self.state = str(state[0])
+        return str(state[0])
 
     def new_poisson_arrivals(self, start_time, interval, windows=[]) -> list:
         poisson_list = []
@@ -90,7 +90,7 @@ class Transcription:
             self.state = "0"
 
     def run_bursts(self, max_minutes, windows, new_dtmc_trace=True, dtmc_list=[], complete_trace=False) -> \
-            (pd.DataFrame, dtmc_list):
+            (pd.DataFrame, list):
 
         if new_dtmc_trace:
             self.dtmc_list = self.create_dtmc_list(max_minutes)
