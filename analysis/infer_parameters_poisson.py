@@ -277,7 +277,7 @@ def lmplot_for(df, x_measure, y_measure, hue_category, len_win):
     plt.close(1)
 
 
-def linear_regression_for(df, measure):
+def linear_regression_for(df, parameter):
     lrs = []
     logging.info("Evaluating method using exact mean of simulated distribution")
 
@@ -288,17 +288,42 @@ def linear_regression_for(df, measure):
         for len_win in window_lengths:
             df_t = df_k_on[df_k_on.len_win == len_win]
 
-            slope, intercept, r_value, p_value, std_err = linregress(x=df_t.k_syn, y=df_t[measure])
+            slope, intercept, r_value, p_value, std_err = linregress(x=df_t.k_syn, y=df_t[parameter])
 
             lrs.append([len_win, k_on_cat, slope, intercept, r_value, p_value, std_err])
             logging.info("slope = {slope} for length {len_win} and k_on_cat {k_on_cat} using {measure}".format(
-                slope=round_sig(slope, 3), len_win=len_win, k_on_cat=k_on_cat, measure=measure))
+                slope=round_sig(slope, 3), len_win=len_win, k_on_cat=k_on_cat, measure=parameter))
             # logging.info("R^2 = {r2}% f or prediction of k_syn length {len_win} using mean".format(
             #     r2=round_sig(r_value**2 * 100, 3), len_win=len_win))
 
     df_lr = pd.DataFrame(data=lrs, columns=('len_win', 'k_on_cat', 'slope', 'intercept', 'r_value', 'p_value', 'std_err'))
 
     return df_lr
+
+
+def heat_map_fitting(df_lr, parameter, measure):
+    df_lr = df_lr[['len_win', 'k_on_cat', measure]]
+    # df_lr = df_lr.sort_values(["len_win", "k_on_cat"])
+    df_lr = df_lr.set_index(["len_win", "k_on_cat"])
+
+    # convert from multi-index to cross-product table
+    df_lr = df_lr.unstack()
+
+    # rename columns, unstack
+    df_lr.columns = ["_".join(x) for x in df_lr.columns.ravel()]
+
+    offset_column = 1 + measure.count("_")
+    df_lr.columns = ["_".join(x.split("_")[offset_column:]) for x in df_lr.columns]
+
+    df_lr = df_lr.transpose()  # if you would like to switch columns and rows
+
+    sns.set(rc={'figure.figsize': (12, 5)})
+    ax = sns.heatmap(df_lr, cmap="seismic_r", annot=True)
+    plt.title("values for {measure} for fitting {parameter}".format(measure=measure, parameter=parameter))
+    plt.xlabel("Length of labeling window (minutes)")
+    plt.ylabel("k_on range")
+    plt.show()
+    plt.close(1)
 
 
 window_lengths = [15, 30, 45, 60, 75, 90, 105, 120]
@@ -329,6 +354,16 @@ df_t = df[df.len_win == len_win]
 
 # lmplot_for(df, "fraction_OFF", "zero_fraction", "k_on_cat", len_win)
 # lmplot_for(df, "calculated_mean", "real_mean", "k_on_cat", len_win)
-# lmplot_for(df_t, "k_syn", "k_syn_fit_m", "k_on_cat", len_win)
+lmplot_for(df_t, "k_syn", "k_syn_fit_m", "k_on_cat", len_win)
 
-df_lr = linear_regression_for(df, measure="k_syn_fit_m")
+
+parameter = "k_syn_fit_m"
+df_lr = linear_regression_for(df, parameter=parameter)
+
+# columns from linear fitting:
+# columns=('len_win', 'k_on_cat', 'slope', 'intercept', 'r_value', 'p_value', 'std_err')
+
+measure = "slope"
+
+heat_map_fitting(df_lr, parameter, measure)
+
