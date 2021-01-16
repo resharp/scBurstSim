@@ -226,8 +226,11 @@ def prepare_data(df):
 
     # mean_rna = k_syn * active_fraction * len_win
     # => k_syn = mean_rna / (active_fraction * len_win)
-    df["k_syn_fit"] = df["real_mean"] / \
-                      (df["active_fraction"] * df["len_win"])
+    df["k_syn_fit_m"] = df["real_mean"] / \
+                        (df["active_fraction"] * df["len_win"])
+
+    df["k_syn_fit_p"] = df["estimated_poisson_mean"] / \
+                        (df["active_fraction"] * df["len_win"])
 
     # make categories for parameter ranges
     df["k_on_cat"] = df.k_on.apply(num_categorize)
@@ -257,7 +260,9 @@ def num_categorize(number):
 
 def lmplot_for(df, x_measure, y_measure, hue_category, len_win):
     hue = "k_on_cat"
+
     hue_order = ["< 1e-5", "< 1e-4", "< 1e-3", "< 1e-2", "< 1e-1", ">= 1e-1"]
+
     sns.set(rc={'figure.figsize': (12, 5)})
     sns.lmplot(x=x_measure, y=y_measure, data=df, fit_reg=True,
                hue=hue_category, hue_order=hue_order, legend=False)
@@ -270,6 +275,30 @@ def lmplot_for(df, x_measure, y_measure, hue_category, len_win):
 
     plt.show()
     plt.close(1)
+
+
+def linear_regression_for(df, measure):
+    lrs = []
+    logging.info("Evaluating method using exact mean of simulated distribution")
+
+    k_on_cats = df.k_on_cat.unique()
+    for k_on_cat in k_on_cats:
+        df_k_on = df[df.k_on_cat == k_on_cat]
+
+        for len_win in window_lengths:
+            df_t = df_k_on[df_k_on.len_win == len_win]
+
+            slope, intercept, r_value, p_value, std_err = linregress(x=df_t.k_syn, y=df_t[measure])
+
+            lrs.append([len_win, k_on_cat, slope, intercept, r_value, p_value, std_err])
+            logging.info("slope = {slope} for length {len_win} and k_on_cat {k_on_cat} using {measure}".format(
+                slope=round_sig(slope, 3), len_win=len_win, k_on_cat=k_on_cat, measure=measure))
+            # logging.info("R^2 = {r2}% f or prediction of k_syn length {len_win} using mean".format(
+            #     r2=round_sig(r_value**2 * 100, 3), len_win=len_win))
+
+    df_lr = pd.DataFrame(data=lrs, columns=('len_win', 'k_on_cat', 'slope', 'intercept', 'r_value', 'p_value', 'std_err'))
+
+    return df_lr
 
 
 window_lengths = [15, 30, 45, 60, 75, 90, 105, 120]
@@ -296,9 +325,10 @@ logging.info("Average error real mean: {}".
 
 df = prepare_data(df)
 len_win = 15
-df = df[df.len_win == len_win]
+df_t = df[df.len_win == len_win]
 
 # lmplot_for(df, "fraction_OFF", "zero_fraction", "k_on_cat", len_win)
 # lmplot_for(df, "calculated_mean", "real_mean", "k_on_cat", len_win)
-lmplot_for(df, "k_syn", "k_syn_fit", "k_on_cat", len_win)
+# lmplot_for(df_t, "k_syn", "k_syn_fit_m", "k_on_cat", len_win)
 
+df_lr = linear_regression_for(df, measure="k_syn_fit_m")
