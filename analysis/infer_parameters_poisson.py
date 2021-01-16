@@ -11,6 +11,7 @@ from pandas import DataFrame
 from scipy.optimize import curve_fit
 from scipy.stats import poisson
 from scipy.stats import linregress
+import seaborn as sns
 
 from analysis.SimulatedDistribution import *
 from simulator.StrategyReader import StrategyReader
@@ -218,25 +219,86 @@ def infer_parameters(lengths_window, strategies):
     return df_fitted_params_all_lengths
 
 
-window_lenghts = [15, 30, 45, 60, 75, 90, 105, 120]
+def prepare_data(df):
+    # Calculate k_syn
+    # First determine active fraction
+    df["active_fraction"] = 1 - df["zero_fraction"]
+
+    # mean_rna = k_syn * active_fraction * len_win
+    # => k_syn = mean_rna / (active_fraction * len_win)
+    df["k_syn_fit"] = df["real_mean"] / \
+                      (df["active_fraction"] * df["len_win"])
+
+    # make categories for parameter ranges
+    df["k_on_cat"] = df.k_on.apply(num_categorize)
+    df["k_off_cat"] = df.k_off.apply(num_categorize)
+    df["k_d_cat"] = df.k_d.apply(num_categorize)
+    df["k_syn_cat"] = df.k_syn.apply(num_categorize)
+
+    return df
+
+
+def num_categorize(number):
+
+    if number < 1e-5:
+        ret_val = "< 1e-5"
+    elif number < 1e-4:
+        ret_val = "< 1e-4"
+    elif number < 1e-3:
+        ret_val = "< 1e-3"
+    elif number < 1e-2:
+        ret_val = "< 1e-2"
+    elif number < 1e-1:
+        ret_val = "< 1e-1"
+    else:
+        ret_val = ">= 1e-1"
+    return ret_val
+
+
+def lmplot_for(df, x_measure, y_measure, hue_category, len_win):
+    hue = "k_on_cat"
+    hue_order = ["< 1e-5", "< 1e-4", "< 1e-3", "< 1e-2", "< 1e-1", ">= 1e-1"]
+    sns.set(rc={'figure.figsize': (12, 5)})
+    sns.lmplot(x=x_measure, y=y_measure, data=df, fit_reg=True,
+               hue=hue_category, hue_order=hue_order, legend=False)
+
+    plt.title("{} against {} for t={}".format(y_measure, x_measure, len_win))
+    ident = [0, int(max(df[x_measure]))]
+    plt.plot(ident, ident, linestyle=':')
+
+    plt.legend(title=hue)
+
+    plt.show()
+    plt.close(1)
+
+
+window_lengths = [15, 30, 45, 60, 75, 90, 105, 120]
 
 run_fitting = False
 # strategies = ["first_example", "second_example", "third_example", "bimodal", "powerlaw"]
-# replace with 100 strategies
 
 csv_name = plot_dir + dir_sep + "parameter_fits.csv"
 if run_fitting:
-    # strategies = ["generated_" + str(i) for i in range(1, 101)]
-    strategies = ["generated_" + str(i) for i in range(1, 21)]
-    df_fitted_params = infer_parameters(window_lenghts, strategies)
-    df_fitted_params.to_csv(csv_name, sep=";", index=False)
+    # replace with 100 strategies
+    # strategies = ["generated_" + str(i) for i in range(1, 21)]
+    strategies = ["generated_" + str(i) for i in range(1, 101)]
+    df = infer_parameters(window_lengths, strategies)
+    df.to_csv(csv_name, sep=";", index=False)
 else:
-    df_fitted_params = pd.read_csv(csv_name, sep=';')
+    df = pd.read_csv(csv_name, sep=';')
 
 
 logging.info("Average error estimated poisson mean: {}".
-             format(np.average(df_fitted_params.error_estimated_poisson_mean)))
+             format(np.average(df.error_estimated_poisson_mean)))
 
 logging.info("Average error real mean: {}".
-             format(np.average(df_fitted_params.error_real_mean)))
+             format(np.average(df.error_real_mean)))
+
+df = prepare_data(df)
+len_win = 15
+df = df[df.len_win == len_win]
+
+# lmplot_for(df, "fraction_OFF", "zero_fraction", "k_on_cat", len_win)
+# lmplot_for(df, "calculated_mean", "real_mean", "k_on_cat", len_win)
+lmplot_for(df, "k_syn", "k_syn_fit", "k_on_cat", len_win)
 
