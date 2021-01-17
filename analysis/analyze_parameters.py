@@ -34,10 +34,9 @@ os.makedirs(plot_dir, exist_ok=True)
 
 in_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\source\scBurstSim\data"
 
-nr_cells = 300
 efficiency = 100
 
-len_win = 15  # 15, 30, 45, 60, 75, 90, 105, 120
+len_win = 60  # 15, 30, 45, 60, 75, 90, 105, 120
 gap = 0
 label_1 = "EU"
 label_2 = "4SU"
@@ -69,7 +68,7 @@ def plot_scatter_k_on_k_off():
 
 
 # Correlation between k_syn and mean count of label
-def plot_mean_vs_k_syn(label_2, df_means):
+def plot_mean_vs_k_syn(label_2, df_means, len_win):
 
     plt.scatter(df_means.k_syn, df_means.real_count)
 
@@ -78,7 +77,8 @@ def plot_mean_vs_k_syn(label_2, df_means):
     plt.xlabel("transcription rate")
     plt.ylabel("count transcripts sampled with {eff}% efficiency".format(eff=efficiency))
 
-    plot_name = plot_dir + dir_sep + "mean_counts_vs_k_syn_{eff}.svg".format(eff=efficiency)
+    plot_name = plot_dir + dir_sep + "mean_counts_vs_k_syn_{eff}_{len_win}.svg".\
+        format(eff=efficiency, len_win=len_win)
     plt.savefig(plot_name)
     plt.close(1)
 
@@ -124,34 +124,39 @@ def mean_expression_level(df_counts_unstack):
 
 def plot_predicted_k_d(df_allele_counts, len_win):
     ident = [0.0, 0.03]
-    plt.plot(ident, ident)
+    plt.figure(figsize=(12, 6))
+    plt.plot(ident, ident, linestyle=":")
 
     plt.scatter(df_allele_counts['k_d'], df_allele_counts['k_d_predicted'])
     plt.xlabel("real k_d")
     plt.ylabel("predicted k_d")
 
-    plt.title("Predicted vs real k_d ({nr_cells} cells/100 alleles); efficiency={eff}%; time={len_win}".
-              format(eff=efficiency, nr_cells=nr_cells, len_win=len_win))
-    plt.legend(["diagonal (not a regression line)", "allele"])
+    plt.title("Predicted vs real k_d ({nr_cells} cells/{nr_alleles} alleles); eff={eff}%; time={len_win}".
+              format(eff=efficiency, nr_cells=nr_cells, nr_alleles=nr_alleles, len_win=len_win))
+    plt.legend(["diagonal (not a regression line)", "one allele"])
 
-    plot_name = plot_dir + dir_sep + "prediction_k_d_{eff}.svg".format(eff=efficiency)
+    plot_name = plot_dir + dir_sep + "prediction_k_d_{eff}_{len_win}.svg".\
+        format(eff=efficiency, len_win=len_win)
 
     plt.savefig(plot_name)
     plt.close(1)
 
 
-def plot_error_k_d(df_allele_counts):
+def plot_error_k_d(df_allele_counts, len_win):
 
-    plt.plot([0, 0.03], [1, 1])
+    plt.figure(figsize=(12, 6))
+    plt.plot([0, 0.03], [1, 1], linestyle=":")
 
     plt.scatter(df_allele_counts['k_d'], df_allele_counts['k_d_error'])
     plt.xlabel("real k_d")
     plt.ylabel("relative error k_d")
-    plt.title("Relative error of k_d predictions (100 cells/100 alleles); efficiency={eff}%".format(eff=efficiency))
+    plt.title("Relative error of k_d predictions ({nr_cells} cells/{nr_alleles} alleles); eff={eff}%;time={len_win}".
+              format(eff=efficiency, len_win=len_win, nr_alleles=nr_alleles, nr_cells=nr_cells))
 
     plt.legend(["no error (not a regression line)", "allele"])
 
-    plot_name = plot_dir + dir_sep + "relative_error_k_d_{eff}.svg".format(eff=efficiency)
+    plot_name = plot_dir + dir_sep + "relative_error_k_d_{eff}_{len_win}.svg".\
+        format(eff=efficiency, len_win=len_win)
 
     plt.savefig(plot_name)
     plt.close(1)
@@ -179,11 +184,12 @@ def create_df_counts_unstack():
     return df_counts_unstack
 
 
-def joint_scatter_plot_two_labels(df_counts_unstack):
+def joint_scatter_plot_two_labels(df_counts_unstack, len_win):
     sns.jointplot(x=df_counts_unstack[label_1],
                   y=df_counts_unstack[label_2],
                   kind='scatter', s=50, color='b')
-    plot_name = plot_dir + dir_sep + "joint_scatter_plot_labels_{eff}.svg".format(eff=efficiency)
+    plot_name = plot_dir + dir_sep + "joint_scatter_plot_labels_{eff}_{len_win}.svg".\
+        format(eff=efficiency, len_win=len_win)
 
     plt.savefig(plot_name)
 
@@ -191,18 +197,23 @@ def joint_scatter_plot_two_labels(df_counts_unstack):
 
 
 # make two dimensional density plot for two labels for one strategy (set of dynamical parameters)
-def joint_kde_plot_two_labels(df_counts_unstack):
+def joint_kde_plot_two_labels(df_counts_unstack, len_win):
     sns.set(style="white", color_codes=True)
     sns.jointplot(x=df_counts_unstack[label_1], y=df_counts_unstack[label_2], kind='kde', color="skyblue"
                   , xlim=(0, max(df_counts_unstack[label_1] + 5))
                   , ylim=(0, max(df_counts_unstack[label_2] + 5)))
-    plot_name = plot_dir + dir_sep + "joint_kde_plot_labels_{eff}.svg".format(eff=efficiency)
+    plot_name = plot_dir + dir_sep + "joint_kde_plot_labels_{eff}_{len_win}.svg".\
+        format(eff=efficiency, len_win=len_win)
     plt.savefig(plot_name)
 
     plt.close(1)
 
 
-# mean expression #TODO: Check if this is the correct way to calculate mean? What about zeroes?
+# NB: df_counts are counts of two labeling windows (single window length)
+nr_cells = len(df_counts.cell_id.unique())
+nr_alleles = len(df_counts.allele_id.unique())
+
+# mean expression (here zeroes are excluding because there are no rows with zero counts!)
 df_means = df_counts.groupby(['allele_id', 'strategy', 'label'])['real_count'].mean().reset_index()
 df_means = pd.merge(df_means, df_strategies, how="left",
                     left_on=['strategy'],
@@ -222,7 +233,7 @@ df_cell_counts = df_cell_counts[df_cell_counts.label == label_2]
 plot_scatter_k_on_k_off()
 
 # Correlation between k_syn and mean count of label
-plot_mean_vs_k_syn(label_2, df_means)
+plot_mean_vs_k_syn(label_2, df_means, len_win)
 
 # explore dependency of nr cells with counts vs k_on/(k_on + k_off)
 plot_nr_cells_vs_mean_fraction_of_active_state(label_2, df_cell_counts, len_win)
@@ -233,15 +244,15 @@ df_counts_unstack = create_df_counts_unstack()
 # for all strategies
 df_allele_counts = mean_expression_level(df_counts_unstack)
 plot_predicted_k_d(df_allele_counts, len_win)
-plot_error_k_d(df_allele_counts)
+plot_error_k_d(df_allele_counts, len_win)
 
 # strategy = "bimodal"
-strategy = "generated_1"
+strategy = "generated_23"
 
 # preparing 2-dim density plot of the two labels for a single strategy
 df_counts_unstack = df_counts_unstack[df_counts_unstack.strategy == strategy]
 
 # make two dimensional scatter and density plot for two labels for one strategy (set of dynamical parameters)
-joint_scatter_plot_two_labels(df_counts_unstack)
-joint_kde_plot_two_labels(df_counts_unstack)
+joint_scatter_plot_two_labels(df_counts_unstack, len_win)
+joint_kde_plot_two_labels(df_counts_unstack, len_win)
 
