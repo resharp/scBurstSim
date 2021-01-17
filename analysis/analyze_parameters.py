@@ -36,7 +36,6 @@ in_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\source\scBurstSim\da
 
 efficiency = 100
 
-len_win = 60  # 15, 30, 45, 60, 75, 90, 105, 120
 gap = 0
 label_1 = "EU"
 label_2 = "4SU"
@@ -45,11 +44,6 @@ sr = StrategyReader(out_dir + dir_sep + "strategies_generated.csv" )
 # sr = StrategyReader(in_dir + dir_sep + "strategies.csv")
 sr.read_strategies()
 df_strategies = sr.df_strategies
-
-filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
-    len_win=len_win, gap=gap, eff=efficiency)
-
-df_counts = pd.read_csv(filename_counts, sep=';')
 
 
 def plot_scatter_k_on_k_off():
@@ -97,7 +91,8 @@ def plot_nr_cells_vs_mean_fraction_of_active_state(label_2, df_cell_counts, len_
     plt.xlim(0, None)
     plt.ylim(0, None)
 
-    plot_name = plot_dir + dir_sep + "nr_cells_vs_active_time_{eff}.svg".format(eff=efficiency)
+    plot_name = plot_dir + dir_sep + "nr_cells_vs_active_time_{eff}_{len_win}.svg".\
+        format(eff=efficiency, len_win=len_win)
     plt.savefig(plot_name)
     plt.close(1)
 
@@ -209,50 +204,62 @@ def joint_kde_plot_two_labels(df_counts_unstack, len_win):
     plt.close(1)
 
 
-# NB: df_counts are counts of two labeling windows (single window length)
-nr_cells = len(df_counts.cell_id.unique())
-nr_alleles = len(df_counts.allele_id.unique())
+def do_analysis(df_counts):
 
-# mean expression (here zeroes are excluding because there are no rows with zero counts!)
-df_means = df_counts.groupby(['allele_id', 'strategy', 'label'])['real_count'].mean().reset_index()
-df_means = pd.merge(df_means, df_strategies, how="left",
-                    left_on=['strategy'],
-                    right_on=['name'])
-df_means = df_means[df_means.label == label_2]
+    # mean expression (here zeroes are excluding because there are no rows with zero counts!)
+    df_means = df_counts.groupby(['allele_id', 'strategy', 'label'])['real_count'].mean().reset_index()
+    df_means = pd.merge(df_means, df_strategies, how="left",
+                        left_on=['strategy'],
+                        right_on=['name'])
+    df_means = df_means[df_means.label == label_2]
 
-# cell counts (for plotting against fraction of time in active state)
-df_cell_counts = df_counts.groupby(['allele_id', 'strategy', 'label'])['real_count'].count().reset_index()
-df_cell_counts["no_count"] = nr_cells - df_cell_counts.real_count
-df_cell_counts = pd.merge(df_cell_counts, df_strategies, how="left",
-                          left_on=['strategy'],
-                          right_on=['name'])
-df_cell_counts = df_cell_counts[df_cell_counts.label == label_2]
+    # cell counts (for plotting against fraction of time in active state)
+    df_cell_counts = df_counts.groupby(['allele_id', 'strategy', 'label'])['real_count'].count().reset_index()
+    df_cell_counts["no_count"] = nr_cells - df_cell_counts.real_count
+    df_cell_counts = pd.merge(df_cell_counts, df_strategies, how="left",
+                              left_on=['strategy'],
+                              right_on=['name'])
+    df_cell_counts = df_cell_counts[df_cell_counts.label == label_2]
+
+    # show distribution of k_on and k_off (for comparison with paper)
+    plot_scatter_k_on_k_off()
+
+    # Correlation between k_syn and mean count of label
+    plot_mean_vs_k_syn(label_2, df_means, len_win)
+
+    # explore dependency of nr cells with counts vs k_on/(k_on + k_off)
+    plot_nr_cells_vs_mean_fraction_of_active_state(label_2, df_cell_counts, len_win)
+
+    df_counts_unstack = create_df_counts_unstack()
+
+    # examine correlation between k_d and inferred k_d from means from label_1 and label_2
+    # (assumes non-changing parameters) for all strategies
+    df_allele_counts = mean_expression_level(df_counts_unstack)
+    plot_predicted_k_d(df_allele_counts, len_win)
+    plot_error_k_d(df_allele_counts, len_win)
+
+    # strategy = "bimodal"
+    strategy = "generated_23"
+
+    # preparing 2-dim density plot of the two labels for a single strategy
+    df_counts_unstack = df_counts_unstack[df_counts_unstack.strategy == strategy]
+
+    # make two dimensional scatter and density plot for two labels for one strategy (set of dynamical parameters)
+    joint_scatter_plot_two_labels(df_counts_unstack, len_win)
+    joint_kde_plot_two_labels(df_counts_unstack, len_win)
 
 
-# show distribution of k_on and k_off (for comparison with paper)
-plot_scatter_k_on_k_off()
+sns.set(style="white", color_codes=True)
 
-# Correlation between k_syn and mean count of label
-plot_mean_vs_k_syn(label_2, df_means, len_win)
+window_lengths = [15, 30, 45, 60, 75, 90, 105, 120]
+for len_win in window_lengths:
 
-# explore dependency of nr cells with counts vs k_on/(k_on + k_off)
-plot_nr_cells_vs_mean_fraction_of_active_state(label_2, df_cell_counts, len_win)
+    filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
+        len_win=len_win, gap=gap, eff=efficiency)
 
-df_counts_unstack = create_df_counts_unstack()
+    df_counts = pd.read_csv(filename_counts, sep=';')
+    # NB: df_counts are counts of two labeling windows (single window length)
+    nr_cells = len(df_counts.cell_id.unique())
+    nr_alleles = len(df_counts.allele_id.unique())
 
-# examine correlation between k_d and inferred k_d from means from label_1 and label_2 (assumes non-changing parameters)
-# for all strategies
-df_allele_counts = mean_expression_level(df_counts_unstack)
-plot_predicted_k_d(df_allele_counts, len_win)
-plot_error_k_d(df_allele_counts, len_win)
-
-# strategy = "bimodal"
-strategy = "generated_23"
-
-# preparing 2-dim density plot of the two labels for a single strategy
-df_counts_unstack = df_counts_unstack[df_counts_unstack.strategy == strategy]
-
-# make two dimensional scatter and density plot for two labels for one strategy (set of dynamical parameters)
-joint_scatter_plot_two_labels(df_counts_unstack, len_win)
-joint_kde_plot_two_labels(df_counts_unstack, len_win)
-
+    do_analysis(df_counts)
