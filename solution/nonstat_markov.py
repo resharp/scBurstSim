@@ -47,8 +47,8 @@ def create_transition_chances(k_on, k_off):
 def plot_transition_chances(k_on, k_off, wins, p_00s, p_10s, p_01s, p_11s):
     plt.plot(wins, p_00s, 'o-', label="P_00")
     plt.plot(wins, p_10s, 'o-', label="P_10")
-    # plt.plot(wins, p_01s, 'o-', label="P_01")
-    # plt.plot(wins, p_11s, 'o-', label="P_11")
+    plt.plot(wins, p_01s, 'o-', label="P_01")
+    plt.plot(wins, p_11s, 'o-', label="P_11")
 
     title = "k_on={k_on};k_off={k_off}. Chances of being in state x_t given state x_0," \
             " with e.g. P_00 = P(x_t=0 | x_0=0)".\

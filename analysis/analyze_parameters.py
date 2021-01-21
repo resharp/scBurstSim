@@ -15,6 +15,7 @@
 # the mean of the distribution, etc, the number of counts
 # make two dimensional scatter and density plot for two labels for one strategy (set of dynamical parameters)
 # examine correlation between k_d and inferred k_d from means from label_1 and label_2 (assumes non-changing parameters)
+# extra analysis of chance of being ON in 2nd window give chance ON or OFF in 1st window
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -204,7 +205,7 @@ def joint_kde_plot_two_labels(df_counts_unstack, len_win):
     plt.close(1)
 
 
-def do_analysis(df_counts):
+def do_descriptive_analysis(df_counts):
 
     # mean expression (here zeroes are excluding because there are no rows with zero counts!)
     df_means = df_counts.groupby(['allele_id', 'strategy', 'label'])['real_count'].mean().reset_index()
@@ -249,17 +250,105 @@ def do_analysis(df_counts):
     joint_kde_plot_two_labels(df_counts_unstack, len_win)
 
 
+def counts_as_proxy_for_p_01_11_t(df_counts, len_win):
+
+    df_label_1 = df_counts[df_counts.label == label_1]
+    df_label_2 = df_counts[df_counts.label == label_2]
+
+    df_1_counts = df_label_1.groupby(["allele_id", "strategy", "cell_id"]).real_count.count().reset_index()
+    df_1_counts.rename(columns={'real_count': 'count_1'}, inplace=True)
+
+    df_2_counts = df_label_2.groupby(["allele_id", "cell_id"]).real_count.count().reset_index()
+    df_2_counts.rename(columns={'real_count': 'count_2'}, inplace=True)
+
+    df_12_counts = pd.merge(df_1_counts, df_2_counts, how="outer",
+                            left_on=['allele_id', 'cell_id'],
+                            right_on=['allele_id', 'cell_id']).fillna(0)
+
+    # df_count_all = df_12_counts.groupby('allele_id').\
+    #     apply(lambda g: g[['cell_id']].count()).\
+    #     reset_index()
+
+    # df_count_p10s = df_12_counts.groupby('allele_id').\
+    #     apply(lambda g: g[(g.count_1 > 0) & (g.count_2 == 0)][['cell_id']].count()).\
+    #     reset_index()
+
+    df_count_p01s = df_12_counts.groupby('allele_id').\
+        apply(lambda g:
+                                  pd.Series(data=[g[(g.count_1 == 0)][['cell_id']].count().item(),
+                                  g[(g.count_1 == 0) & (g.count_2 > 0)][['cell_id']].count().item()]).
+              rename({0: "count_0", 1: "count_01"})
+              ).\
+        reset_index()
+
+    df_count_p11s = df_12_counts.groupby('allele_id').\
+        apply(lambda g:
+                                  pd.Series(data=[g[(g.count_1 > 0)][['cell_id']].count().item(),
+                                  g[(g.count_1 > 0) & (g.count_2 > 0)][['cell_id']].count().item()]).
+              rename({0: "count_1", 1: "count_11"})
+              ).\
+        reset_index()
+
+    df_count_p01s["len_win"] = len_win
+    df_count_p11s["len_win"] = len_win
+
+    df_count_p01s["p"] = df_count_p01s["count_01"]/df_count_p01s["count_0"]
+    df_count_p11s["p"] = df_count_p11s["count_11"]/df_count_p11s["count_1"]
+
+    return df_count_p01s, df_count_p11s
+
+
+def plot_chance_vs_time(df_p11_example, y_label):
+
+    plt.figure(figsize=(12, 6))
+    plt.plot(df_p11_example.len_win, df_p11_example.p, '.-')
+    plt.title("WRONG? Chance of being in state 1 at t when in state 1 at t=0 for allele {allele_id}".
+              format(allele_id=allele_id))
+    plt.xlabel("time (minutes)")
+    plt.ylabel(y_label)
+    plt.xlim(0, None)
+    plt.ylim(0, None)
+    plt.show()
+    plt.close(1)
+
+
 sns.set(style="white", color_codes=True)
 
 window_lengths = [15, 30, 45, 60, 75, 90, 105, 120]
+
+p_01s = []
+p_11s = []
+
+allele_id = 6  # 6
+
 for len_win in window_lengths:
 
     filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
         len_win=len_win, gap=gap, eff=efficiency)
 
+    # df_counts are counts of two labeling windows (single window length)
     df_counts = pd.read_csv(filename_counts, sep=';')
-    # NB: df_counts are counts of two labeling windows (single window length)
+
     nr_cells = len(df_counts.cell_id.unique())
     nr_alleles = len(df_counts.allele_id.unique())
 
-    do_analysis(df_counts)
+    # main analysis (NB: creates lots of plots!)
+    do_descriptive_analysis(df_counts)
+
+    # temp for debugging
+    # df_counts = df_counts[df_counts.allele_id == allele_id]
+
+    # extra analysis of chance of being ON in 2nd window give chance ON or OFF in 1st window
+    df_count_p01s, df_count_p11s = counts_as_proxy_for_p_01_11_t(df_counts, len_win)
+
+    p_01s.append(df_count_p01s)
+    p_11s.append(df_count_p11s)
+
+
+df_p01s = pd.concat(p_01s)
+df_p11s = pd.concat(p_11s)
+
+df_p11_example = df_p11s[df_p11s.allele_id == allele_id]
+
+plot_chance_vs_time(df_p11_example, y_label="inferred chance P_11(t))")
+

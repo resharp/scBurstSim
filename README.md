@@ -108,6 +108,7 @@ against theoretical stationary distribution
 for one strategy (set of dynamical parameters)
 - examine correlation between k_d and inferred k_d from means 
 from label_1 and label_2 (assuming non-changing parameters)
+- extra analysis of chance of being ON in 2nd window give chance ON or OFF in 1st window
 
 ## analyze active state
 explore the shape of the active state fraction distribution 
