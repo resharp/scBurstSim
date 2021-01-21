@@ -192,9 +192,6 @@ def fit_distribution_for_len_win(len_win, strategies, create_plot=False):
 
 def infer_parameters(lengths_window, strategies):
 
-    logger.info("Infer parameters based on time dependent distributions from {} cells".format(nr_cells))
-    logger.info("Results in {}".format(csv_name))
-
     list_df_fitted_params = []
 
     for len_win in lengths_window:
@@ -238,6 +235,9 @@ def prepare_data(df):
     df["k_d_cat"] = df.k_d.apply(num_categorize)
     df["k_syn_cat"] = df.k_syn.apply(num_categorize)
 
+    # error prediction of fraction_OFF =k_off/(k_off + k_on) by using zero fraction (fraction of cells with no counts)
+    df["error_zero_fraction"] = np.abs(df["fraction_OFF"] - df["zero_fraction"])/df["fraction_OFF"]
+
     return df
 
 
@@ -268,7 +268,10 @@ def lmplot_for(df, x_measure, y_measure, hue_category, len_win):
                hue=hue_category, hue_order=hue_order, legend=False)
 
     plt.title("{} against {} for t={}".format(y_measure, x_measure, len_win))
+
     ident = [0, int(max(df[x_measure]))]
+    if x_measure == "fraction_OFF":
+        ident = [0, 1]
     plt.plot(ident, ident, linestyle=':')
 
     plt.legend(title=hue)
@@ -277,7 +280,7 @@ def lmplot_for(df, x_measure, y_measure, hue_category, len_win):
     plt.close(1)
 
 
-def linear_regression_for(df, parameter):
+def linear_regression_for(df, window_lengths, x_parameter, y_parameter):
     lrs = []
     logging.info("Evaluating method using exact mean of simulated distribution")
 
@@ -288,20 +291,24 @@ def linear_regression_for(df, parameter):
         for len_win in window_lengths:
             df_t = df_k_on[df_k_on.len_win == len_win]
 
-            slope, intercept, r_value, p_value, std_err = linregress(x=df_t.k_syn, y=df_t[parameter])
+            slope, intercept, r_value, p_value, std_err = linregress(x=df_t[x_parameter], y=df_t[y_parameter])
 
-            lrs.append([len_win, k_on_cat, slope, intercept, r_value, p_value, std_err])
+            # mean absolute error in prediction of fraction_OFF by using zero fraction
+            mean_error_zero = df_t.error_zero_fraction.mean()
+
+            lrs.append([len_win, k_on_cat, slope, intercept, r_value, p_value, std_err, mean_error_zero])
             logging.info("slope = {slope} for length {len_win} and k_on_cat {k_on_cat} using {measure}".format(
-                slope=round_sig(slope, 3), len_win=len_win, k_on_cat=k_on_cat, measure=parameter))
+                slope=round_sig(slope, 3), len_win=len_win, k_on_cat=k_on_cat, measure=y_parameter))
             # logging.info("R^2 = {r2}% f or prediction of k_syn length {len_win} using mean".format(
             #     r2=round_sig(r_value**2 * 100, 3), len_win=len_win))
 
-    df_lr = pd.DataFrame(data=lrs, columns=('len_win', 'k_on_cat', 'slope', 'intercept', 'r_value', 'p_value', 'std_err'))
+    df_lr = pd.DataFrame(data=lrs, columns=('len_win', 'k_on_cat', 'slope', 'intercept', 'r_value', 'p_value', 'std_err',
+                                            'mean_error_zero'))
 
     return df_lr
 
 
-def heat_map_fitting(df_lr, parameter, measure):
+def heat_map_inferred_parameters(df_lr, parameter, measure):
     df_lr = df_lr[['len_win', 'k_on_cat', measure]]
     # df_lr = df_lr.sort_values(["len_win", "k_on_cat"])
     df_lr = df_lr.set_index(["len_win", "k_on_cat"])
@@ -326,44 +333,60 @@ def heat_map_fitting(df_lr, parameter, measure):
     plt.close(1)
 
 
+def infer_parameters_for_window_lenghts(window_lengths, run_fitting = False):
+
+    csv_name = plot_dir + dir_sep + "parameter_fits.csv"
+    logger.info("Infer parameters based on time dependent distributions from {} cells".format(nr_cells))
+    logger.info("Results in {}".format(csv_name))
+
+    if run_fitting:
+        # replace with 100 strategies
+        # strategies = ["generated_" + str(i) for i in range(1, 21)]
+        strategies = ["generated_" + str(i) for i in range(1, 101)]
+
+        df = infer_parameters(window_lengths, strategies)
+
+        df.to_csv(csv_name, sep=";", index=False)
+    else:
+        df = pd.read_csv(csv_name, sep=';')
+
+    return df
+
+
+def evaluate_infer_corrected_mean(df, window_lengths):
+
+    logging.info("Average error estimated poisson mean: {}".
+                 format(np.average(df.error_estimated_poisson_mean)))
+
+    logging.info("Average error real mean: {}".
+                 format(np.average(df.error_real_mean)))
+
+    df = prepare_data(df)
+    len_win = 15
+    df_t = df[df.len_win == len_win]
+
+    # x_parameter = "fraction_OFF"; y_parameter = "zero_fraction"
+    # x_parameter = "k_syn"; y_parameter = "k_syn_fit_m"
+    x_parameter = "calculated_mean"; y_parameter = "estimated_poisson_mean"
+    # y_parameter = "real_mean"
+
+    lmplot_for(df, x_parameter, y_parameter, "k_on_cat", len_win)
+
+    df_lr = linear_regression_for(df, window_lengths, x_parameter=x_parameter, y_parameter=y_parameter)
+
+    # possible measures from linear fitting:
+    # columns=('len_win', 'k_on_cat', 'slope', 'intercept', 'r_value', 'p_value', 'std_err', 'mean_error_zero')
+
+    measure = "r_value"
+
+    heat_map_inferred_parameters(df_lr, y_parameter, measure)
+
+
+# TODO: set run_fitting to True if you use new data
+run_fitting = False
+
 window_lengths = [15, 30, 45, 60, 75, 90, 105, 120]
 
-run_fitting = False
-# strategies = ["first_example", "second_example", "third_example", "bimodal", "powerlaw"]
+df_predictions = infer_parameters_for_window_lenghts(window_lengths, run_fitting)
 
-csv_name = plot_dir + dir_sep + "parameter_fits.csv"
-if run_fitting:
-    # replace with 100 strategies
-    # strategies = ["generated_" + str(i) for i in range(1, 21)]
-    strategies = ["generated_" + str(i) for i in range(1, 101)]
-    df = infer_parameters(window_lengths, strategies)
-    df.to_csv(csv_name, sep=";", index=False)
-else:
-    df = pd.read_csv(csv_name, sep=';')
-
-
-logging.info("Average error estimated poisson mean: {}".
-             format(np.average(df.error_estimated_poisson_mean)))
-
-logging.info("Average error real mean: {}".
-             format(np.average(df.error_real_mean)))
-
-df = prepare_data(df)
-len_win = 15
-df_t = df[df.len_win == len_win]
-
-# lmplot_for(df, "fraction_OFF", "zero_fraction", "k_on_cat", len_win)
-# lmplot_for(df, "calculated_mean", "real_mean", "k_on_cat", len_win)
-lmplot_for(df_t, "k_syn", "k_syn_fit_m", "k_on_cat", len_win)
-
-
-parameter = "k_syn_fit_m"
-df_lr = linear_regression_for(df, parameter=parameter)
-
-# columns from linear fitting:
-# columns=('len_win', 'k_on_cat', 'slope', 'intercept', 'r_value', 'p_value', 'std_err')
-
-measure = "slope"
-
-heat_map_fitting(df_lr, parameter, measure)
-
+evaluate_infer_corrected_mean(df_predictions, window_lengths)
