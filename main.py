@@ -9,14 +9,14 @@ import argparse
 logger = logging.getLogger(__name__)
 
 run_sim = True  # setting run_sim to False results in use of locally stored data set
-create_cluster_map = False
+create_cluster_map = True
 nr_cells = 300
 gap = 0
 # TODO: time > 120
 length_window = 60  # 15, 30, 45, 60, 75, 90, 105, 120
 efficiency = 1
 
-nr_syn_within_strategy = 1
+nr_syn_within_strategy = 2
 nr_non_syn_within_strategy = 1
 
 # under this run_dir we should also create a plot directory
@@ -29,8 +29,8 @@ else:
     dir_sep = "/"
 
 # see strategy names in data\strategies.csv
-strategies_file = out_dir + dir_sep + "strategies_generated.csv"
-# strategies_file = in_dir + dir_sep + "strategies.csv"
+# strategies_file = out_dir + dir_sep + "strategies_generated.csv"
+strategies_file = in_dir + dir_sep + "strategies.csv"
 
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 
@@ -154,7 +154,8 @@ def main(args_in):
 # if __name__ == "__main__":
 #     main(sys.argv[1:])
 
-for length_window in [15, 30, 45, 60, 75, 90, 105, 120]:
+# for length_window in [15, 30, 45, 60, 75, 90, 105, 120]:
+for length_window in [60]:
     main(["-nc", str(nr_cells),
           "-g", str(gap),
           "-w", str(length_window),

@@ -140,7 +140,8 @@ def run_active_state_is_present_simulations(label, nr_runs):
                                   tm_id=np.nan,
                                   k_syn=k_syn, k_d=k_d,
                                   coord_group=0,
-                                  name="test")
+                                  name="test",
+                                  tran_type="S")
 
         trans = Transcription(params)
 

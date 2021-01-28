@@ -2,22 +2,26 @@ import numpy as np
 import pandas as pd
 from typing import NamedTuple
 
-WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
+WINDOW_START = 0;
+WINDOW_END = 1;
+WINDOW_LABEL = 2
 
 
 class TranscriptParams(NamedTuple):
     # transcription matrix
-    k_on: float             # part of transition matrix
-    k_off: float             # part of transition matrix
-    tm_id: int              # id for every unique transcription matrix
+    k_on: float  # part of transition matrix
+    k_off: float  # part of transition matrix
+    tm_id: int  # id for every unique transcription matrix
     nr_refractions: int
 
     # high/low expression
-    k_syn: float            # k_syn = synthesis rate = transcription rate
-    k_d: float              # decay is strictly not part of transcription but we include it in the model
+    k_syn: float  # k_syn = synthesis rate = transcription rate
+    k_d: float  # decay is strictly not part of transcription but we include it in the model
 
     # coordination (prerequisite: same transition matrix)
     coord_group: int
+
+    tran_type: str
 
     name: str
 
@@ -43,7 +47,7 @@ class Transcription:
 
     def init_state(self):
         elements = ["1", "0"]
-        probabilities = [self.params.k_on  / (self.params.k_on + self.params.k_off),
+        probabilities = [self.params.k_on / (self.params.k_on + self.params.k_off),
                          self.params.k_off / (self.params.k_on + self.params.k_off)]
 
         state = np.random.choice(elements, 1, p=probabilities)
@@ -54,7 +58,7 @@ class Transcription:
         poisson_list = []
 
         last_arrival = 0
-        label = ""
+
         while last_arrival < interval:
             arrival = np.random.exponential(scale=1.0, size=None) / self.params.k_syn
             last_arrival = last_arrival + arrival
@@ -108,7 +112,7 @@ class Transcription:
             # we will now put the arrivals and decays in one table self.df_events and sort by time ..
             self.df_events = self.sort_events()
 
-            # .. enable cumulative sums
+            # .. enabling cumulative sums
             self.sum_labeled_events(windows)
 
             self.sum_unlabeled_events()
@@ -120,9 +124,16 @@ class Transcription:
 
         return self.df_dtmc, self.dtmc_list
 
+    # hidden state trace DTMC (discrete time markov chain) is generated
+    # if tran_type == "F" it is a deterministic alternating set of alternative active and inactive periods
     def create_dtmc_list(self, max_minutes):
         dtmc_list = []
         current_time = 0
+
+        # if deterministically fluctuating begin randomly in the cycle (=inactive period + active period)
+        if self.params.tran_type == "F":
+            current_time = np.random.random() * (1/self.params.k_on + 1/self.params.k_off)
+
         while current_time < max_minutes:
 
             state_time = 0
@@ -132,13 +143,20 @@ class Transcription:
                 # we could get a peaked distribution of waiting times by repeating (setting alpha > 1)
                 # see alpha in https://homepage.divms.uiowa.edu/~mbognar/applets/gamma.html
                 # this is a simple way to simulate multiple refractory states?
-                alpha = self.params.nr_refractions
-                k = k * alpha
-                for i in range(alpha):
-                    state_time = state_time + np.random.exponential(scale=1.0, size=None) / k
+                if self.params.tran_type == "S":
+
+                    alpha = self.params.nr_refractions
+                    k = k * alpha
+                    for i in range(alpha):
+                        state_time = state_time + np.random.exponential(scale=1.0, size=None) / k
+                else:  # F = Fluctuating
+                    state_time = state_time + 1/k
             else:
                 k = self.params.k_off
-                state_time = np.random.exponential(scale=1.0, size=None) / k
+                if self.params.tran_type == "S":
+                    state_time = np.random.exponential(scale=1.0, size=None) / k
+                else:  # F = Fluctuating
+                    state_time = 1 / k
 
             end_time = current_time + state_time
 
@@ -169,7 +187,7 @@ class Transcription:
     # however we lose the single molecule information this way
     def sort_events(self):
 
-        df_decays = self.df_transcripts[['label', 'decay', "count_d"]].\
+        df_decays = self.df_transcripts[['label', 'decay', "count_d"]]. \
             rename(columns={'decay': 'arrival', 'count_d': 'count_s'})
 
         df_poisson_arrivals = self.df_transcripts[["label", "arrival", "count_s"]]
@@ -181,7 +199,7 @@ class Transcription:
 
         self.dfs_labeled_events = []
         for window in windows:
-            df_labeled = (self.df_events[self.df_events.label == window[WINDOW_LABEL]]).\
+            df_labeled = (self.df_events[self.df_events.label == window[WINDOW_LABEL]]). \
                 copy(deep=True)
             df_labeled['cum_count'] = df_labeled['count_s'].cumsum()
             self.dfs_labeled_events.append([window[WINDOW_LABEL], df_labeled])
@@ -189,5 +207,3 @@ class Transcription:
     def sum_unlabeled_events(self):
         self.df_unlabeled_events = (self.df_events[self.df_events.label == ""]).copy(deep=True)
         self.df_unlabeled_events['cum_count'] = self.df_unlabeled_events['count_s'].cumsum()
-
-

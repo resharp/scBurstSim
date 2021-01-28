@@ -4,11 +4,10 @@ from simulator.Transcription import TranscriptParams
 
 
 class StrategyReader:
-    filename = ""
-    df_strategies = None
 
     def __init__(self, filename):
         self.filename = filename
+        self.df_strategies = None
 
     def select_all(self):
 
@@ -18,7 +17,8 @@ class StrategyReader:
                                         tm_id=item.tm_id,
                                         k_syn=item.k_syn, k_d=item.k_d,
                                         coord_group=item.coord_group,
-                                        name=item['name'])
+                                        name=item['name'],
+                                        tran_type=item.tran_type)
                        for id_dummy, item in self.df_strategies.iterrows()]
         return params_list
 
@@ -70,5 +70,6 @@ class StrategyReader:
                                   tm_id=df_strategy.tm_id.item(),
                                   k_syn=df_strategy.k_syn.item(), k_d=df_strategy.k_d.item(),
                                   coord_group=df_strategy.coord_group.item(),
-                                  name=df_strategy.name.item())
+                                  name=df_strategy.name.item(),
+                                  tran_type=df_strategy.tran_type.item())
         return params

@@ -57,12 +57,19 @@ An example of the strategies file:
 # named strategies for the simulator/Transcription class (; separated!)
 name;k_on;k_off;coord_group;k_syn;k_d
 # two strategies with the same burst coordination
-frequent_coor;0.02;0.02;1;0.16;0.01
-frequent_uncoor;0.02;0.02;;0.16;0.01
-frequent_high;0.02;0.02;1;0.8;0.01
-large_swing;0.005;0.01;;0.16;0.005
-real_bursty_coor;0.005;0.02;2;0.32;0.02
-real_bursty_uncoor;0.005;0.02;;0.32;0.02
+frequent_coor;0.02;0.02;1;0.16;0.01;S
+frequent_high;0.02;0.02;1;0.8;0.01;S
+# no coordination: leave coord_group empty
+frequent_uncoor;0.02;0.02;;0.16;0.01;S
+large_swing;0.005;0.01;;0.16;0.005;S
+real_bursty_coor;0.005;0.02;2;0.32;0.02;S
+real_bursty_uncoor;0.005;0.02;;0.32;0.02;S
+first_example;0.03;0.01;;2;0.02;S
+# example fluctuating alleles with fixed period
+second_example;0.024;0.03;;1;0.02;F
+third_example;0.02;0.02;;2;0.02;S
+bimodal;0.01;0.01;;2;0.02;S
+powerlaw;0.01;0.04;;2;0.02;S
 ```
 For each strategy a number of alleles will be generated. 
 All parameters are per minute.
@@ -83,6 +90,10 @@ trace (same bursts=same active and silent periods).
 
 Alleles with different k_syn and k_d parameters may be coordinated 
 by assigning the same coord_group id to the strategy.   
+
+The last parameter tran_type denotes if there is 
+stochastic (S) switching between Markov states 
+or deterministic fluctuating (F) behaviour for active/inactive states with fixed period. 
 
 In the above example alleles with the strategy 
 frequent_coor and frequent_high are synchronized by a shared coordination group 1.
@@ -121,9 +132,6 @@ fit to time dependent function of chance of having activity of any length
 during a single labeling window
 
 ## infer parameters Poisson
-
-
-
 
 
 
