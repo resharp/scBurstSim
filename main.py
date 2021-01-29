@@ -8,16 +8,16 @@ import argparse
 # get the fully-qualified logger (here: `root.__main__`)
 logger = logging.getLogger(__name__)
 
-run_sim = True  # setting run_sim to False results in use of locally stored data set
+run_sim = True # setting run_sim to False results in use of locally stored data set
 create_cluster_map = True
 nr_cells = 300
 gap = 0
 # TODO: time > 120
 length_window = 60  # 15, 30, 45, 60, 75, 90, 105, 120
-efficiency = 1
+efficiency = 0.1
 
 nr_syn_within_strategy = 2
-nr_non_syn_within_strategy = 1
+nr_non_syn_within_strategy = 3
 
 # under this run_dir we should also create a plot directory
 out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
@@ -45,6 +45,22 @@ def get_windows_and_fix_time(length_window=60, gap=0):
     fix_time = windows[-1][WINDOW_END]  # fix_time zero minutes after end of last window
 
     return windows, fix_time
+
+
+def normalize(df_counts):
+
+    df_mean_counts = df_counts[['allele_id', 'label', 'real_count']].\
+        groupby(['allele_id', 'label']).mean().reset_index()
+
+    df_mean_counts.rename(columns={'real_count': 'mean_count'}, inplace=True)
+
+    df_ret = df_counts.merge(df_mean_counts, how='inner',
+                             left_on=['allele_id', 'label'],
+                             right_on=['allele_id', 'label'])
+
+    df_ret["norm_count"] = df_ret["real_count"] / df_ret["mean_count"]
+
+    return df_ret
 
 
 def arg_parse(args_in):
@@ -116,6 +132,8 @@ def main(args_in):
     label = "EU"
     df_counts_eu = df_counts[df_counts.label == label]
 
+    df_counts = normalize(df_counts)
+
     # df_counts_eu = violin_plot_fraction(0.8, "80", df_counts_eu)
 
     # do_kolmogorov_smirnov_tests_for_percentages_on(df_counts_eu)
@@ -138,13 +156,20 @@ def main(args_in):
         os.makedirs(plot_dir, exist_ok=True)
 
         df_counts["real_count_log10"] = np.log10(df_counts["real_count"])
+        df_counts["norm_count_log10"] = np.log10(df_counts["norm_count"])
         df_counts["count_all_log10"] = np.log10(df_counts["count_all"])
 
         # cluster map creates plot cluster_map.svg in run directory if you do not provide a plot name
         for window in windows:
             label = window[WINDOW_LABEL]
-            measures = ["fraction", "real_count_log10", "count_all_log10"]
+
+            # only use label counts for clustering
+            measures = ["real_count_log10", "norm_count"]
+
             for measure in measures:
+
+                # TODO: Be careful: the sum of count_all differs for different labels due to filtering in cluster_map
+                # because rows may be missing for the label /allele/cell combination resulting in missing that count_all
                 cluster_map(df_counts, measure=measure, label=label, exp_params=exp_params,
                             plot_name=plot_dir + dir_sep + "{measure}_cluster_map_{label}.svg".
                             format(label=label, measure=measure))

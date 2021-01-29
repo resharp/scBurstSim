@@ -172,6 +172,8 @@ def lmplot(x, y, data, exp_params):
     plt.close(1)
 
 
+# TODO: Be careful: the sum of count_all differs for different labels due to filtering
+# because rows may be missing for the label /allele/cell combination resulting in missing that count_all
 def cluster_map(df_counts, measure, label, exp_params, plot_name="cluster_map.svg"):
 
     df_counts_unstack = df_counts[["cell_id", "allele_id", "allele_label", "strategy_group",
@@ -186,7 +188,7 @@ def cluster_map(df_counts, measure, label, exp_params, plot_name="cluster_map.sv
 
     df_counts_unstack = df_counts_unstack.fillna(0)
 
-    g = sns.clustermap(df_counts_unstack, cmap="vlag", row_cluster=False,  figsize=(7, 5)).\
+    g = sns.clustermap(df_counts_unstack, cmap="vlag", row_cluster=False,  figsize=(12, 6)).\
         fig.suptitle("{measure} for label {label} for {nr_cells} cells; efficiency: {eff}".
                      format(measure=measure, label=label, nr_cells=exp_params.nr_cells, eff=exp_params.efficiency))
     # plt.show()
