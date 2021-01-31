@@ -130,9 +130,9 @@ class Transcription:
         dtmc_list = []
         current_time = 0
 
-        # if deterministically fluctuating begin randomly in the cycle (=inactive period + active period)
+        # if deterministically fluctuating begin randomly halfway in the cycle (=inactive period + active period)
         if self.params.tran_type == "F":
-            current_time = np.random.random() * (1/self.params.k_on + 1/self.params.k_off)
+            current_time = np.random.random() * 0.5 * (1/self.params.k_on + 1/self.params.k_off)
 
         while current_time < max_minutes:
 

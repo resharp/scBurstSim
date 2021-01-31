@@ -150,7 +150,7 @@ def run_distribution(params, interval, nr_snapshots):
 
 # we can select a strategy by name
 # see strategy names in data\strategies.csv
-strategy = "second_example"
+strategy = "fluc"
 params = sr.get(strategy=strategy)
 
 # or retrieve a random strategy

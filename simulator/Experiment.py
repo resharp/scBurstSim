@@ -145,7 +145,7 @@ class Experiment:
         df_counts.rename(columns={'count_s': 'real_count'}, inplace=True)
 
         df_counts.fillna("", inplace=True)
-        # fraction denotes the fraction of cells
+        # here fraction denotes the fraction of labeled transcripts as compared to all transcripts
         df_counts["fraction"] = df_counts["real_count"] / df_counts["count_all"]
         df_counts.fraction = df_counts.fraction.round(4)
 

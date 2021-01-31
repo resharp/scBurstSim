@@ -77,6 +77,7 @@ class StrategyGenerator:
         if k_on_first:
             k_on_exp = self.sample_value(self.range_k_on_exp)
 
+            # convert to units per minute
             k_on = round_sig(10 ** k_on_exp / 60)
 
             # we want the ON times shorter than the OFF times: average length ON ~ 1/k_off < 1/k_on
@@ -120,7 +121,7 @@ class StrategyGenerator:
 
             [k_on, k_off, np.nan, k_syn, k_d] = self.create_random(k_on_first)
 
-            while not self.test_restriction(k_on, k_off, k_syn, k_d):
+            while not self.test_restrictions(k_on, k_off, k_syn, k_d):
                 [k_on, k_off, np.nan, k_syn, k_d] = self.create_random(k_on_first)
 
             data.append([name] + [k_on, k_off, np.nan, k_syn, k_d])
@@ -128,8 +129,9 @@ class StrategyGenerator:
         df_strategies = pd.DataFrame(data=data, columns=columns)
         df_strategies.to_csv(path_or_buf=self.filename, sep=';', index=False)
 
-    # should return True when passing test
-    def test_restriction(self, k_on, k_off, k_syn, k_d) -> bool:
+    # should return True when passing tests
+    @staticmethod
+    def test_restrictions(k_on, k_off, k_syn, k_d) -> bool:
 
         # hour production when assuming no decay
         hour_production = k_syn * 60 * k_on/(k_on + k_off)
