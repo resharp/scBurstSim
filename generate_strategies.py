@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import logging
 import os
+import sys
 
 from simulator.StrategyGenerator import *
 from simulator.StrategyReader import StrategyReader
@@ -25,6 +26,8 @@ logfile_name = out_dir + dir_sep + 'generate_strategies.log'
 logging.basicConfig(filename=logfile_name, filemode='w',
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     level=logging.INFO)
+logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+
 print("logging in: {file_name}".format(file_name=logfile_name))
 
 # ranges of 10^k are taken from plots generated in read_larsson2019.py
@@ -39,35 +42,18 @@ range_k_d_exp = [-1.4, 0.2]
 # range_k_syn = [0.016, 1.6]
 # range_k_d = [0.0019, 0.023]
 
-filename = out_dir + dir_sep + "strategies_generated.csv"
+filename = out_dir + dir_sep + "strategies_mixed.csv"
 sg = StrategyGenerator(range_k_on_exp=range_k_on_exp, range_k_off_exp=range_k_off_exp,
                        range_k_syn_exp=range_k_syn_exp, range_k_d_exp=range_k_d_exp,
                        filename=filename)
 
 k_on_first = False
-sg.generate_and_write_strategies(100, k_on_first)
+# sg.generate_and_write_strategies(100, k_on_first)
 
-sr = StrategyReader(out_dir + dir_sep + "strategies_generated.csv" )
-
-strategies = sr.select_all()
-
-df_strategies = sr.df_strategies
-
-df_strategies["burst_time_log10"] = np.log10(1 / df_strategies["k_on"])
-df_strategies["silent_time_log10"] = np.log10(1 / df_strategies["k_off"])
-df_strategies["half_life_log10"] = np.log10(np.log(2)/df_strategies.k_d)
-df_strategies["chance_on"] = df_strategies.k_on / (df_strategies.k_off + df_strategies.k_on)
-
-df_strategies["chance_on_log10"] = np.log10(df_strategies["chance_on"])
-df_strategies["k_syn_effective"] = df_strategies.k_syn * df_strategies.chance_on
-df_strategies["k_syn_effective_log10"] = np.log10(df_strategies.k_syn_effective)
-df_strategies["nr_steady_state_log10"] = np.log10(df_strategies.k_syn_effective / df_strategies.k_d)
-
-measures = ["burst_time_log10", "silent_time_log10", "half_life_log10"
-            , "chance_on_log10", "chance_on_log10", "k_syn_effective_log10", "nr_steady_state_log10"]
+sg.generate_mixed_set()
 
 
-def show_distribution(measure):
+def show_distribution(df_strategies, measure):
 
     units = "minutes"
     if measure == "nr_steady_state_log10":
@@ -81,5 +67,30 @@ def show_distribution(measure):
     plt.close(1)
 
 
-for measure in measures:
-    show_distribution(measure)
+def read_strategies_and_prepare_data():
+
+    sr = StrategyReader(filename)
+
+    strategies = sr.select_all()
+
+    df_strategies = sr.df_strategies
+
+    df_strategies["burst_time_log10"] = np.log10(1 / df_strategies["k_on"])
+    df_strategies["silent_time_log10"] = np.log10(1 / df_strategies["k_off"])
+    df_strategies["half_life_log10"] = np.log10(np.log(2)/df_strategies.k_d)
+    df_strategies["chance_on"] = df_strategies.k_on / (df_strategies.k_off + df_strategies.k_on)
+
+    df_strategies["chance_on_log10"] = np.log10(df_strategies["chance_on"])
+    df_strategies["k_syn_effective"] = df_strategies.k_syn * df_strategies.chance_on
+    df_strategies["k_syn_effective_log10"] = np.log10(df_strategies.k_syn_effective)
+    df_strategies["nr_steady_state_log10"] = np.log10(df_strategies.k_syn_effective / df_strategies.k_d)
+
+    measures = ["burst_time_log10", "silent_time_log10", "half_life_log10"
+                , "chance_on_log10", "chance_on_log10", "k_syn_effective_log10", "nr_steady_state_log10"]
+
+    for measure in measures:
+        show_distribution(df_strategies, measure)
+
+
+# read_strategies_and_prepare_data()
+

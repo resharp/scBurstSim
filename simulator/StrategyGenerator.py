@@ -2,24 +2,19 @@ import logging
 
 import numpy as np
 import pandas as pd
+import random
 
 from simulator.Transcription import TranscriptParams
 from utils.utils import round_sig
 
+from itertools import product
+
 
 class StrategyGenerator:
 
-    filename = ""
-
-    range_k_on_exp = []
-    range_k_off_exp = []
-    range_k_syn_exp = []
-    range_k_d_exp = []
-
-    counter = 0
-
     def __init__(self, range_k_on_exp, range_k_off_exp, range_k_syn_exp, range_k_d_exp, filename):
 
+        self.counter = 0
         self.range_k_on_exp = range_k_on_exp
         self.range_k_off_exp = range_k_off_exp
         self.range_k_syn_exp = range_k_syn_exp
@@ -160,3 +155,67 @@ class StrategyGenerator:
             ret_value = round(np.random.uniform(limits[0], limits[1]), decimals)
 
         return ret_value
+
+    # generate a mixed set of strategies with equal fraction ON and OFF for combination of:
+    # - stochastic and fluctuating
+    # - coordinated/non-coordinated
+    # - length of periods (range between 1h to 24h)
+    # - synthesis rates (1 or 0.1 per minute)
+    # - half lives (1 to 5 hours)
+    # - number of alleles in cluster
+    def generate_mixed_set(self):
+
+        columns = ['name', 'k_on', 'k_off', 'coord_group', 'k_syn', 'k_d', 'tran_type']
+
+        data = []
+
+        # 6 increasing periods
+        periods_in_hours = [1, 2, 3, 5, 12, 24]
+
+        tran_types = ['S', 'F']
+        coord_types = [True, False]
+
+        half_lives_in_hours = [1, 5, 2, 4, 3]
+        k_syns_in_minutes = [0.1, 1]
+
+        k_d_in_minutes = [np.log(2) / (60 * h) for h in half_lives_in_hours]
+
+        coord_group_counter = 0
+
+        for period_h in periods_in_hours:
+            logging.info("start period_h {}".format(period_h))
+
+            # calculate k_on and k_off
+            one_state_m = 60 * period_h / 2
+            k_on = round(1 / one_state_m, 4)
+            k_off = round(1 / one_state_m, 4)
+
+            categories = product(tran_types, coord_types)
+            for tran_type, sync_type in categories:
+                logging.info("start category{} {}".format(tran_type, sync_type))
+                nrs_in_cluster = [1, 2, 4, 8, 32]
+
+                for nr_in_cluster in nrs_in_cluster:
+
+                    # each cluster is either coordinated or not
+                    # determine coord_group
+                    if sync_type:
+                        coord_group_counter = coord_group_counter + 1
+                        coord_group = coord_group_counter
+                        coord_label = "C"
+                    else:
+                        coord_group = np.nan
+                        coord_label = "NC"
+                    for allele in range(0, nr_in_cluster):
+                        self.counter = self.counter + 1
+                        name = "a_{}_{}_{}_{}".format(self.counter, tran_type, coord_label, period_h)
+
+                        # pick k_syn and pick k_d
+                        k_syn = np.random.choice(k_syns_in_minutes)
+                        k_d = round(np.random.choice(k_d_in_minutes), 4)
+
+                        # add generated allele/strategy
+                        data.append([name, k_on, k_off, coord_group, k_syn, k_d, tran_type])
+
+        df_strategies = pd.DataFrame(data=data, columns=columns)
+        df_strategies.to_csv(path_or_buf=self.filename, sep=';', index=False)

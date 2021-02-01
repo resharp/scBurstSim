@@ -14,10 +14,10 @@ nr_cells = 300
 gap = 0
 # TODO: time > 120
 length_window = 60  # 15, 30, 45, 60, 75, 90, 105, 120
-efficiency = 0.1
+efficiency = 1
 
-nr_syn_within_strategy = 2
-nr_non_syn_within_strategy = 3
+nr_syn_within_strategy = 1
+nr_non_syn_within_strategy = 1
 
 # under this run_dir we should also create a plot directory
 out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
@@ -29,8 +29,8 @@ else:
     dir_sep = "/"
 
 # see strategy names in data\strategies.csv
-# strategies_file = out_dir + dir_sep + "strategies_generated.csv"
-strategies_file = in_dir + dir_sep + "strategies.csv"
+strategies_file = out_dir + dir_sep + "strategies_mixed.csv"
+# strategies_file = in_dir + dir_sep + "strategies.csv"
 
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 

@@ -36,7 +36,8 @@ logging.basicConfig(filename=out_dir + dir_sep + 'single_allele_example.log', fi
                     level=logging.INFO)
 
 # sr = StrategyReader(out_dir + dir_sep + "strategies_generated.csv" )
-sr = StrategyReader(in_dir + dir_sep + "strategies.csv" )
+sr = StrategyReader(out_dir + dir_sep + "strategies_mixed.csv" )
+# sr = StrategyReader(in_dir + dir_sep + "strategies.csv" )
 
 
 # windows = [[400, 460, 'EU'], [520, 580, '4SU']] # e.g. 120 minutes of EU labeling
@@ -151,10 +152,10 @@ def run_distribution(params, interval, nr_snapshots):
 # we can select a strategy by name
 # see strategy names in data\strategies.csv
 strategy = "fluc"
-params = sr.get(strategy=strategy)
+# params = sr.get(strategy=strategy)
 
 # or retrieve a random strategy
-# params = sr.get_random()
+params = sr.get_random()
 
 run_example(params)
 
