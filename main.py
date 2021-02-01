@@ -8,8 +8,8 @@ import argparse
 # get the fully-qualified logger (here: `root.__main__`)
 logger = logging.getLogger(__name__)
 
-run_sim = True # setting run_sim to False results in use of locally stored data set
-create_cluster_map = True
+run_sim = True  # setting run_sim to False results in use of locally stored data set
+create_cluster_map = False
 nr_cells = 300
 gap = 0
 # TODO: time > 120
@@ -176,16 +176,16 @@ def main(args_in):
 
 
 # TODO: uncomment for production mode with parameters from the command line
-# if __name__ == "__main__":
-#     main(sys.argv[1:])
+if __name__ == "__main__":
+    main(sys.argv[1:])
 
 # for length_window in [15, 30, 45, 60, 75, 90, 105, 120]:
-for length_window in [60]:
-    main(["-nc", str(nr_cells),
-          "-g", str(gap),
-          "-w", str(length_window),
-          "-e", str(efficiency),
-          "-o", out_dir,
-          "-sf", strategies_file])
+# for length_window in [60]:
+#     main(["-nc", str(nr_cells),
+#           "-g", str(gap),
+#           "-w", str(length_window),
+#           "-e", str(efficiency),
+#           "-o", out_dir,
+#           "-sf", strategies_file])
 # main(["-h"])
 # main([])
