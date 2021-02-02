@@ -1,8 +1,12 @@
 import os
 
+from pandas import DataFrame
+from sklearn.cluster import AgglomerativeClustering
+
 from simulator.Experiment import *
 from simulator.StrategyReader import StrategyReader
 from simulator.data_analysis import *
+import scipy.cluster.hierarchy as sch
 
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 
@@ -61,25 +65,129 @@ df_counts["norm_count_log10"] = np.log10(df_counts["norm_count"])
 df_counts["count_all_log10"] = np.log10(df_counts["count_all"])
 
 
-windows, fix_time = get_windows_and_fix_time(length_window=len_win, gap=gap)
+def make_cluster_maps():
 
-exp_params = ExperimentParams(nr_cells=100,
-                              strategies_file=strategies_file,
-                              nr_syn_within_strategy=1,
-                              nr_non_syn_within_strategy=1,
-                              efficiency=1,
-                              windows=windows, fix_time=fix_time)
+    windows, fix_time = get_windows_and_fix_time(length_window=len_win, gap=gap)
 
-for window in windows:
-    # cluster map creates plot cluster_map.svg in run directory if you do not provide a plot name
-    label = window[WINDOW_LABEL]
+    nr_cells = 100
+    efficiency = 1
 
-    # only use label counts for clustering
-    measures = ["real_count_log10", "norm_count"]
+    for window in windows:
+        # cluster map creates plot cluster_map.svg in run directory if you do not provide a plot name
+        label = window[WINDOW_LABEL]
 
-    for measure in measures:
-        # TODO: Be careful: the sum of count_all differs for different labels due to filtering in cluster_map
-        # because rows may be missing for the label /allele/cell combination resulting in missing that count_all
-        cluster_map(df_counts, measure=measure, label=label, exp_params=exp_params,
-                    plot_name=plot_dir + dir_sep + "{measure}_cluster_map_{label}.svg".
-                    format(label=label, measure=measure))
+        # only use label counts for clustering
+        measures = ["real_count_log10", "norm_count"]
+
+        for measure in measures:
+            # TODO: Be careful: the sum of count_all differs for different labels due to filtering in cluster_map
+            # because rows may be missing for the label /allele/cell combination resulting in missing that count_all
+            cluster_map(df_counts, measure=measure, label=label, nr_cells=nr_cells, efficiency=efficiency,
+                        plot_name=plot_dir + dir_sep + "{measure}_cluster_map_{label}.svg".
+                        format(label=label, measure=measure))
+
+
+def plot_dendrogram(model, **kwargs):
+    # Create linkage matrix and then plot the dendrogram
+
+    # create the counts of samples under each node
+    counts = np.zeros(model.children_.shape[0])
+    n_samples = len(model.labels_)
+    for i, merge in enumerate(model.children_):
+        current_count = 0
+        for child_idx in merge:
+            if child_idx < n_samples:
+                current_count += 1  # leaf node
+            else:
+                current_count += counts[child_idx - n_samples]
+        counts[i] = current_count
+
+    linkage_matrix = np.column_stack([model.children_, model.distances_,
+                                      counts]).astype(float)
+
+    # Plot the corresponding dendrogram
+    sch.dendrogram(linkage_matrix, **kwargs)
+
+
+def show_other_method_by_correlation():
+
+    df = df_counts_2_matrix.transpose()    # we transpose because we want the alleles as features here
+
+    cor = df.corr()
+    filename_corr = plot_dir + dir_sep + "corr_matrix.csv"
+    cor.to_csv(filename_corr, sep=";")
+
+    sns.heatmap(cor, square=True, xticklabels=cor.columns, yticklabels=cor.columns)
+    plt.show()
+
+
+def cluster_for_dendrogram(df_matrix):
+    # https://towardsdatascience.com/hierarchical-clustering-explained-e58d2f936323
+    # first calculate all distances by setting distance_threshold=0
+    model = AgglomerativeClustering(distance_threshold=0, n_clusters=None, affinity='euclidean', linkage='ward')
+
+    model = model.fit(df_matrix)
+
+    print("nr of clusters: {}".format(model.n_clusters_))
+    # If there are n distances greated than [distance cutoff] so, when combined, n+1 clusters will be formed
+    distances = model.distances_
+
+    plt.figure(figsize=(12, 6))
+    plt.title('Hierarchical Clustering Dendrogram')
+    # plot the top three levels of the dendrogram
+    plot_dendrogram(model, truncate_mode='level', p=3)
+
+    plot_name = plot_dir + dir_sep + "dendrogram.svg"
+    plt.xlabel("Number of points in node (or index of point if no parenthesis).")
+
+    plt.savefig(plot_name)
+
+
+def cluster_alleles(df_matrix):
+    # After having visually inspected the dendrogram we decide to set the distance cutoff at
+    threshold = 20
+
+    model = AgglomerativeClustering(distance_threshold=threshold, n_clusters=None, affinity='euclidean', linkage='ward')
+    # and cluster again
+
+    model = model.fit(df_matrix)
+
+    print("nr of clusters: {}".format(model.n_clusters_))
+
+    df_labels = DataFrame(model.labels_)
+
+    # now we want to make a DataFrame with the combination of alleles and cluster labels
+
+    df_matrix = df_matrix.reset_index()
+
+    # merge on index
+    df_merge = df_labels.merge(df_matrix, left_index=True, right_index=True, how="inner")
+
+    df_merge.rename(columns={0: 'cluster'}, inplace=True)
+
+    filename_clusters = plot_dir + dir_sep + "clusters_{th}.csv".format(th=threshold)
+    df_merge.to_csv(filename_clusters, sep=";")
+
+    # count number of allles in clusters
+    df_cluster_counts = df_merge[['cluster', 'strategy']].groupby('cluster').count().reset_index()
+
+    print(df_cluster_counts)
+
+    filename_cluster_counts = plot_dir + dir_sep + "cl_counts_{th}.csv".format(th=threshold)
+    df_cluster_counts.to_csv(filename_cluster_counts, sep=";")
+
+
+# using seaborn cluster maps
+make_cluster_maps()
+
+# show_other_method_by_correlation()
+
+df_counts_2 = df_counts[(df_counts.label == label_2)][['strategy', 'cell_id', 'norm_count']]
+
+df_counts_2_matrix = df_counts_2.set_index(["strategy", "cell_id"])['norm_count'].unstack()
+df_counts_2_matrix = df_counts_2_matrix.fillna(0)
+
+cluster_for_dendrogram(df_counts_2_matrix)
+
+cluster_alleles(df_counts_2_matrix)
+
