@@ -1,7 +1,7 @@
 import logging
 import os
 
-from simulator.Experiment import Experiment
+from simulator.Experiment import *
 from simulator.StrategyReader import StrategyReader
 from simulator.Transcription import *
 from simulator.transcription_plots import *
@@ -38,19 +38,6 @@ logging.basicConfig(filename=out_dir + dir_sep + 'single_allele_example.log', fi
 # sr = StrategyReader(out_dir + dir_sep + "strategies_generated.csv" )
 sr = StrategyReader(out_dir + dir_sep + "strategies_mixed.csv" )
 # sr = StrategyReader(in_dir + dir_sep + "strategies.csv" )
-
-
-# windows = [[400, 460, 'EU'], [520, 580, '4SU']] # e.g. 120 minutes of EU labeling
-def get_windows_and_fix_time(length_window=60, gap=0):
-
-    start_windows = 600
-    window_eu = [start_windows, start_windows + length_window, 'EU'] # e.g. 120 minutes of EU labeling
-    window_4su = [start_windows + length_window + gap,
-                  start_windows + 2 * length_window + gap, '4SU'] # e.g. 120 minutes of EU labeling
-    windows = [window_eu, window_4su]
-    fix_time = windows[-1][WINDOW_END] + 0  # fix_time 0 minutes after end of last window
-
-    return windows, fix_time
 
 
 windows, fix_time = get_windows_and_fix_time(length_window=60, gap=0)
@@ -151,11 +138,11 @@ def run_distribution(params, interval, nr_snapshots):
 
 # we can select a strategy by name
 # see strategy names in data\strategies.csv
-strategy = "fluc"
-# params = sr.get(strategy=strategy)
+strategy = "a_665_F_C_5"
+params = sr.get(strategy=strategy)
 
 # or retrieve a random strategy
-params = sr.get_random()
+# params = sr.get_random()
 
 run_example(params)
 

@@ -20,6 +20,18 @@ class ExperimentParams(NamedTuple):
     fix_time: int
 
 
+def get_windows_and_fix_time(length_window=60, gap=0):
+
+    start_windows = 600
+    window_eu = [start_windows, start_windows + length_window, 'EU']  # e.g. 60 minutes of EU labeling
+    window_4su = [start_windows + length_window + gap,
+                  start_windows + 2 * length_window + gap, '4SU']  # e.g. identical window for 4SU labeling
+    windows = [window_eu, window_4su]
+    fix_time = windows[-1][WINDOW_END]  # fix_time zero minutes after end of last window
+
+    return windows, fix_time
+
+
 class Experiment:
 
     def __init__(self, params):

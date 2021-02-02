@@ -8,9 +8,8 @@ import argparse
 # get the fully-qualified logger (here: `root.__main__`)
 logger = logging.getLogger(__name__)
 
-run_sim = True  # setting run_sim to False results in use of locally stored data set
-create_cluster_map = False
-nr_cells = 300
+run_sim = False  # setting run_sim to False results in use of locally stored data set
+nr_cells = 100
 gap = 0
 # TODO: time > 120
 length_window = 60  # 15, 30, 45, 60, 75, 90, 105, 120
@@ -33,34 +32,6 @@ strategies_file = out_dir + dir_sep + "strategies_mixed.csv"
 # strategies_file = in_dir + dir_sep + "strategies.csv"
 
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
-
-
-def get_windows_and_fix_time(length_window=60, gap=0):
-
-    start_windows = 600
-    window_eu = [start_windows, start_windows + length_window, 'EU']  # e.g. 60 minutes of EU labeling
-    window_4su = [start_windows + length_window + gap,
-                  start_windows + 2 * length_window + gap, '4SU']  # e.g. identical window for 4SU labeling
-    windows = [window_eu, window_4su]
-    fix_time = windows[-1][WINDOW_END]  # fix_time zero minutes after end of last window
-
-    return windows, fix_time
-
-
-def normalize(df_counts):
-
-    df_mean_counts = df_counts[['allele_id', 'label', 'real_count']].\
-        groupby(['allele_id', 'label']).mean().reset_index()
-
-    df_mean_counts.rename(columns={'real_count': 'mean_count'}, inplace=True)
-
-    df_ret = df_counts.merge(df_mean_counts, how='inner',
-                             left_on=['allele_id', 'label'],
-                             right_on=['allele_id', 'label'])
-
-    df_ret["norm_count"] = df_ret["real_count"] / df_ret["mean_count"]
-
-    return df_ret
 
 
 def arg_parse(args_in):
@@ -132,8 +103,6 @@ def main(args_in):
     label = "EU"
     df_counts_eu = df_counts[df_counts.label == label]
 
-    df_counts = normalize(df_counts)
-
     # df_counts_eu = violin_plot_fraction(0.8, "80", df_counts_eu)
 
     # do_kolmogorov_smirnov_tests_for_percentages_on(df_counts_eu)
@@ -150,42 +119,18 @@ def main(args_in):
 
     # show_distribution_real_counts(df_counts, nr_cells)
 
-    if create_cluster_map:
-
-        plot_dir = args.out_dir + dir_sep + "main_scBurstSim.plots"
-        os.makedirs(plot_dir, exist_ok=True)
-
-        df_counts["real_count_log10"] = np.log10(df_counts["real_count"])
-        df_counts["norm_count_log10"] = np.log10(df_counts["norm_count"])
-        df_counts["count_all_log10"] = np.log10(df_counts["count_all"])
-
-        # cluster map creates plot cluster_map.svg in run directory if you do not provide a plot name
-        for window in windows:
-            label = window[WINDOW_LABEL]
-
-            # only use label counts for clustering
-            measures = ["real_count_log10", "norm_count"]
-
-            for measure in measures:
-
-                # TODO: Be careful: the sum of count_all differs for different labels due to filtering in cluster_map
-                # because rows may be missing for the label /allele/cell combination resulting in missing that count_all
-                cluster_map(df_counts, measure=measure, label=label, exp_params=exp_params,
-                            plot_name=plot_dir + dir_sep + "{measure}_cluster_map_{label}.svg".
-                            format(label=label, measure=measure))
-
 
 # TODO: uncomment for production mode with parameters from the command line
-if __name__ == "__main__":
-    main(sys.argv[1:])
+# if __name__ == "__main__":
+#     main(sys.argv[1:])
 
 # for length_window in [15, 30, 45, 60, 75, 90, 105, 120]:
-# for length_window in [60]:
-#     main(["-nc", str(nr_cells),
-#           "-g", str(gap),
-#           "-w", str(length_window),
-#           "-e", str(efficiency),
-#           "-o", out_dir,
-#           "-sf", strategies_file])
+for length_window in [60]:
+    main(["-nc", str(nr_cells),
+          "-g", str(gap),
+          "-w", str(length_window),
+          "-e", str(efficiency),
+          "-o", out_dir,
+          "-sf", strategies_file])
 # main(["-h"])
 # main([])

@@ -41,7 +41,7 @@ gap = 0
 label_1 = "EU"
 label_2 = "4SU"
 
-sr = StrategyReader(out_dir + dir_sep + "strategies_generated.csv" )
+sr = StrategyReader(out_dir + dir_sep + "strategies_mixed.csv" )
 # sr = StrategyReader(in_dir + dir_sep + "strategies.csv")
 sr.read_strategies()
 df_strategies = sr.df_strategies
@@ -240,7 +240,7 @@ def do_descriptive_analysis(df_counts):
     plot_error_k_d(df_allele_counts, len_win)
 
     # strategy = "bimodal"
-    strategy = "generated_23"
+    strategy = "a_665_F_C_5"
 
     # preparing 2-dim density plot of the two labels for a single strategy
     df_counts_unstack = df_counts_unstack[df_counts_unstack.strategy == strategy]
@@ -314,7 +314,8 @@ def plot_chance_vs_time(df_p11_example, y_label):
 
 sns.set(style="white", color_codes=True)
 
-window_lengths = [15, 30, 45, 60, 75, 90, 105, 120]
+# window_lengths = [15, 30, 45, 60, 75, 90, 105, 120]
+window_lengths = [60]
 
 p_01s = []
 p_11s = []

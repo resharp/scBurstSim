@@ -4,8 +4,6 @@
 # window_lengths = [15, 30, 45, 60, 120, 180]
 # fit based on (hidden) presence of active state, on real simulated counts and on sampled simulated counts
 
-
-
 # TO DO
 # three categories of k_syn:
 # only change k_on with fixed (k_off, k_syn, k_d)
@@ -16,7 +14,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.optimize import curve_fit
 
-from simulator.Experiment import Experiment
+from simulator.Experiment import *
 from simulator.Transcription import *
 import numpy as np
 
@@ -111,18 +109,6 @@ def plot_production_of_mrna():
     plt.savefig(plot_dir + dir_sep + "theoretical_production_mrna_{k_on}_{k_off}_{k_syn}.svg".format(
         k_on=k_on, k_off=k_off, k_syn=k_syn))
     plt.close(1)
-
-
-def get_windows_and_fix_time(length_window=60, gap=0):
-
-    start_windows = 600
-    window_eu = [start_windows, start_windows + length_window, 'EU'] # e.g. 120 minutes of EU labeling
-    window_4su = [start_windows + length_window + gap,
-                  start_windows + 2 * length_window + gap, '4SU'] # e.g. 120 minutes of EU labeling
-    windows = [window_eu, window_4su]
-    fix_time = windows[-1][WINDOW_END] + 0  # fix_time 0 minutes after end of last window
-
-    return windows, fix_time
 
 
 def run_active_state_is_present_simulations(label, nr_runs):
