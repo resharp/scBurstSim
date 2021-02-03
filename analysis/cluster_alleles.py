@@ -87,12 +87,23 @@ def make_cluster_maps():
                         format(label=label, measure=measure))
 
 
+def allele_label(allele_index):
+
+    if allele_index > len(df_alleles) - 1:
+        return "cluster ({})".format(allele_index)
+
+    allele_label = df_alleles[df_alleles.index == allele_index].strategy.item()
+
+    return allele_label
+
+
 def plot_dendrogram(model, **kwargs):
     # Create linkage matrix and then plot the dendrogram
 
     # create the counts of samples under each node
     counts = np.zeros(model.children_.shape[0])
     n_samples = len(model.labels_)
+    # see documentation https://scikit-learn.org/stable/modules/generated/sklearn.cluster.AgglomerativeClustering.html
     for i, merge in enumerate(model.children_):
         current_count = 0
         for child_idx in merge:
@@ -106,7 +117,7 @@ def plot_dendrogram(model, **kwargs):
                                       counts]).astype(float)
 
     # Plot the corresponding dendrogram
-    sch.dendrogram(linkage_matrix, **kwargs)
+    sch.dendrogram(linkage_matrix, **kwargs, orientation='left', leaf_label_func=allele_label)
 
 
 def show_other_method_by_correlation():
@@ -122,6 +133,7 @@ def show_other_method_by_correlation():
 
 
 def cluster_for_dendrogram(df_matrix):
+
     # https://towardsdatascience.com/hierarchical-clustering-explained-e58d2f936323
     # first calculate all distances by setting distance_threshold=0
     model = AgglomerativeClustering(distance_threshold=0, n_clusters=None, affinity='euclidean', linkage='ward')
@@ -132,14 +144,15 @@ def cluster_for_dendrogram(df_matrix):
     # If there are n distances greated than [distance cutoff] so, when combined, n+1 clusters will be formed
     distances = model.distances_
 
-    plt.figure(figsize=(12, 6))
+    plt.figure(figsize=(12, 80))
     plt.title('Hierarchical Clustering Dendrogram')
     # plot the top three levels of the dendrogram
-    plot_dendrogram(model, truncate_mode='level', p=3)
+    plot_dendrogram(model, truncate_mode='level', p=30)
 
     plot_name = plot_dir + dir_sep + "dendrogram.svg"
-    plt.xlabel("Number of points in node (or index of point if no parenthesis).")
 
+    # plt.xlabel("Number of points in node (or index of point if no parenthesis).")
+    plt.xlabel("Distance")
     plt.savefig(plot_name)
 
 
@@ -178,7 +191,7 @@ def cluster_alleles(df_matrix):
 
 
 # using seaborn cluster maps
-make_cluster_maps()
+# make_cluster_maps()
 
 # show_other_method_by_correlation()
 
@@ -187,6 +200,7 @@ df_counts_2 = df_counts[(df_counts.label == label_2)][['strategy', 'cell_id', 'n
 df_counts_2_matrix = df_counts_2.set_index(["strategy", "cell_id"])['norm_count'].unstack()
 df_counts_2_matrix = df_counts_2_matrix.fillna(0)
 
+df_alleles = df_counts_2_matrix.reset_index()[['strategy']]
 cluster_for_dendrogram(df_counts_2_matrix)
 
 cluster_alleles(df_counts_2_matrix)
