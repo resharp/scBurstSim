@@ -17,8 +17,6 @@ if os.name == 'nt':
 else:
     dir_sep = "/"
     out_dir = "sc_runs"
-plot_dir = out_dir + dir_sep + "cluster_alleles.plots"
-os.makedirs(plot_dir, exist_ok=True)
 
 in_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\source\scBurstSim\data"
 
@@ -28,6 +26,9 @@ gap = 0
 label_1 = "EU"
 label_2 = "4SU"
 len_win = 60
+
+plot_dir = out_dir + dir_sep + "cluster_alleles.plots" + dir_sep + "len_win_{}".format(len_win)
+os.makedirs(plot_dir, exist_ok=True)
 
 filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
     len_win=len_win, gap=gap, eff=efficiency)
@@ -117,10 +118,12 @@ def plot_dendrogram(model, **kwargs):
                                       counts]).astype(float)
 
     # Plot the corresponding dendrogram
-    sch.dendrogram(linkage_matrix, **kwargs, orientation='left', leaf_label_func=allele_label)
+    sch.dendrogram(linkage_matrix, **kwargs, orientation='left',
+                   leaf_label_func=allele_label,
+                   color_threshold=15)
 
 
-def show_other_method_by_correlation():
+def show_other_method_by_correlation(df_counts_2_matrix):
 
     df = df_counts_2_matrix.transpose()    # we transpose because we want the alleles as features here
 
@@ -132,7 +135,7 @@ def show_other_method_by_correlation():
     plt.show()
 
 
-def cluster_for_dendrogram(df_matrix):
+def cluster_for_dendrogram(df_matrix, plot_name):
 
     # https://towardsdatascience.com/hierarchical-clustering-explained-e58d2f936323
     # first calculate all distances by setting distance_threshold=0
@@ -141,7 +144,8 @@ def cluster_for_dendrogram(df_matrix):
     model = model.fit(df_matrix)
 
     print("nr of clusters: {}".format(model.n_clusters_))
-    # If there are n distances greated than [distance cutoff] so, when combined, n+1 clusters will be formed
+
+    # If there are n distances greater than [distance cutoff] so, when combined, n+1 clusters will be formed
     distances = model.distances_
 
     plt.figure(figsize=(12, 80))
@@ -149,20 +153,16 @@ def cluster_for_dendrogram(df_matrix):
     # plot the top three levels of the dendrogram
     plot_dendrogram(model, truncate_mode='level', p=30)
 
-    plot_name = plot_dir + dir_sep + "dendrogram.svg"
-
     # plt.xlabel("Number of points in node (or index of point if no parenthesis).")
     plt.xlabel("Distance")
     plt.savefig(plot_name)
 
 
-def cluster_alleles(df_matrix):
-    # After having visually inspected the dendrogram we decide to set the distance cutoff at
-    threshold = 20
+def cluster_alleles_and_save_to_csv(df_matrix, suffix, threshold=20):
 
     model = AgglomerativeClustering(distance_threshold=threshold, n_clusters=None, affinity='euclidean', linkage='ward')
-    # and cluster again
 
+    # and cluster again
     model = model.fit(df_matrix)
 
     print("nr of clusters: {}".format(model.n_clusters_))
@@ -178,7 +178,7 @@ def cluster_alleles(df_matrix):
 
     df_merge.rename(columns={0: 'cluster'}, inplace=True)
 
-    filename_clusters = plot_dir + dir_sep + "clusters_{th}.csv".format(th=threshold)
+    filename_clusters = plot_dir + dir_sep + "clusters_{suffix}_{th}.csv".format(suffix=suffix, th=threshold)
     df_merge.to_csv(filename_clusters, sep=";")
 
     # count number of allles in clusters
@@ -190,10 +190,61 @@ def cluster_alleles(df_matrix):
     df_cluster_counts.to_csv(filename_cluster_counts, sep=";")
 
 
+# prepare matrix with direction of difference
+# norm_count are the normalized counts as compared to all cell values for that allele and label
+# we assume this normalization corrects for differences of counts for labels due to decay
+# returns all-to-all allele matrix with
+# up =  1 : norm_count label 2 > norm_count label 1 (or no counts for label 1)
+# up = -1 : norm_count label 2 < norm_count label 1 (or no counts for label 2)
+# up =  0 : no counts for label 1 and label 2
+def prepare_12_count_matrix():
+
+    # norm_count for label 1 and label 2 in separate columns
+    df_counts_1 = df_counts[(df_counts.label == label_1)][['strategy', 'cell_id', 'norm_count']]
+    df_counts_2 = df_counts[(df_counts.label == label_2)][['strategy', 'cell_id', 'norm_count']]
+
+    df_counts_12 = df_counts_1.merge(df_counts_2,
+                                     left_on=['strategy', 'cell_id'],
+                                     right_on=['strategy', 'cell_id'],
+                                     how='outer',
+                                     suffixes=["_1", "_2"],
+                                     indicator=True)
+
+    df_counts_12.norm_count_1 = df_counts_12.norm_count_1.fillna(0)
+    df_counts_12.norm_count_2 = df_counts_12.norm_count_2.fillna(0)
+
+    df_counts_12['up'] = -1
+    df_counts_12.loc[df_counts_12.norm_count_2 > df_counts_12.norm_count_1, 'up'] = 1
+
+    df_12_matrix = df_counts_12.set_index(["strategy", "cell_id"])['up'].unstack()
+    df_12_matrix = df_12_matrix.fillna(0)
+
+    return df_12_matrix
+
+
+def cluster_on_one_label(df_counts_2_matrix):
+
+    # TODO: probably possible to cluster once and add all distances for complete dendrogram
+    cluster_for_dendrogram(df_counts_2_matrix, plot_name=plot_dir + dir_sep + "dendrogram_label_2.svg")
+
+    # After having visually inspected the dendrogram we decide to set the distance cutoff at
+    threshold = 15
+    cluster_alleles_and_save_to_csv(df_counts_2_matrix, suffix="one", threshold=threshold)
+
+    # show_other_method_by_correlation(df_counts_2_matrix)
+
+
+def cluster_on_two_labels(df_counts_12_matrix):
+
+    cluster_for_dendrogram(df_counts_12_matrix, plot_name=plot_dir + dir_sep + "dendrogram_direction12.svg")
+
+    # After having visually inspected the dendrogram we decide to set the distance cutoff at
+    threshold = 15
+    cluster_alleles_and_save_to_csv(df_counts_12_matrix, suffix="two", threshold=threshold)
+
+
 # using seaborn cluster maps
 # make_cluster_maps()
-
-# show_other_method_by_correlation()
 
 df_counts_2 = df_counts[(df_counts.label == label_2)][['strategy', 'cell_id', 'norm_count']]
 
@@ -201,7 +252,14 @@ df_counts_2_matrix = df_counts_2.set_index(["strategy", "cell_id"])['norm_count'
 df_counts_2_matrix = df_counts_2_matrix.fillna(0)
 
 df_alleles = df_counts_2_matrix.reset_index()[['strategy']]
-cluster_for_dendrogram(df_counts_2_matrix)
 
-cluster_alleles(df_counts_2_matrix)
+cluster_on_one_label(df_counts_2_matrix)
 
+# ------------------------
+# clustering on two labels
+df_counts_12_matrix = prepare_12_count_matrix()
+
+# we have to set this df_alleles because it is used in allele_label
+df_alleles = df_counts_2_matrix.reset_index()[['strategy']]
+
+cluster_on_two_labels(df_counts_2_matrix)
