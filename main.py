@@ -1,6 +1,6 @@
 import os
 from simulator.Experiment import *
-from simulator.data_analysis import *
+from analysis.data_analysis import *
 import logging
 import sys
 import argparse

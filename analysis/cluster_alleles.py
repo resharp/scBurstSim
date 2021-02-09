@@ -5,7 +5,7 @@ from sklearn.cluster import AgglomerativeClustering
 
 from simulator.Experiment import *
 from simulator.StrategyReader import StrategyReader
-from simulator.data_analysis import *
+from analysis.data_analysis import *
 import scipy.cluster.hierarchy as sch
 
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
@@ -35,8 +35,12 @@ filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
     len_win=len_win, gap=gap, eff=efficiency)
 
 
-def normalize(df_counts):
-
+def normalize(df_counts) -> DataFrame:
+    """
+    :param df_counts: count table with column real_count in separate records per cell, allele and label
+    :return: df_ret: same count table with extra column norm_count with normalized counts based on
+        means per allele per label over all cells
+    """
     df_mean_counts = df_counts[['allele_id', 'label', 'real_count']].\
         groupby(['allele_id', 'label']).mean().reset_index()
 
@@ -49,22 +53,6 @@ def normalize(df_counts):
     df_ret["norm_count"] = df_ret["real_count"] / df_ret["mean_count"]
 
     return df_ret
-
-
-# df_counts are counts of two labeling windows (single window length)
-df_counts = pd.read_csv(filename_counts, sep=';')
-
-df_counts = normalize(df_counts)
-
-strategies_file = out_dir + dir_sep + "strategies_mixed.csv"
-sr = StrategyReader(strategies_file)
-# sr = StrategyReader(in_dir + dir_sep + "strategies.csv")
-sr.read_strategies()
-df_strategies = sr.df_strategies
-
-df_counts["real_count_log10"] = np.log10(df_counts["real_count"])
-df_counts["norm_count_log10"] = np.log10(df_counts["norm_count"])
-df_counts["count_all_log10"] = np.log10(df_counts["count_all"])
 
 
 def make_cluster_maps():
@@ -259,6 +247,21 @@ def add_coord_group_to_strategy(df_alleles):
 
     return df_merged
 
+
+# df_counts are counts of two labeling windows (single window length)
+df_counts = pd.read_csv(filename_counts, sep=';')
+
+df_counts = normalize(df_counts)
+
+strategies_file = out_dir + dir_sep + "strategies_mixed.csv"
+sr = StrategyReader(strategies_file)
+# sr = StrategyReader(in_dir + dir_sep + "strategies.csv")
+sr.read_strategies()
+df_strategies = sr.df_strategies
+
+df_counts["real_count_log10"] = np.log10(df_counts["real_count"])
+df_counts["norm_count_log10"] = np.log10(df_counts["norm_count"])
+df_counts["count_all_log10"] = np.log10(df_counts["count_all"])
 
 # using seaborn cluster maps
 # make_cluster_maps()
