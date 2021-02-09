@@ -8,6 +8,45 @@ import seaborn as sns
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 
 
+def normalize_counts(df_counts) -> pd.DataFrame:
+    """
+    :param df_counts: count table with column real_count in separate records per cell, allele and label
+    :return: df_ret: same count table with extra column norm_count with normalized counts based on
+        means per allele per label over all cells
+
+    normalize counts based on means per allele per label over all cells
+    """
+    df_mean_counts = df_counts[['allele_id', 'label', 'real_count']].\
+        groupby(['allele_id', 'label']).mean().reset_index()
+
+    df_mean_counts.rename(columns={'real_count': 'mean_count'}, inplace=True)
+
+    df_ret = df_counts.merge(df_mean_counts, how='inner',
+                             left_on=['allele_id', 'label'],
+                             right_on=['allele_id', 'label'])
+
+    df_ret["norm_count"] = df_ret["real_count"] / df_ret["mean_count"]
+
+    return df_ret
+
+
+def merge_label_counts(df_counts, label_1, label_2) -> pd.DataFrame:
+
+    # norm_count for label 1 and label 2 in separate columns
+    df_counts_1 = df_counts[(df_counts.label == label_1)][['strategy', 'cell_id', 'norm_count']]
+    df_counts_2 = df_counts[(df_counts.label == label_2)][['strategy', 'cell_id', 'norm_count']]
+    df_counts_12 = df_counts_1.merge(df_counts_2,
+                                     left_on=['strategy', 'cell_id'],
+                                     right_on=['strategy', 'cell_id'],
+                                     how='outer',
+                                     suffixes=["_1", "_2"],
+                                     indicator=True)
+    df_counts_12.norm_count_1 = df_counts_12.norm_count_1.fillna(0)
+    df_counts_12.norm_count_2 = df_counts_12.norm_count_2.fillna(0)
+
+    return df_counts_12
+
+
 def show_distribution_real_counts(df_counts, nr_cells):
     # NB: not all zeroes are shown! (when burst was absent; however, can be derived from unlabeled counts)
     plt.title("Distribution of real labeled mRNA counts over {nr} single cells".format(nr=nr_cells))

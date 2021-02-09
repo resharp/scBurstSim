@@ -19,8 +19,6 @@ else:
     dir_sep = "/"
     out_dir = "sc_runs"
 
-in_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\source\scBurstSim\data"
-
 efficiency = 100
 
 gap = 0
@@ -33,26 +31,6 @@ os.makedirs(plot_dir, exist_ok=True)
 
 filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
     len_win=len_win, gap=gap, eff=efficiency)
-
-
-def normalize(df_counts) -> DataFrame:
-    """
-    :param df_counts: count table with column real_count in separate records per cell, allele and label
-    :return: df_ret: same count table with extra column norm_count with normalized counts based on
-        means per allele per label over all cells
-    """
-    df_mean_counts = df_counts[['allele_id', 'label', 'real_count']].\
-        groupby(['allele_id', 'label']).mean().reset_index()
-
-    df_mean_counts.rename(columns={'real_count': 'mean_count'}, inplace=True)
-
-    df_ret = df_counts.merge(df_mean_counts, how='inner',
-                             left_on=['allele_id', 'label'],
-                             right_on=['allele_id', 'label'])
-
-    df_ret["norm_count"] = df_ret["real_count"] / df_ret["mean_count"]
-
-    return df_ret
 
 
 def make_cluster_maps():
@@ -187,21 +165,9 @@ def cluster_alleles_and_save_to_csv(df_matrix, suffix, threshold=20):
 # up =  1 : norm_count label 2 > norm_count label 1 (or no counts for label 1)
 # up = -1 : norm_count label 2 < norm_count label 1 (or no counts for label 2)
 # up =  0 : no counts for label 1 and label 2
-def prepare_12_count_matrix():
+def prepare_12_count_matrix(df_counts, label_1, label_2):
 
-    # norm_count for label 1 and label 2 in separate columns
-    df_counts_1 = df_counts[(df_counts.label == label_1)][['strategy', 'cell_id', 'norm_count']]
-    df_counts_2 = df_counts[(df_counts.label == label_2)][['strategy', 'cell_id', 'norm_count']]
-
-    df_counts_12 = df_counts_1.merge(df_counts_2,
-                                     left_on=['strategy', 'cell_id'],
-                                     right_on=['strategy', 'cell_id'],
-                                     how='outer',
-                                     suffixes=["_1", "_2"],
-                                     indicator=True)
-
-    df_counts_12.norm_count_1 = df_counts_12.norm_count_1.fillna(0)
-    df_counts_12.norm_count_2 = df_counts_12.norm_count_2.fillna(0)
+    df_counts_12 = merge_label_counts(df_counts, label_1, label_2)
 
     df_counts_12['up'] = -1
     df_counts_12.loc[df_counts_12.norm_count_2 > df_counts_12.norm_count_1, 'up'] = 1
@@ -251,7 +217,7 @@ def add_coord_group_to_strategy(df_alleles):
 # df_counts are counts of two labeling windows (single window length)
 df_counts = pd.read_csv(filename_counts, sep=';')
 
-df_counts = normalize(df_counts)
+df_counts = normalize_counts(df_counts)
 
 strategies_file = out_dir + dir_sep + "strategies_mixed.csv"
 sr = StrategyReader(strategies_file)
@@ -278,7 +244,7 @@ cluster_on_one_label(df_counts_2_matrix)
 
 # ------------------------
 # clustering on two labels
-df_counts_12_matrix = prepare_12_count_matrix()
+df_counts_12_matrix = prepare_12_count_matrix(df_counts, label_1, label_2)
 
 # we have to set this df_alleles because it is used in allele_label
 df_alleles = df_counts_2_matrix.reset_index()[['strategy']]
