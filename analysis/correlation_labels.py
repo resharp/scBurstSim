@@ -2,6 +2,7 @@
 
 import os
 import pandas as pd
+import seaborn as sns
 from simulator.StrategyReader import StrategyReader
 from analysis.data_analysis import *
 from scipy.stats import pearsonr
@@ -77,16 +78,58 @@ def calculate_corr_and_save(df_counts):
     df_corr.to_csv(filename_corr_labels, sep=";", index=False)
     return df_corr
 
+def add_coord_group_to_strategy(df_alleles):
+
+    df_merged = df_alleles.merge(df_strategies, how='inner',
+                                 left_on=['strategy'],
+                                 right_on=['name'])
+    df_merged["display"] = np.where( df_merged.coord_group.isnull(),
+                                     df_merged['strategy'],
+                                     df_merged['strategy'] + "__cg" + df_merged.coord_group.astype(str))
+
+    return df_merged
+
+
+def make_box_plot_for_periods(df, measure, agg_field, tran_type):
+
+    pattern = "_" + tran_type
+    df_type = df[df.strategy.str.contains(pattern)]
+
+    plt.figure(figsize=(12, 5))
+    plt.title("Pearson correlation for different periods, type={}".format(tran_type))
+    sns.set(style="ticks")
+
+    b = sns.boxplot(x=measure, y=agg_field, data=df_type,
+                    palette="vlag")
+
+    sns.set(font_scale=0.8)
+
+    sns.swarmplot(x=measure, y=agg_field, data=df_type,
+                  size=2, color=".3", linewidth=0)
+
+    plt.xlabel("Pearson correlation between normalized counts two labels")
+    plt.ylabel("Period (hours)")
+    fig_name = plot_dir + dir_sep + "boxplot_correlation_{type}_{len_win}.svg".format(
+        type=tran_type, len_win=len_win)
+    plt.savefig(fig_name)
+    plt.close(1)
+
 
 df_counts = normalize_counts(df_counts)
 df_counts_12 = merge_label_counts(df_counts, label_1, label_2)
 
 
 df_corr = calculate_corr_and_save(df_counts_12)
-
+df_corr = add_coord_group_to_strategy(df_corr)
 
 strategy = df_corr.head(1).strategy.item()
 scatter_plot_for_allele(df_counts_12, strategy)
 
 strategy = df_corr.tail(1).strategy.item()
 scatter_plot_for_allele(df_counts_12, strategy)
+
+df_corr["period"] = df_corr.strategy.str.split("_", expand=True)[4]
+
+for tran_type in ["S", "F"]:
+    make_box_plot_for_periods(df_corr, measure="corr", agg_field="period", tran_type=tran_type)
+
