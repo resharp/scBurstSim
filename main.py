@@ -8,7 +8,7 @@ import argparse
 # get the fully-qualified logger (here: `root.__main__`)
 logger = logging.getLogger(__name__)
 
-run_sim = False  # setting run_sim to False results in use of locally stored data set
+run_sim = True  # setting run_sim to False results in use of locally stored data set
 nr_cells = 100
 gap = 0
 # TODO: time > 120
@@ -125,6 +125,7 @@ def main(args_in):
 #     main(sys.argv[1:])
 
 # for length_window in [15, 30, 45, 60, 75, 90, 105, 120]:
+# alternative way to run main from within your development environment:
 for length_window in [60]:
     main(["-nc", str(nr_cells),
           "-g", str(gap),

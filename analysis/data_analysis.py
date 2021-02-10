@@ -1,3 +1,4 @@
+# some common methods that can be used in different analyses
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import ks_2samp

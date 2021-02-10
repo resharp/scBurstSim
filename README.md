@@ -1,5 +1,5 @@
 # scBurstSim
-Single cell transcriptional bursts and noise simulator
+Single cell transcriptional bursts/fluctuations and noise simulator
 
 Stochastic modeling of transcription and sampling noise on single cell level. 
 
@@ -33,19 +33,19 @@ python3 "[your source location]/scBurstSim/main.py" -nc 10  -sf "[your path]/str
 ```
 An example strategies.csv file is in the data folder. See explanation of file below.
 
-Output: A resulting file df_counts.csv is put in the output directory, when
+A file with a mix of 1128 strategies strategies_mixed.csv is also in the data folder, 
+which was used for the analysis of correlation between normalized label counts. 
+
+Output: A resulting file df_counts_W<len_win>_G<len_gap>.csv is put in the output directory, when
 no output directory is specified it is put in the directory you run your 
 script from.
 
-Also some plots for clustering will be placed here (for now only some simple 
-clustering based on the fraction of count of one label as compared to the total counts)  
-
-For now, further parameters, e.g. the labeling window(s) can be set by adapting main.py.
+For now, further parameters, e.g. the (number of) labeling window(s) can be set by adapting main.py.
 
 # Dependencies 
 
 See file requirements.txt for dependency on Python packages.
- 
+We used conda environments for handling the dependencies. 
 
 # Strategies
 
@@ -109,6 +109,18 @@ should be identical for coordinated strategies.
 
 # Analysis
 
+## correlation labels ## 
+analysis of correlation between normalized label counts
+
+output: 
+- directory correlation_labels.plots containing
+- a csv corr_labels_<len_win>.csv with Pearson correlation values
+- some plots with correlation values for different categories (tran_type S/F and length of period)
+
+
+## cluster alleles ##
+to do
+
 ## analyze parameters
 
 - compare simulated (time-dependent and stationary) distributions 
@@ -132,6 +144,6 @@ fit to time dependent function of chance of having activity of any length
 during a single labeling window
 
 ## infer parameters Poisson
-
+to do
 
 

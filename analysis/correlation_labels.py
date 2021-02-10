@@ -1,4 +1,7 @@
-# we use correlation between two label counts as a filter
+# analysis of correlation between normalized label counts
+# output: directory correlation_labels.plots containing
+#   - a csv corr_labels_<len_win>.csv with Pearson correlation values
+#   - some plots with correlation values for different categories (tran_type S/F and length of period)
 
 import os
 import pandas as pd
@@ -77,6 +80,7 @@ def calculate_corr_and_save(df_counts):
     filename_corr_labels = plot_dir + dir_sep + "corr_labels_{len_win}.csv".format(len_win=len_win)
     df_corr.to_csv(filename_corr_labels, sep=";", index=False)
     return df_corr
+
 
 def add_coord_group_to_strategy(df_alleles):
 
