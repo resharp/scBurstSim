@@ -105,7 +105,7 @@ should be identical for coordinated strategies.
 
 ## single_allele_example.py 
 1. traces: run single_allele_example.py for plotting example traces of specific strategies (see further documentation inline)
-2. distributions quickly create stationary distribution for a single allele example (by sampling snapshots from single trace)
+2. distributions: quickly create stationary distribution for a single allele example (by sampling snapshots from single trace)
 
 # Analysis
 
