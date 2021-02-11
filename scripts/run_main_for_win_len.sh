@@ -14,6 +14,7 @@ out_dir=/hosts/linuxhome/mutant1/tmp/richard/sc_runs_${window}
 
 echo $source_dir
 echo "output in" $out_dir 
+mkdir $out_dir
 ls $source_dir/scBurstSim/main.py
 echo -w $window  -o $out_dir
 python3 $source_dir/scBurstSim/main.py -nc 1 -sf sc_runs/strategies_mixed.csv -g 0 -w $window -o $out_dir -e 1
