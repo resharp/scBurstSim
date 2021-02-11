@@ -6,9 +6,6 @@ echo ${log_line}
 
 source_dir=../..
 
-conda deactivate
-conda activate python37
-
 #out_dir=sc_runs_${window}
 out_dir=/hosts/linuxhome/mutant1/tmp/richard/sc_runs_${window}
 
