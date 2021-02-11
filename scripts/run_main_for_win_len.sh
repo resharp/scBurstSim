@@ -14,6 +14,6 @@ echo "output in" $out_dir
 mkdir $out_dir
 ls $source_dir/scBurstSim/main.py
 echo -w $window  -o $out_dir
-python3 $source_dir/scBurstSim/main.py -nc 1 -sf sc_runs/strategies_mixed.csv -g 0 -w $window -o $out_dir -e 1
+python3 $source_dir/scBurstSim/main.py -nc 1 -sf ~/sc_runs/strategies_mixed.csv -g 0 -w $window -o $out_dir -e 1
 
 #sleep $window
