@@ -55,7 +55,7 @@ An example of the strategies file:
 
 ```                        
 # named strategies for the simulator/Transcription class (; separated!)
-name;k_on;k_off;coord_group;k_syn;k_d
+name;k_on;k_off;coord_group;k_syn;k_d;tran_type
 # two strategies with the same burst coordination
 frequent_coor;0.02;0.02;1;0.16;0.01;S
 frequent_high;0.02;0.02;1;0.8;0.01;S

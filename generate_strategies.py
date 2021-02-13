@@ -42,7 +42,7 @@ range_k_d_exp = [-1.4, 0.2]
 # range_k_syn = [0.016, 1.6]
 # range_k_d = [0.0019, 0.023]
 
-filename = out_dir + dir_sep + "strategies_mixed.csv"
+filename = out_dir + dir_sep + "strategies_mixed_new.csv"
 sg = StrategyGenerator(range_k_on_exp=range_k_on_exp, range_k_off_exp=range_k_off_exp,
                        range_k_syn_exp=range_k_syn_exp, range_k_d_exp=range_k_d_exp,
                        filename=filename)
