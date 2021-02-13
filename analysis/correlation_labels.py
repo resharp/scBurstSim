@@ -120,7 +120,7 @@ def make_box_plot_for_periods(df, measure, agg_field, tran_type):
     plt.close(1)
 
 
-def make_box_plot_for_len_win(df, measure, agg_field, tran_type):
+def make_box_plot_for_len_win(df, period, measure, agg_field, tran_type):
 
     sns.set_theme(style="whitegrid")
 
@@ -130,7 +130,7 @@ def make_box_plot_for_len_win(df, measure, agg_field, tran_type):
     df_type["len_win_str"] = df_type.len_win.map(str)
 
     plt.figure(figsize=(12, 5))
-    plt.title("Pearson correlation for different window lengths, type={}".format(tran_type))
+    plt.title("Pearson correlation for different window lengths, period={}h type={}".format(period, tran_type))
     sns.set(style="ticks")
 
     b = sns.boxplot(x=agg_field, y=measure, data=df_type,
@@ -144,8 +144,8 @@ def make_box_plot_for_len_win(df, measure, agg_field, tran_type):
     plt.xlabel("Length window (minutes)")
     plt.ylabel("Pearson correlation between normalized counts two labels")
 
-    fig_name = plot_dir + dir_sep + "boxplot_correlation_{agg_field}_{type}_{len_win}.svg".format(
-        type=tran_type, agg_field=agg_field, len_win=len_win)
+    fig_name = plot_dir + dir_sep + "boxplot_correlation_{agg_field}_{type}_{period}.svg".format(
+        type=tran_type, agg_field=agg_field, period=period)
     plt.savefig(fig_name)
     plt.close(1)
 
@@ -173,7 +173,7 @@ def run_and_plot_one_correlation(df_counts):
 # combine all correlation files into one and add an extra column for window size
 def run_all_correlations():
     corr_list = []
-    window_lengths = [15, 30, 45, 60, 75, 90, 105, 120]
+    window_lengths = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195]
     for len_win in window_lengths:
 
         filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
@@ -210,8 +210,10 @@ if run_corr:
 else:
     df_corr_all = pd.read_csv(corr_name, sep=';')
 
-period = 2
-df_one_period = df_corr_all[df_corr_all.period == period]
+periods = [1, 2, 3, 5, 12, 24]
 
-make_box_plot_for_len_win(df_one_period, "corr", "len_win_str", "F")
+for period in periods:
+    df_one_period = df_corr_all[df_corr_all.period == period]
+
+    make_box_plot_for_len_win(df_one_period, period, "corr", "len_win_str", "F")
 
