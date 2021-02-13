@@ -10,4 +10,4 @@ efficiency=$1
 mutant=$(hostname | tr '.' '\t' | cut -f1)
 out_dir=/hosts/linuxhome/${mutant}/tmp/richard/sc_runs_${efficiency}
 
-parallel -a $par_input -j 8 bash run_main_for_win_len.sh {} $efficiency $our_dir
+parallel -a $par_input -j 8 bash run_main_for_win_len.sh {} $efficiency $out_dir
