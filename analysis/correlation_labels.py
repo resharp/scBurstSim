@@ -125,7 +125,7 @@ def make_box_plot_for_len_win(df, period, measure, agg_field, tran_type):
     sns.set_theme(style="whitegrid")
 
     pattern = "_" + tran_type
-    df_type = df[df.strategy.str.contains(pattern)]
+    df_type = df[df.strategy.str.contains(pattern)].copy(deep=True)
 
     df_type["len_win_str"] = df_type.len_win.map(str)
 
