@@ -175,7 +175,7 @@ class StrategyGenerator:
         tran_types = ['S', 'F']
         coord_types = [True, False]
 
-        half_lives_in_hours = [1, 5, 2, 4, 3]
+        half_lives_in_hours = [0.5, 1, 2, 3, 4, 5]
         k_syns_in_minutes = [0.1, 1]
 
         k_d_in_minutes = [np.log(2) / (60 * h) for h in half_lives_in_hours]
