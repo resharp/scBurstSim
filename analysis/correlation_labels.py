@@ -129,6 +129,7 @@ def make_box_plot_for_len_win(df, period, measure, agg_field, tran_type, efficie
     df_type = df[df.strategy.str.contains(pattern)].copy(deep=True)
 
     df_type["len_win_str"] = df_type.len_win.map(str)
+    df_type["k_syn_str"] = df_type.k_syn.map(str)
 
     plt.figure(figsize=(12, 5))
     plt.title("Pearson correlation for different window lengths, period={}h type={} efficiency={}".
@@ -136,11 +137,11 @@ def make_box_plot_for_len_win(df, period, measure, agg_field, tran_type, efficie
     sns.set(style="ticks")
 
     b = sns.boxplot(x=agg_field, y=measure, data=df_type,
-                    palette="vlag", orient="v")
+                    color="white", orient="v")
 
     sns.set(font_scale=0.8)
 
-    sns.swarmplot(x=agg_field, y=measure, data=df_type,
+    sns.swarmplot(x=agg_field, y=measure, data=df_type, hue="k_syn_str", palette="vlag",
                   size=2, color=".3", linewidth=0, orient="v")
 
     plt.xlabel("Length window (minutes)")
@@ -190,6 +191,7 @@ def run_all_correlations():
         df_counts_12["len_win"] = len_win
 
         df_corr = calculate_corr_and_save(df_counts_12)
+        df_corr = add_coord_group_to_strategy(df_corr)
         df_corr["len_win"] = len_win
 
         corr_list.append(df_corr)
