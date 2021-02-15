@@ -30,7 +30,6 @@ os.makedirs(plot_dir, exist_ok=True)
 in_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\source\scBurstSim\data"
 
 nr_cells = 300
-efficiency = 100
 
 len_win = 60  # 15, 30, 45, 60, 75, .. 120, 180, 240
 gap = 0
@@ -121,7 +120,7 @@ def plot_means_against_time(label_1, label_2, strategies, times=[15, 30, 45, 60,
         for len_win in times:
 
             filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
-                len_win=len_win, gap=gap, eff=efficiency)
+                len_win=len_win, gap=gap)
 
             df_counts = pd.read_csv(filename_counts, sep=';')
 
@@ -164,7 +163,7 @@ def plot_distributions_against_time(label_2):
         for len_win in times:
 
             filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
-                len_win=len_win, gap=gap, eff=efficiency)
+                len_win=len_win, gap=gap)
 
             df_counts = pd.read_csv(filename_counts, sep=';')
 
@@ -194,7 +193,7 @@ def plot_distributions_against_time(label_2):
 
 
 filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
-    len_win=len_win, gap=gap, eff=efficiency)
+    len_win=len_win, gap=gap)
 
 df_counts = pd.read_csv(filename_counts, sep=';')
 

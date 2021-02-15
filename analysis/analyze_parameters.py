@@ -35,7 +35,7 @@ os.makedirs(plot_dir, exist_ok=True)
 
 in_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\source\scBurstSim\data"
 
-efficiency = 100
+efficiency = 1
 
 gap = 0
 label_1 = "EU"

@@ -19,8 +19,6 @@ else:
     dir_sep = "/"
     out_dir = "sc_runs"
 
-efficiency = 100
-
 gap = 0
 label_1 = "EU"
 label_2 = "4SU"
@@ -30,7 +28,7 @@ plot_dir = out_dir + dir_sep + "cluster_alleles.plots" + dir_sep + "len_win_{}".
 os.makedirs(plot_dir, exist_ok=True)
 
 filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
-    len_win=len_win, gap=gap, eff=efficiency)
+    len_win=len_win, gap=gap)
 
 
 def make_cluster_maps():
