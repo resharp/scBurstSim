@@ -12,16 +12,17 @@ from scipy.stats import pearsonr
 
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 
+efficiency = 1
+
 if os.name == 'nt':
     dir_sep = "\\"
     # TODO: set your own out directory
     # out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
-    out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs_on_server"
+    out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs_on_server_{}".format(efficiency)
 else:
     dir_sep = "/"
     out_dir = "sc_runs"
 
-efficiency = 100
 
 gap = 0
 label_1 = "EU"
@@ -32,13 +33,13 @@ plot_dir = out_dir + dir_sep + "correlation_labels.plots"
 os.makedirs(plot_dir, exist_ok=True)
 
 filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
-    len_win=len_win, gap=gap, eff=efficiency)
+    len_win=len_win, gap=gap)
 
 
 # df_counts are counts of two labeling windows (single window length)
 df_counts = pd.read_csv(filename_counts, sep=';')
 
-strategies_file = out_dir + dir_sep + "strategies_mixed.csv"
+strategies_file = out_dir + dir_sep + "strategies_mixed_new.csv"
 sr = StrategyReader(strategies_file)
 # sr = StrategyReader(in_dir + dir_sep + "strategies.csv")
 sr.read_strategies()
@@ -120,7 +121,7 @@ def make_box_plot_for_periods(df, measure, agg_field, tran_type):
     plt.close(1)
 
 
-def make_box_plot_for_len_win(df, period, measure, agg_field, tran_type):
+def make_box_plot_for_len_win(df, period, measure, agg_field, tran_type, efficiency):
 
     sns.set_theme(style="whitegrid")
 
@@ -130,7 +131,8 @@ def make_box_plot_for_len_win(df, period, measure, agg_field, tran_type):
     df_type["len_win_str"] = df_type.len_win.map(str)
 
     plt.figure(figsize=(12, 5))
-    plt.title("Pearson correlation for different window lengths, period={}h type={}".format(period, tran_type))
+    plt.title("Pearson correlation for different window lengths, period={}h type={} efficiency={}".
+              format(period, tran_type, efficiency))
     sns.set(style="ticks")
 
     b = sns.boxplot(x=agg_field, y=measure, data=df_type,
@@ -177,7 +179,7 @@ def run_all_correlations():
     for len_win in window_lengths:
 
         filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
-            len_win=len_win, gap=gap, eff=efficiency)
+            len_win=len_win, gap=gap)
 
         # df_counts are counts of two labeling windows (single window length)
         df_counts = pd.read_csv(filename_counts, sep=';')
@@ -215,5 +217,5 @@ periods = [1, 2, 3, 5, 12, 24]
 for period in periods:
     df_one_period = df_corr_all[df_corr_all.period == period]
 
-    make_box_plot_for_len_win(df_one_period, period, "corr", "len_win_str", "F")
+    make_box_plot_for_len_win(df_one_period, period, "corr", "len_win_str", "F", efficiency)
 
