@@ -9,6 +9,7 @@ import seaborn as sns
 from simulator.StrategyReader import StrategyReader
 from analysis.data_analysis import *
 from scipy.stats import pearsonr
+from scipy.stats import mannwhitneyu
 
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 
@@ -19,10 +20,11 @@ if os.name == 'nt':
     # TODO: set your own out directory
     # out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
     out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs_on_server_{}".format(efficiency)
+    prj_dir = r"D:\26 Battich Oudenaarden transcriptional bursts"
 else:
     dir_sep = "/"
-    out_dir = "sc_runs"
-
+    out_dir = "sc_runs_{}".format(efficiency)
+    prj_dir = "sc_runs"
 
 gap = 0
 label_1 = "EU"
@@ -74,12 +76,14 @@ def label_pearson_correlation(series):
     return df
 
 
-def calculate_corr_and_save(df_counts):
+def calculate_corr_and_save(df_counts, len_win):
 
     df_corr = df_counts.groupby(["strategy"]).apply(label_pearson_correlation).reset_index(). \
         sort_values("corr").drop('level_1', axis=1)
 
     filename_corr_labels = plot_dir + dir_sep + "corr_labels_{len_win}.csv".format(len_win=len_win)
+
+    # do we still want to save this separately?
     df_corr.to_csv(filename_corr_labels, sep=";", index=False)
     return df_corr
 
@@ -121,34 +125,31 @@ def make_box_plot_for_periods(df, measure, agg_field, tran_type):
     plt.close(1)
 
 
-def make_box_plot_for_len_win(df, period, measure, agg_field, tran_type, efficiency):
+def make_box_plot_for_len_win(df, period, measure, agg_field, efficiency):
 
     sns.set_theme(style="whitegrid")
 
-    pattern = "_" + tran_type
-    df_type = df[df.strategy.str.contains(pattern)].copy(deep=True)
-
-    df_type["len_win_str"] = df_type.len_win.map(str)
-    df_type["k_syn_str"] = df_type.k_syn.map(str)
+    df = df.copy(deep=True)
+    df["len_win_str"] = df.len_win.map(str)
+    df["k_syn_str"] = df.k_syn.map(str)
 
     plt.figure(figsize=(12, 5))
-    plt.title("Pearson correlation for different window lengths, period={}h type={} efficiency={}".
-              format(period, tran_type, efficiency))
-    sns.set(style="ticks")
+    plt.title("Pearson correlation for different window lengths, period={}h efficiency={}".
+              format(period, efficiency))
 
-    b = sns.boxplot(x=agg_field, y=measure, data=df_type,
+    b = sns.boxplot(x=agg_field, y=measure, data=df, hue="tran_type", hue_order=["S", "F"],
                     color="white", orient="v")
 
     sns.set(font_scale=0.8)
 
-    sns.swarmplot(x=agg_field, y=measure, data=df_type, hue="k_syn_str", palette="vlag",
-                  size=2, color=".3", linewidth=0, orient="v")
+    sns.swarmplot(x=agg_field, y=measure, data=df, hue="tran_type", dodge=True,
+                  size=2, palette="vlag", linewidth=0, orient="v", hue_order=["S", "F"])
 
     plt.xlabel("Length window (minutes)")
     plt.ylabel("Pearson correlation between normalized counts two labels")
 
-    fig_name = plot_dir + dir_sep + "boxplot_correlation_{agg_field}_{type}_{period}.svg".format(
-        type=tran_type, agg_field=agg_field, period=period)
+    fig_name = plot_dir + dir_sep + "boxplot_correlation_{agg_field}_{period}.svg".format(
+        agg_field=agg_field, period=period)
     plt.savefig(fig_name)
     plt.close(1)
 
@@ -190,7 +191,7 @@ def run_all_correlations():
 
         df_counts_12["len_win"] = len_win
 
-        df_corr = calculate_corr_and_save(df_counts_12)
+        df_corr = calculate_corr_and_save(df_counts_12, len_win)
         df_corr = add_coord_group_to_strategy(df_corr)
         df_corr["len_win"] = len_win
 
@@ -219,5 +220,69 @@ periods = [1, 2, 3, 5, 12, 24]
 for period in periods:
     df_one_period = df_corr_all[df_corr_all.period == period]
 
-    make_box_plot_for_len_win(df_one_period, period, "corr", "len_win_str", "F", efficiency)
+    make_box_plot_for_len_win(df_one_period, period, "corr", "len_win_str", efficiency)
 
+mw_values = []
+# once we calculated the correlations for all efficiencies
+# we can compare F to S for all window sizes and all efficiencies for a certain window length
+efficiencies = [1, 0.5, 0.2, 0.05]
+for eff in efficiencies:
+
+    out_dir = r"{}{}runs_on_server_{}".format(prj_dir, dir_sep, eff)
+    plot_dir = out_dir + dir_sep + "correlation_labels.plots"
+
+    corr_name = "{pd}{dir_sep}df_corr_all_G{gap}.csv".format(
+        pd=plot_dir, dir_sep=dir_sep, gap=gap)
+    df_corr_all_eff = pd.read_csv(corr_name, sep=';')
+
+    periods = [1, 2, 3, 5, 12, 24]
+    for period in periods:
+        df_one_period = df_corr_all[df_corr_all_eff.period == period]
+        # now for each window length, calculate the difference in mean
+        # between tran_type S and tran_type F
+        window_lengths = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195]
+        for len_win in window_lengths:
+
+            df_s = df_one_period[(df_one_period.len_win == len_win) & (df_one_period.tran_type == "S")]
+            df_f = df_one_period[(df_one_period.len_win == len_win) & (df_one_period.tran_type == "F")]
+
+            mw_result = mannwhitneyu(x=df_s["corr"], y=df_f["corr"])
+
+            mw_values.append([period, eff, len_win, mw_result.pvalue])
+
+
+df_mw_values = pd.DataFrame(mw_values, columns=["period", "eff", "len_win", "mw_pvalue"])
+
+df_mw_values["minus_log10_mw_pvalue"] = -np.log10(df_mw_values.mw_pvalue).round(2)
+
+
+periods = [1, 2, 3, 5, 12, 24]
+for period in periods:
+
+    data = df_mw_values[df_mw_values.period == period]
+
+    data = data[['eff', 'len_win', 'minus_log10_mw_pvalue']]
+    data = data.sort_values("len_win")
+    data = data.set_index(["eff", "len_win"])
+
+    # convert from multi-index to cross-product table
+    data = data.unstack()
+
+    # data = data.transpose() # if you would like to switch columns and rows
+
+    # rename columns, unstack
+    data.columns = [x[1] for x in data.columns.ravel()]
+
+    plt.figure(figsize=(12, 5))
+    ax = sns.heatmap(data, cmap="vlag_r", annot=True)
+
+    plt.title("-log10(pvalue) ManWU test between label correlation values of F and S for period: {}h".format(period))
+
+    plot_dir = r"{}{}runs{}{}".format(prj_dir, dir_sep, dir_sep, "correlation_labels.plots")
+    phase_plot_name = plot_dir + dir_sep + "phase_plot_{}.svg".format(period)
+
+    plt.xlabel("window size in minutes (no gap)")
+    plt.ylabel("efficiency")
+    plt.savefig(phase_plot_name)
+    # plt.show()
+    plt.close(1)
