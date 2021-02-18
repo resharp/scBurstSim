@@ -29,23 +29,6 @@ else:
 gap = 0
 label_1 = "EU"
 label_2 = "4SU"
-len_win = 120
-
-plot_dir = out_dir + dir_sep + "correlation_labels.plots"
-os.makedirs(plot_dir, exist_ok=True)
-
-filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
-    len_win=len_win, gap=gap)
-
-
-# df_counts are counts of two labeling windows (single window length)
-df_counts = pd.read_csv(filename_counts, sep=';')
-
-strategies_file = out_dir + dir_sep + "strategies_mixed_new.csv"
-sr = StrategyReader(strategies_file)
-# sr = StrategyReader(in_dir + dir_sep + "strategies.csv")
-sr.read_strategies()
-df_strategies = sr.df_strategies
 
 
 def scatter_plot_for_allele(df_counts, strategy):
@@ -175,9 +158,9 @@ def run_and_plot_one_correlation(df_counts):
 
 
 # combine all correlation files into one and add an extra column for window size
-def run_all_correlations():
+def run_all_correlations(window_lengths):
     corr_list = []
-    window_lengths = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195]
+
     for len_win in window_lengths:
 
         filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
@@ -203,86 +186,110 @@ def run_all_correlations():
     return df_corr_all
 
 
+def mwu_test_for_all_efficiencies_win_lens_and_periods(prj_dir, efficiencies, window_lengths, periods):
+    mw_values = []
+    # once we calculated the correlations for all efficiencies
+    # we can compare F to S for all window sizes and all efficiencies for a certain window length
+
+    for eff in efficiencies:
+
+        out_dir = r"{}{}runs_on_server_{}".format(prj_dir, dir_sep, eff)
+        plot_dir = out_dir + dir_sep + "correlation_labels.plots"
+
+        corr_name = "{plot_dir}{dir_sep}df_corr_all_G{gap}.csv".format(
+            plot_dir=plot_dir, dir_sep=dir_sep, gap=gap)
+        df_corr_all_eff = pd.read_csv(corr_name, sep=';')
+
+        for period in periods:
+            df_one_period = df_corr_all[df_corr_all_eff.period == period]
+            # now for each window length, calculate the difference in mean
+            # between tran_type S and tran_type F
+            for len_win in window_lengths:
+
+                df_s = df_one_period[(df_one_period.len_win == len_win) & (df_one_period.tran_type == "S")]
+                df_f = df_one_period[(df_one_period.len_win == len_win) & (df_one_period.tran_type == "F")]
+
+                mw_result = mannwhitneyu(x=df_s["corr"], y=df_f["corr"])
+
+                mw_values.append([period, eff, len_win, mw_result.pvalue])
+
+    df_mw_return = pd.DataFrame(mw_values, columns=["period", "eff", "len_win", "mw_pvalue"])
+
+    df_mw_return["minus_log10_mw_pvalue"] = -np.log10(df_mw_return.mw_pvalue).round(2)
+
+    return df_mw_return
+
+
+def create_phase_diagram_for_periods(df_mw_values, periods, prj_dir):
+    for period in periods:
+        data = df_mw_values[df_mw_values.period == period]
+
+        data = data[['eff', 'len_win', 'minus_log10_mw_pvalue']]
+        data = data.sort_values("len_win")
+        data = data.set_index(["eff", "len_win"])
+
+        # convert from multi-index to cross-product table
+        data = data.unstack()
+
+        # data = data.transpose() # if you would like to switch columns and rows
+
+        # rename columns, unstack
+        data.columns = [x[1] for x in data.columns.ravel()]
+
+        plt.figure(figsize=(12, 5))
+        ax = sns.heatmap(data, cmap="vlag_r", annot=True)
+
+        plt.title(
+            "-log10(pvalue) ManWU test between label correlation values of F and S for period: {}h".format(period))
+
+        plot_dir = r"{}{}runs{}{}".format(prj_dir, dir_sep, dir_sep, "correlation_labels.plots")
+        phase_plot_name = plot_dir + dir_sep + "phase_plot_{}.svg".format(period)
+
+        plt.xlabel("window size in minutes (no gap)")
+        plt.ylabel("efficiency")
+        plt.savefig(phase_plot_name)
+        plt.close(1)
+
+
+len_win = 120
+
+plot_dir = out_dir + dir_sep + "correlation_labels.plots"
+os.makedirs(plot_dir, exist_ok=True)
+
+filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
+    len_win=len_win, gap=gap)
+
+# df_counts are counts of two labeling windows (single window length)
+df_counts = pd.read_csv(filename_counts, sep=';')
+
+strategies_file = out_dir + dir_sep + "strategies_mixed_new.csv"
+sr = StrategyReader(strategies_file)
+# sr = StrategyReader(in_dir + dir_sep + "strategies.csv")
+sr.read_strategies()
+df_strategies = sr.df_strategies
+
 # run_and_plot_one_correlation(df_counts)
 
 corr_name = "{od}{dir_sep}df_corr_all_G{gap}.csv".format(
     od=plot_dir, dir_sep=dir_sep, gap=gap)
 
+window_lengths = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195]
 run_corr = False
 if run_corr:
-    df_corr_all = run_all_correlations()
+    df_corr_all = run_all_correlations(window_lengths)
     df_corr_all.to_csv(path_or_buf=corr_name, sep=';', index=False)
 else:
     df_corr_all = pd.read_csv(corr_name, sep=';')
 
 periods = [1, 2, 3, 5, 12, 24]
-
 for period in periods:
     df_one_period = df_corr_all[df_corr_all.period == period]
 
+    # for 1 efficiency: make box plot and compare between F (deterministic fluctuation) and S (stochastic behavior)
     make_box_plot_for_len_win(df_one_period, period, "corr", "len_win_str", efficiency)
 
-mw_values = []
-# once we calculated the correlations for all efficiencies
-# we can compare F to S for all window sizes and all efficiencies for a certain window length
+# after having run correlation for all window lengths
 efficiencies = [1, 0.5, 0.2, 0.05]
-for eff in efficiencies:
+df_mw_values = mwu_test_for_all_efficiencies_win_lens_and_periods(prj_dir, efficiencies, window_lengths, periods)
 
-    out_dir = r"{}{}runs_on_server_{}".format(prj_dir, dir_sep, eff)
-    plot_dir = out_dir + dir_sep + "correlation_labels.plots"
-
-    corr_name = "{pd}{dir_sep}df_corr_all_G{gap}.csv".format(
-        pd=plot_dir, dir_sep=dir_sep, gap=gap)
-    df_corr_all_eff = pd.read_csv(corr_name, sep=';')
-
-    periods = [1, 2, 3, 5, 12, 24]
-    for period in periods:
-        df_one_period = df_corr_all[df_corr_all_eff.period == period]
-        # now for each window length, calculate the difference in mean
-        # between tran_type S and tran_type F
-        window_lengths = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195]
-        for len_win in window_lengths:
-
-            df_s = df_one_period[(df_one_period.len_win == len_win) & (df_one_period.tran_type == "S")]
-            df_f = df_one_period[(df_one_period.len_win == len_win) & (df_one_period.tran_type == "F")]
-
-            mw_result = mannwhitneyu(x=df_s["corr"], y=df_f["corr"])
-
-            mw_values.append([period, eff, len_win, mw_result.pvalue])
-
-
-df_mw_values = pd.DataFrame(mw_values, columns=["period", "eff", "len_win", "mw_pvalue"])
-
-df_mw_values["minus_log10_mw_pvalue"] = -np.log10(df_mw_values.mw_pvalue).round(2)
-
-
-periods = [1, 2, 3, 5, 12, 24]
-for period in periods:
-
-    data = df_mw_values[df_mw_values.period == period]
-
-    data = data[['eff', 'len_win', 'minus_log10_mw_pvalue']]
-    data = data.sort_values("len_win")
-    data = data.set_index(["eff", "len_win"])
-
-    # convert from multi-index to cross-product table
-    data = data.unstack()
-
-    # data = data.transpose() # if you would like to switch columns and rows
-
-    # rename columns, unstack
-    data.columns = [x[1] for x in data.columns.ravel()]
-
-    plt.figure(figsize=(12, 5))
-    ax = sns.heatmap(data, cmap="vlag_r", annot=True)
-
-    plt.title("-log10(pvalue) ManWU test between label correlation values of F and S for period: {}h".format(period))
-
-    plot_dir = r"{}{}runs{}{}".format(prj_dir, dir_sep, dir_sep, "correlation_labels.plots")
-    phase_plot_name = plot_dir + dir_sep + "phase_plot_{}.svg".format(period)
-
-    plt.xlabel("window size in minutes (no gap)")
-    plt.ylabel("efficiency")
-    plt.savefig(phase_plot_name)
-    # plt.show()
-    plt.close(1)
+create_phase_diagram_for_periods(df_mw_values, periods, prj_dir)
