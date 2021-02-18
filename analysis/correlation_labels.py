@@ -2,7 +2,8 @@
 # output: directory correlation_labels.plots containing
 #   - a csv corr_labels_<len_win>.csv with Pearson correlation values
 #   - some plots with correlation values for different categories (tran_type S/F and length of period)
-
+#   - phase diagrams of differences in Pearson correlation p-value distribution for tran_type S and F
+#       for dimensions win_len and efficiency, separately for every oscillation period
 import os
 import pandas as pd
 import seaborn as sns
@@ -50,7 +51,7 @@ def scatter_plot_for_allele(df_counts, strategy):
     plt.close(1)
 
 
-def label_pearson_correlation(series):
+def calc_pearson_correlation(series):
 
     corr, _ = pearsonr(series.norm_count_1, series.norm_count_2)
 
@@ -61,7 +62,7 @@ def label_pearson_correlation(series):
 
 def calculate_corr_and_save(df_counts, len_win):
 
-    df_corr = df_counts.groupby(["strategy"]).apply(label_pearson_correlation).reset_index(). \
+    df_corr = df_counts.groupby(["strategy"]).apply(calc_pearson_correlation).reset_index(). \
         sort_values("corr").drop('level_1', axis=1)
 
     filename_corr_labels = plot_dir + dir_sep + "corr_labels_{len_win}.csv".format(len_win=len_win)
