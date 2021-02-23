@@ -41,7 +41,7 @@ def scatter_plot_for_allele(df_counts, strategy):
 
     df_counts_allele = df_counts[df_counts.strategy == strategy]
 
-    corr, _ = pearsonr(df_counts_allele.norm_count_1, df_counts_allele.norm_count_2)
+    corr, p_value = pearsonr(df_counts_allele.norm_count_1, df_counts_allele.norm_count_2)
 
     corr_s = '%.3f' % corr
     # print("Pearsons correlation: {}".format(corr_s))
@@ -143,12 +143,12 @@ def make_box_plot_for_len_win(df, period, measure, agg_field, efficiency):
     plt.close(1)
 
 
-def run_and_plot_one_correlation(df_counts):
+def run_and_plot_one_correlation(df_counts, len_win):
 
     df_counts = normalize_counts(df_counts)
     df_counts_12 = merge_label_counts(df_counts, label_1, label_2)
 
-    df_corr = calculate_corr_and_save(df_counts_12)
+    df_corr = calculate_corr_and_save(df_counts_12, len_win)
     df_corr = add_coord_group_to_strategy(df_corr)
 
     strategy = df_corr.head(1).strategy.item()
@@ -243,7 +243,7 @@ def create_phase_diagram_for_periods(df_mw_values, periods, prj_dir):
         data.columns = [x[1] for x in data.columns.ravel()]
 
         plt.figure(figsize=(12, 5))
-        ax = sns.heatmap(data, cmap="vlag_r", annot=True)
+        ax = sns.heatmap(data, cmap="Spectral_r", annot=True)
 
         plt.title(
             "-log10(pvalue) ManWU test between label correlation values of F and S for period: {}h".format(period))
@@ -257,7 +257,7 @@ def create_phase_diagram_for_periods(df_mw_values, periods, prj_dir):
         plt.close(1)
 
 
-len_win = 120
+len_win = 60
 
 plot_dir = out_dir + dir_sep + "correlation_labels.plots"
 os.makedirs(plot_dir, exist_ok=True)
@@ -274,7 +274,7 @@ sr = StrategyReader(strategies_file)
 sr.read_strategies()
 df_strategies = sr.df_strategies
 
-# run_and_plot_one_correlation(df_counts)
+run_and_plot_one_correlation(df_counts, len_win)
 
 corr_name = "{od}{dir_sep}df_corr_all_G{gap}.csv".format(
     od=plot_dir, dir_sep=dir_sep, gap=gap)
