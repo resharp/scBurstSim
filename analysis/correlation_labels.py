@@ -209,7 +209,8 @@ def mwu_test_for_all_efficiencies_win_lens_and_periods(prj_dir, efficiencies, wi
         df_corr_all_eff = pd.read_csv(corr_name, sep=';')
 
         for period in periods:
-            df_one_period = df_corr_all_eff[df_corr_all_eff.period == period]
+            # df_one_period = df_corr_all_eff[df_corr_all_eff.period == period]
+            df_one_period = df_corr_all_eff[(df_corr_all_eff.period == period) & (df_corr_all.nr_data_points >= 30)]
             # now for each window length, calculate the difference in mean
             # between tran_type S and tran_type F
             for len_win in window_lengths:
