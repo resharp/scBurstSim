@@ -58,9 +58,11 @@ def scatter_plot_for_allele(df_counts, strategy):
 
 def calc_pearson_correlation(series):
 
-    corr, _ = pearsonr(series.norm_count_1, series.norm_count_2)
+    nr_data_points = len(series)
 
-    df = pd.DataFrame([corr], columns=["corr"])
+    corr, p_value = pearsonr(series.norm_count_1, series.norm_count_2)
+
+    df = pd.DataFrame([[corr, nr_data_points, p_value]], columns=["corr", "nr_data_points", "p_value"])
 
     return df
 
@@ -207,7 +209,7 @@ def mwu_test_for_all_efficiencies_win_lens_and_periods(prj_dir, efficiencies, wi
         df_corr_all_eff = pd.read_csv(corr_name, sep=';')
 
         for period in periods:
-            df_one_period = df_corr_all[df_corr_all_eff.period == period]
+            df_one_period = df_corr_all_eff[df_corr_all_eff.period == period]
             # now for each window length, calculate the difference in mean
             # between tran_type S and tran_type F
             for len_win in window_lengths:
@@ -281,6 +283,7 @@ corr_name = "{od}{dir_sep}df_corr_all_G{gap}.csv".format(
 
 window_lengths = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195]
 run_corr = False
+
 if run_corr:
     df_corr_all = run_all_correlations(window_lengths)
     df_corr_all.to_csv(path_or_buf=corr_name, sep=';', index=False)
@@ -289,6 +292,7 @@ else:
 
 periods = [1, 2, 3, 5, 12, 24]
 for period in periods:
+    # df_one_period = df_corr_all[(df_corr_all.period == period) & (df_corr_all.nr_data_points >= 30)]
     df_one_period = df_corr_all[df_corr_all.period == period]
 
     # for 1 efficiency: make box plot and compare between F (deterministic fluctuation) and S (stochastic behavior)
