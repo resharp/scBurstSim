@@ -1,4 +1,9 @@
 # analysis of signal of label counts
+#
+# input: all counts for 500 cells for all combinations of:
+# efficiencies = [1, 0.5, 0.2, 0.05]
+# window_lengths (minutes) = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195]
+#
 # output: directory signal_labels.plots containing
 #   - phase diagrams of mean counts of labels
 import os

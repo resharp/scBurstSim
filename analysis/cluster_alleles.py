@@ -1,3 +1,6 @@
+# hierarchical clustering on information from one or two labels:
+# one label: based on the normalized counts (normalize counts based on means per allele per label over all cells)
+# two labels: based on either going UP or DOWN in normalized counts
 import os
 
 from pandas import DataFrame

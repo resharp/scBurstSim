@@ -111,15 +111,30 @@ should be identical for coordinated strategies.
 
 ## correlation labels ## 
 analysis of correlation between normalized label counts
+input: all counts for 500 cells for all combinations of: 
+
+efficiencies = [1, 0.5, 0.2, 0.05]
+
+window_lengths (minutes) = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195]
 
 output: 
 - directory correlation_labels.plots containing
 - a csv corr_labels_<len_win>.csv with Pearson correlation values
 - some plots with correlation values for different categories (tran_type S/F and length of period)
 
+## signal of labels ##
+analysis of signal of label counts
+input: same as for correlation labels
+
+output: 
+- directory signal_labels.plots containing
+    - phase diagrams of mean counts of labels
+
 
 ## cluster alleles ##
-to do
+hierarchical clustering on information from one or two labels:
+- one label: based on the normalized counts (normalize counts based on means per allele per label over all cells)
+- two labels: based on either going UP or DOWN in normalized counts
 
 ## analyze parameters
 
@@ -144,6 +159,8 @@ fit to time dependent function of chance of having activity of any length
 during a single labeling window
 
 ## infer parameters Poisson
-to do
-
+try to infer dynamic parameters with approximation for time dependent solution
+based on time dependent counts in one labeling window, and multiple window lengths
+1. fit Poisson distribution to simulated data of counts with 100% efficiency
+2. does not work well: fit to stationary distribution to infer k_syn/k_d, k_on/k_d and k_off/k_d 
 

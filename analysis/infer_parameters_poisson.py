@@ -1,5 +1,8 @@
-# here we fit a Poisson distribution to simulated data of "real" transcripts
+# try to infer dynamic parameters with approximation for time dependent solution
 # based on time dependent counts in one labeling window, and multiple window lengths
+# 1. fit Poisson distribution to simulated data of counts with 100% efficiency
+# 2. does not work well: fit to stationary distribution to infer k_syn/k_d, k_on/k_d and k_off/k_d
+
 import logging
 import os
 import sys
@@ -333,7 +336,7 @@ def heat_map_inferred_parameters(df_lr, parameter, measure):
     plt.close(1)
 
 
-def infer_parameters_for_window_lenghts(window_lengths, run_fitting = False):
+def infer_parameters_for_window_lenghts(window_lengths, run_fitting=False):
 
     csv_name = plot_dir + dir_sep + "parameter_fits.csv"
     logger.info("Infer parameters based on time dependent distributions from {} cells".format(nr_cells))

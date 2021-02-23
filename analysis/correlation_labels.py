@@ -1,4 +1,9 @@
 # analysis of correlation between normalized label counts
+
+# input: all counts for 500 cells for all combinations of:
+# efficiencies = [1, 0.5, 0.2, 0.05]
+# window_lengths (minutes) = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195]
+#
 # output: directory correlation_labels.plots containing
 #   - a csv corr_labels_<len_win>.csv with Pearson correlation values
 #   - some plots with correlation values for different categories (tran_type S/F and length of period)
