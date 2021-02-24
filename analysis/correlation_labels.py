@@ -209,22 +209,27 @@ def mwu_test_for_all_efficiencies_win_lens_and_periods(prj_dir, efficiencies, wi
         df_corr_all_eff = pd.read_csv(corr_name, sep=';')
 
         for period in periods:
-            # df_one_period = df_corr_all_eff[df_corr_all_eff.period == period]
-            df_one_period = df_corr_all_eff[(df_corr_all_eff.period == period) & (df_corr_all.nr_data_points >= 30)]
+            df_one_period = df_corr_all_eff[df_corr_all_eff.period == period]
+            df_filtered = \
+                df_corr_all_eff[(df_corr_all_eff.period == period) & (df_corr_all.nr_data_points >= 30)]
+
             # now for each window length, calculate the difference in mean
             # between tran_type S and tran_type F
             for len_win in window_lengths:
 
-                df_s = df_one_period[(df_one_period.len_win == len_win) & (df_one_period.tran_type == "S")]
-                df_f = df_one_period[(df_one_period.len_win == len_win) & (df_one_period.tran_type == "F")]
+                # here we could also average the number of data points for each window length
+                mean_nr_data_points = int(df_one_period[df_one_period.len_win == len_win].nr_data_points.mean())
+
+                df_s = df_filtered[(df_filtered.len_win == len_win) & (df_filtered.tran_type == "S")]
+                df_f = df_filtered[(df_filtered.len_win == len_win) & (df_filtered.tran_type == "F")]
 
                 mw_result = mannwhitneyu(x=df_s["corr"], y=df_f["corr"])
 
-                mw_values.append([period, eff, len_win, mw_result.pvalue])
+                mw_values.append([period, eff, len_win, mw_result.pvalue, mean_nr_data_points])
 
-    df_mw_return = pd.DataFrame(mw_values, columns=["period", "eff", "len_win", "mw_pvalue"])
+    df_mw_return = pd.DataFrame(mw_values, columns=["period", "eff", "len_win", "mw_pvalue", "mean_nr_data_points"])
 
-    df_mw_return["minus_log10_mw_pvalue"] = -np.log10(df_mw_return.mw_pvalue).round(2)
+    df_mw_return["minus_log10_mw_pvalue"] = -np.log10(df_mw_return.mw_pvalue).round(1)
 
     return df_mw_return
 
@@ -233,31 +238,41 @@ def create_phase_diagram_for_periods(df_mw_values, periods, prj_dir):
     for period in periods:
         data = df_mw_values[df_mw_values.period == period]
 
-        data = data[['eff', 'len_win', 'minus_log10_mw_pvalue']]
-        data = data.sort_values("len_win")
-        data = data.set_index(["eff", "len_win"])
+        measure = 'minus_log10_mw_pvalue'
+        title = "-log10(pvalue) ManWU test between label correlation values of F and S for period: {}h".format(period)
 
-        # convert from multi-index to cross-product table
-        data = data.unstack()
+        create_phase_diagram(data, measure, title, period, prj_dir)
 
-        # data = data.transpose() # if you would like to switch columns and rows
+        measure = 'mean_nr_data_points'
+        title = "mean nr of data points (counts for either label 1 or 2 or both for period: {}h".format(period)
 
-        # rename columns, unstack
-        data.columns = [x[1] for x in data.columns.ravel()]
+        create_phase_diagram(data, measure, title, period, prj_dir)
 
-        plt.figure(figsize=(12, 5))
-        ax = sns.heatmap(data, cmap="Spectral_r", annot=True)
 
-        plt.title(
-            "-log10(pvalue) ManWU test between label correlation values of F and S for period: {}h".format(period))
+def create_phase_diagram(data, measure, title, period, prj_dir):
 
-        plot_dir = r"{}{}runs{}{}".format(prj_dir, dir_sep, dir_sep, "correlation_labels.plots")
-        phase_plot_name = plot_dir + dir_sep + "phase_plot_{}.svg".format(period)
+    data = data[['eff', 'len_win', measure]]
+    data = data.sort_values("len_win")
+    data = data.set_index(["eff", "len_win"])
 
-        plt.xlabel("window size in minutes (no gap)")
-        plt.ylabel("efficiency")
-        plt.savefig(phase_plot_name)
-        plt.close(1)
+    # convert from multi-index to cross-product table
+    data = data.unstack()
+    # data = data.transpose() # if you would like to switch columns and rows
+    # rename columns, unstack
+    data.columns = [x[1] for x in data.columns.ravel()]
+
+    plt.figure(figsize=(12, 5))
+    ax = sns.heatmap(data, cmap="Spectral_r", annot=True, fmt='g')
+    plt.title(title)
+    plot_dir = r"{}{}runs{}{}".format(prj_dir, dir_sep, dir_sep, "correlation_labels.plots")
+
+    phase_plot_name = plot_dir + dir_sep + "phase_plot_{}_{}.svg".format(measure, period)
+
+    plt.xlabel("window size in minutes (no gap)")
+    plt.ylabel("efficiency")
+
+    plt.savefig(phase_plot_name)
+    plt.close(1)
 
 
 len_win = 60
