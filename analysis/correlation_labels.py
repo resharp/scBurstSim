@@ -124,6 +124,9 @@ def make_box_plot_for_len_win(df, period, measure, agg_field, efficiency):
     df["len_win_str"] = df.len_win.map(str)
     df["k_syn_str"] = df.k_syn.map(str)
 
+    df_0_1 = df[df.k_syn == 0.1]
+    df_1 = df[df.k_syn == 1]
+
     plt.figure(figsize=(12, 5))
     plt.title("Pearson correlation for different window lengths, period={}h efficiency={}".
               format(period, efficiency))
@@ -133,12 +136,20 @@ def make_box_plot_for_len_win(df, period, measure, agg_field, efficiency):
 
     sns.set(font_scale=0.8)
 
-    sns.swarmplot(x=agg_field, y=measure, data=df, hue="tran_type", dodge=True,
-                  size=2, palette="vlag", linewidth=0, orient="v", hue_order=["S", "F"])
+    blues = ['steelblue', 'darkblue']
+    reds = ['darksalmon', 'red']
+    sw1 = sns.swarmplot(x=agg_field, y=measure, data=df_0_1, hue="tran_type", dodge=True,
+                        size=2, palette=blues, linewidth=0, orient="v", hue_order=["S", "F"])
+
+    sw2 = sns.swarmplot(x=agg_field, y=measure, data=df_1, hue="tran_type", dodge=True,
+                        size=2, palette=reds, linewidth=0, orient="v", hue_order=["S", "F"])
+
+    handles2, _ = sw2.get_legend_handles_labels()
 
     plt.xlabel("Length window (minutes)")
     plt.ylabel("Pearson correlation between normalized counts two labels")
 
+    plt.legend(handles2, ['Stochastic (S)', 'Fluctuating (F)', 'S low', 'F low', 'S high', 'F high'])
     fig_name = plot_dir + dir_sep + "boxplot_correlation_{agg_field}_{period}.svg".format(
         agg_field=agg_field, period=period)
     plt.savefig(fig_name)
