@@ -32,7 +32,7 @@ label_1 = "EU"
 label_2 = "4SU"
 
 
-def run_all_counts(prj_dir, nr_cells, efficiencies, window_lengths):
+def run_all_counts(prj_dir, nr_cells, efficiencies, window_lengths, df_strategies):
     list_agg = []
 
     for eff in efficiencies:
@@ -46,7 +46,12 @@ def run_all_counts(prj_dir, nr_cells, efficiencies, window_lengths):
             # df_counts are counts of two labeling windows (single window length)
             df_counts = pd.read_csv(filename_counts, sep=';')
 
-            df_agg = df_counts.groupby(['allele_id', 'strategy', 'label']).agg(
+            df_merged = df_counts.merge(df_strategies, how='inner',
+                                        left_on=['strategy'],
+                                        right_on=['name'])
+
+            # to do: join strategies and split between transcription rates
+            df_agg = df_merged.groupby(['allele_id', 'strategy', 'label', 'k_syn']).agg(
                 sum_count=('real_count', 'sum'),
                 cell_count=('real_count', 'count')
                  ).reset_index()
@@ -56,9 +61,6 @@ def run_all_counts(prj_dir, nr_cells, efficiencies, window_lengths):
             df_agg["len_win"] = len_win
 
             list_agg.append(df_agg)
-
-    # df_counts = normalize_counts(df_counts)
-    # df_counts_12 = merge_label_counts(df_counts, label_1, label_2)
 
     df_agg_all = pd.concat(list_agg)
 
@@ -98,33 +100,35 @@ if run_agg:
 
     nr_cells = 500
     # aggregate over cells
-    df_agg = run_all_counts(prj_dir, nr_cells, efficiencies, window_lengths)
+    df_agg = run_all_counts(prj_dir, nr_cells, efficiencies, window_lengths, df_strategies)
 
     df_agg["period"] = df_agg.strategy.str.split("_", expand=True)[4]
     # df_agg = add_coord_group_to_strategy(df_agg)
     df_agg.to_csv(path_or_buf=alleles_file_name, sep=';', index=False)
 
-    # aggregate over all alleles
-    df_agg2 = df_agg.groupby(['eff', 'len_win', 'label', 'period']).agg(
+    # aggregate over all alleles of a certain synthesis rate
+    df_agg2 = df_agg.groupby(['eff', 'len_win', 'label', 'k_syn']).agg(
         mean_count=('mean_count', 'mean'),
         cell_count=('cell_count', 'mean')
-    ).round(2).reset_index()
+    ).reset_index()
+
+    df_agg2.mean_count = df_agg2.mean_count.round(2)
+    df_agg2.cell_count = df_agg2.cell_count.round(0)
 
     df_agg2.to_csv(path_or_buf=total_file_name, sep=';', index=False)
 else:
     df_agg = pd.read_csv(alleles_file_name, sep=';')
     df_agg2 = pd.read_csv(total_file_name, sep=';')
 
+# discriminate between transcription rates
+k_syns = df_agg2.k_syn.unique()
 
-periods = [1, 2, 3, 5, 12, 24]
-
-
-for period in periods:
+for k_syn in k_syns:
     labels = [label_1, label_2]
     label_nr = 0
     for label in labels:
         label_nr = label_nr + 1
-        data = df_agg2[(df_agg2.period.map(int) == period) & (df_agg2.label == label)]
+        data = df_agg2[(df_agg2.k_syn == k_syn) & (df_agg2.label == label)]
 
         data = data[['eff', 'len_win', 'mean_count']]
         data = data.sort_values("len_win")
@@ -137,13 +141,13 @@ for period in periods:
         data.columns = [x[1] for x in data.columns.ravel()]
 
         plt.figure(figsize=(12, 5))
-        ax = sns.heatmap(data, cmap="Spectral_r", annot=True)
+        ax = sns.heatmap(data, cmap="Spectral_r", annot=True, fmt='g')
 
         plt.title(
-            "mean transcript abundance for label {}, period: {}h".format(label_nr, period))
+            "mean transcript abundance for label {}, k_syn: {}".format(label_nr, k_syn))
 
         plot_dir = r"{}{}runs{}{}".format(prj_dir, dir_sep, dir_sep, "signal_of_labels.plots")
-        phase_plot_name = plot_dir + dir_sep + "phase_plot_{}_{}.svg".format(label, period)
+        phase_plot_name = plot_dir + dir_sep + "phase_plot_{}_{}.svg".format(label, k_syn)
 
         plt.xlabel("window size in minutes (no gap)")
         plt.ylabel("efficiency")
