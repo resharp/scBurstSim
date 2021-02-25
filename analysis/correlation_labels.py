@@ -258,7 +258,8 @@ def mwu_test_for_all_efficiencies_win_lens_and_periods(prj_dir, efficiencies, wi
     return df_mw_return
 
 
-def create_phase_diagram_for_periods(df_mw_values, periods, prj_dir):
+def create_phase_diagrams(df_mw_values, periods, prj_dir):
+
     for period in periods:
         data = df_mw_values[df_mw_values.period == period]
 
@@ -267,10 +268,15 @@ def create_phase_diagram_for_periods(df_mw_values, periods, prj_dir):
 
         create_phase_diagram(data, measure, title, period, prj_dir)
 
-        measure = 'mean_nr_data_points'
-        title = "mean nr of data points (counts for either label 1 or 2 or both for period: {}h".format(period)
+    measure = 'mean_nr_data_points'
+    title = "mean nr of data points (=minimum of counts of label 1 and 2)"
 
-        create_phase_diagram(data, measure, title, period, prj_dir)
+    # for the mean number of data points we aggregate over the periods
+    df_mw_agg_periods = df_mw_values.groupby(['eff', 'len_win']).agg(
+        mean_nr_data_points=('mean_nr_data_points', 'mean'),
+    ).round(0).reset_index()
+
+    create_phase_diagram(df_mw_agg_periods, measure, title, period="", prj_dir=prj_dir)
 
 
 def create_phase_diagram(data, measure, title, period, prj_dir):
@@ -342,5 +348,5 @@ for period in periods:
 efficiencies = [1, 0.5, 0.2, 0.05]
 df_mw_values = mwu_test_for_all_efficiencies_win_lens_and_periods(prj_dir, efficiencies, window_lengths, periods)
 
-# TODO: change; combine all periods
-create_phase_diagram_for_periods(df_mw_values, periods, prj_dir)
+create_phase_diagrams(df_mw_values, periods, prj_dir)
+
