@@ -58,9 +58,17 @@ def scatter_plot_for_allele(df_counts, strategy):
 
 def calc_pearson_correlation(series):
 
-    nr_data_points = len(series)
+    # criterium for at least 15 non-zero values in series.norm_count_1 and 15 in series.norm_count_2
+    nr_label_1 = len(series[series.norm_count_1 > 0])
+    nr_label_2 = len(series[series.norm_count_2 > 0])
 
-    corr, p_value = pearsonr(series.norm_count_1, series.norm_count_2)
+    nr_data_points = np.min([nr_label_1, nr_label_2])
+
+    if nr_data_points >= 15:
+        corr, p_value = pearsonr(series.norm_count_1, series.norm_count_2)
+    else:
+        corr = np.nan
+        p_value = 0
 
     df = pd.DataFrame([[corr, nr_data_points, p_value]], columns=["corr", "nr_data_points", "p_value"])
 
@@ -71,6 +79,8 @@ def calculate_corr_and_save(df_counts, len_win):
 
     df_corr = df_counts.groupby(["strategy"]).apply(calc_pearson_correlation).reset_index(). \
         sort_values("corr").drop('level_1', axis=1)
+
+    df_corr = df_corr[(df_corr["corr"].notna()) & (df_corr.nr_data_points >= 15)]
 
     filename_corr_labels = plot_dir + dir_sep + "corr_labels_{len_win}.csv".format(len_win=len_win)
 
@@ -131,8 +141,9 @@ def make_box_plot_for_len_win(df, period, measure, agg_field, efficiency):
     plt.title("Pearson correlation for different window lengths, period={}h efficiency={}".
               format(period, efficiency))
 
+    gray_white = ['lightgrey', 'white']
     b = sns.boxplot(x=agg_field, y=measure, data=df, hue="tran_type", hue_order=["S", "F"],
-                    color="white", orient="v")
+                    palette=gray_white, orient="v")
 
     sns.set(font_scale=0.8)
 
@@ -162,6 +173,7 @@ def run_and_plot_one_correlation(df_counts, len_win):
     df_counts_12 = merge_label_counts(df_counts, label_1, label_2)
 
     df_corr = calculate_corr_and_save(df_counts_12, len_win)
+
     df_corr = add_coord_group_to_strategy(df_corr)
 
     strategy = df_corr.head(1).strategy.item()
@@ -221,8 +233,9 @@ def mwu_test_for_all_efficiencies_win_lens_and_periods(prj_dir, efficiencies, wi
 
         for period in periods:
             df_one_period = df_corr_all_eff[df_corr_all_eff.period == period]
+
             df_filtered = \
-                df_corr_all_eff[(df_corr_all_eff.period == period) & (df_corr_all.nr_data_points >= 30)]
+                df_corr_all_eff[(df_corr_all_eff.period == period) & (df_corr_all_eff.nr_data_points >= 15)]
 
             # now for each window length, calculate the difference in mean
             # between tran_type S and tran_type F
@@ -286,7 +299,7 @@ def create_phase_diagram(data, measure, title, period, prj_dir):
     plt.close(1)
 
 
-len_win = 60
+len_win = 120
 
 plot_dir = out_dir + dir_sep + "correlation_labels.plots"
 os.makedirs(plot_dir, exist_ok=True)
@@ -329,4 +342,5 @@ for period in periods:
 efficiencies = [1, 0.5, 0.2, 0.05]
 df_mw_values = mwu_test_for_all_efficiencies_win_lens_and_periods(prj_dir, efficiencies, window_lengths, periods)
 
+# TODO: change; combine all periods
 create_phase_diagram_for_periods(df_mw_values, periods, prj_dir)
