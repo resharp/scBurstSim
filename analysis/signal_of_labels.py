@@ -123,6 +123,34 @@ else:
 # discriminate between transcription rates
 k_syns = df_agg2.k_syn.unique()
 
+
+def signal_phase_diagram(data, measure, title):
+
+    data = data[['eff', 'len_win', measure]]
+    data = data.sort_values("len_win")
+    data = data.set_index(["eff", "len_win"])
+
+    # convert from multi-index to cross-product table
+    data = data.unstack()
+
+    # rename columns, unstack
+    data.columns = [x[1] for x in data.columns.ravel()]
+
+    plt.figure(figsize=(12, 5))
+    ax = sns.heatmap(data, cmap="Spectral_r", annot=True, fmt='g')
+
+    plt.title(title)
+
+    plot_dir = r"{}{}runs{}{}".format(prj_dir, dir_sep, dir_sep, "signal_of_labels.plots")
+    phase_plot_name = plot_dir + dir_sep + "phase_plot_{}_{}_{}.svg".format(measure, label, k_syn)
+
+    plt.xlabel("window size in minutes (no gap)")
+    plt.ylabel("efficiency")
+
+    plt.savefig(phase_plot_name)
+    plt.close(1)
+
+
 for k_syn in k_syns:
     labels = [label_1, label_2]
     label_nr = 0
@@ -130,26 +158,11 @@ for k_syn in k_syns:
         label_nr = label_nr + 1
         data = df_agg2[(df_agg2.k_syn == k_syn) & (df_agg2.label == label)]
 
-        data = data[['eff', 'len_win', 'mean_count']]
-        data = data.sort_values("len_win")
-        data = data.set_index(["eff", "len_win"])
+        measure = 'mean_count'
+        title = "mean transcript abundance per gene for label {}, k_syn: {}".format(label_nr, k_syn)
+        signal_phase_diagram(data, measure, title)
 
-        # convert from multi-index to cross-product table
-        data = data.unstack()
+        measure = 'cell_count'
+        title = "mean nr of cells with counts per gene, label {}, k_syn: {}".format(label_nr, k_syn)
+        signal_phase_diagram(data, measure, title)
 
-        # rename columns, unstack
-        data.columns = [x[1] for x in data.columns.ravel()]
-
-        plt.figure(figsize=(12, 5))
-        ax = sns.heatmap(data, cmap="Spectral_r", annot=True, fmt='g')
-
-        plt.title(
-            "mean transcript abundance for label {}, k_syn: {}".format(label_nr, k_syn))
-
-        plot_dir = r"{}{}runs{}{}".format(prj_dir, dir_sep, dir_sep, "signal_of_labels.plots")
-        phase_plot_name = plot_dir + dir_sep + "phase_plot_{}_{}.svg".format(label, k_syn)
-
-        plt.xlabel("window size in minutes (no gap)")
-        plt.ylabel("efficiency")
-        plt.savefig(phase_plot_name)
-        plt.close(1)
