@@ -376,7 +376,7 @@ df_hl_counts = data.groupby(['strategy', 'half_life_h']).count().reset_index()['
 nr_genes = len(data.strategy.unique())
 
 # data = data[data.p_value < 0.05]
-data = data[(data.p_value < 0.05) & (data.nr_data_points > 50)]
+data = data[(data.p_value < 0.05) & (data.nr_data_points > 30)]
 
 df_agg = data.groupby(['eff', 'len_win', 'half_life_h']).agg(
     corr_count=('corr', 'count')
