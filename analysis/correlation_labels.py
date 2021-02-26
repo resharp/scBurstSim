@@ -266,7 +266,7 @@ def create_phase_diagrams(df_mw_values, periods, prj_dir):
         measure = 'minus_log10_mw_pvalue'
         title = "-log10(pvalue) ManWU test between label correlation values of F and S for period: {}h".format(period)
 
-        create_phase_diagram(data, measure, title, period, prj_dir)
+        create_phase_diagram(data, 'eff', measure, title, period, prj_dir)
 
     measure = 'mean_nr_data_points'
     title = "mean nr of data points (=minimum of counts of label 1 and 2)"
@@ -276,17 +276,17 @@ def create_phase_diagrams(df_mw_values, periods, prj_dir):
         mean_nr_data_points=('mean_nr_data_points', 'mean'),
     ).round(0).reset_index()
 
-    create_phase_diagram(df_mw_agg_periods, measure, title, period="", prj_dir=prj_dir)
+    create_phase_diagram(df_mw_agg_periods, 'eff', measure, title, period="", prj_dir=prj_dir)
 
 
-def create_phase_diagram(data, measure, title, period, prj_dir):
+def create_phase_diagram(data, h_axis, measure, title, period, prj_dir):
 
-    data = data[['eff', 'len_win', measure]]
+    data = data[[h_axis, 'len_win', measure]]
     data = data.sort_values("len_win")
-    data = data.set_index(["eff", "len_win"])
+    data = data.set_index([h_axis, "len_win"])
 
     # convert from multi-index to cross-product table
-    data = data.unstack()
+    data = data.unstack().fillna(0)
     # data = data.transpose() # if you would like to switch columns and rows
     # rename columns, unstack
     data.columns = [x[1] for x in data.columns.ravel()]
@@ -299,8 +299,11 @@ def create_phase_diagram(data, measure, title, period, prj_dir):
     phase_plot_name = plot_dir + dir_sep + "phase_plot_{}_{}.svg".format(measure, period)
 
     plt.xlabel("window size in minutes (no gap)")
-    plt.ylabel("efficiency")
 
+    if h_axis == "eff":
+        plt.ylabel("efficiency")
+    elif h_axis == "half_life_h":
+        plt.ylabel("half life")
     plt.savefig(phase_plot_name)
     plt.close(1)
 
@@ -350,3 +353,58 @@ df_mw_values = mwu_test_for_all_efficiencies_win_lens_and_periods(prj_dir, effic
 
 create_phase_diagrams(df_mw_values, periods, prj_dir)
 
+# based on one df_corr_all for one efficiency
+# we want to determine the percentage of genes for which correlation can be calculated
+
+corr_list_for_eff = []
+for eff in efficiencies:
+    out_dir = r"{}{}runs_on_server_{}".format(prj_dir, dir_sep, eff)
+    plot_dir = out_dir + dir_sep + "correlation_labels.plots"
+
+    corr_name = "{plot_dir}{dir_sep}df_corr_all_G{gap}.csv".format(
+        plot_dir=plot_dir, dir_sep=dir_sep, gap=gap)
+    df_corr_all_eff = pd.read_csv(corr_name, sep=';')
+    df_corr_all_eff["eff"] = eff
+    corr_list_for_eff.append(df_corr_all_eff)
+
+data = pd.concat(corr_list_for_eff)
+data["half_life_h"] = (np.log(2)/(60 * data["k_d"])).round(1).map(str)
+
+# count number of half life categories over all genes
+df_hl_counts = data.groupby(['strategy', 'half_life_h']).count().reset_index()['half_life_h'].value_counts()
+
+nr_genes = len(data.strategy.unique())
+
+# data = data[data.p_value < 0.05]
+data = data[(data.p_value < 0.05) & (data.nr_data_points > 50)]
+
+df_agg = data.groupby(['eff', 'len_win', 'half_life_h']).agg(
+    corr_count=('corr', 'count')
+).reset_index()
+
+df_agg["perc"] = (100 * df_agg["corr_count"] / nr_genes).round(1)
+
+df_agg2 = df_agg.groupby(['eff', 'len_win']).agg(
+    corr_count=('corr_count', 'sum')
+).reset_index()
+
+df_agg2["perc"] = (100 * df_agg2["corr_count"] / nr_genes).round(1)
+
+create_phase_diagram(df_agg2, "eff", "perc",
+                     "percentage of genes for which correlation can be calculated",
+                     "", prj_dir)
+
+# now take one row, e.g. efficiency 20%
+df_agg = df_agg[df_agg.eff == 0.2]
+
+df_agg_plus_norm = df_agg.merge(df_hl_counts, how="inner",
+                                left_on='half_life_h',
+                                right_index=True)
+
+# normalize based on the total number of genes per half_life
+df_agg_plus_norm['corr_count_perc'] = (100 * df_agg_plus_norm.corr_count / df_agg_plus_norm.half_life_h_y).round()
+
+# and split per half life category
+create_phase_diagram(df_agg_plus_norm, "half_life_h", "corr_count_perc",
+                     "percentage of genes for which correlation can be calculated (eff=20%)",
+                     "", prj_dir)
