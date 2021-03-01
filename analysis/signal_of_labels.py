@@ -6,7 +6,8 @@
 #
 # output: directory signal_labels.plots containing
 #   - phase diagrams of mean counts of labels, and number of cells that have non-zero counts
-#   - split for categories of synthesis and decay rate (half life)
+#       - split for categories of synthesis and decay rate (half life)
+#   - plot pulse length giving max label 1 signal for various half lives
 import os
 import pandas as pd
 import seaborn as sns
@@ -133,6 +134,38 @@ def make_phase_diagrams(df_agg2):
                 signal_phase_diagram(data, measure, label, k_syn, half_life_h, title)
 
 
+def plot_max_signal_vs_half_life(df_agg2, eff):
+
+    df_agg2_eff = df_agg2[(df_agg2.eff == eff) & (df_agg2.label == label_1)]
+
+    # for each half life and k_syn, calculate pulse length giving maximum counts
+    # https://stackoverflow.com/questions/15705630/get-the-rows-which-have-the-max-value-in-groups-using-groupby
+    idx = df_agg2_eff.groupby(['k_syn', 'half_life_h'])['cell_count'].transform(max) == df_agg2_eff['cell_count']
+    df_max = df_agg2_eff[idx].sort_values(['k_syn', 'half_life_h'])
+
+    plt.figure(figsize=(12, 5))
+
+    k_syns = df_max.k_syn.unique()
+
+    for k_syn in k_syns:
+        df_max_syn = df_max[df_max.k_syn == k_syn]
+        plt.plot(df_max_syn.half_life_h, df_max_syn.len_win, linestyle='-', marker='.', label="k_syn={}".format(k_syn))
+
+    plt.xlim(0, None)
+    plt.ylim(0, None)
+    plt.legend()
+    plt.title("pulse length giving max label 1 signal for various half lives (eff={})".format(eff))
+
+    plt.xlabel("Half life")
+    plt.ylabel("Pulse length (for both windows)")
+
+    plot_dir = r"{}{}runs{}{}".format(prj_dir, dir_sep, dir_sep, "signal_of_labels.plots")
+    plot_name = plot_dir + dir_sep + "pulse_length_vs_half_life_{}.svg".format(eff)
+    plt.savefig(plot_name)
+    plt.close(1)
+
+
+
 plot_dir = prj_dir + dir_sep + "runs" + dir_sep + "signal_of_labels.plots"
 os.makedirs(plot_dir, exist_ok=True)
 
@@ -186,9 +219,5 @@ else:
 
 make_phase_diagrams(df_agg2)
 
-# df_agg2_eff = df_agg2[(df_agg2.eff == 0.2) & (df_agg2.label == label_1)]
-# for each half life and k_syn, calculate pulse length giving maximum counts
-# https://stackoverflow.com/questions/15705630/get-the-rows-which-have-the-max-value-in-groups-using-groupby
-
-debug = True
+plot_max_signal_vs_half_life(df_agg2, eff=0.2)
 
