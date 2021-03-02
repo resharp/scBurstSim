@@ -28,7 +28,7 @@ gap = 0
 label_1 = "EU"
 label_2 = "4SU"
 
-eff = 1
+eff = 0.2
 
 out_dir = r"{}{}runs_on_server_{}".format(prj_dir, dir_sep, eff)
 plot_dir = out_dir + dir_sep + "correlation_labels.plots"
