@@ -121,6 +121,8 @@ output:
 - directory correlation_labels.plots containing
 - a csv corr_labels_<len_win>.csv with Pearson correlation values
 - some plots with correlation values for different categories (tran_type S/F and length of period)
+- phase diagrams of differences in Pearson correlation p-value distribution for tran_type S and F
+- percentage of genes for which correlation can be calculated (enough signal)
 
 ## signal of labels ##
 analysis of signal of label counts
@@ -128,8 +130,8 @@ input: same as for correlation labels
 
 output: 
 - directory signal_labels.plots containing
-    - phase diagrams of mean counts of labels
-
+    - phase diagrams of mean counts of labels and mean number of cells with non-zero count
+    - plot pulse length giving max label 1 signal for various half lives
 
 ## cluster alleles ##
 hierarchical clustering on information from one or two labels:

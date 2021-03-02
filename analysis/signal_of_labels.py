@@ -159,11 +159,9 @@ def plot_max_signal_vs_half_life(df_agg2, eff):
     plt.xlabel("Half life")
     plt.ylabel("Pulse length (for both windows)")
 
-    plot_dir = r"{}{}runs{}{}".format(prj_dir, dir_sep, dir_sep, "signal_of_labels.plots")
     plot_name = plot_dir + dir_sep + "pulse_length_vs_half_life_{}.svg".format(eff)
     plt.savefig(plot_name)
     plt.close(1)
-
 
 
 plot_dir = prj_dir + dir_sep + "runs" + dir_sep + "signal_of_labels.plots"

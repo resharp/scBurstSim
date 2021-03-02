@@ -9,6 +9,8 @@
 #   - some plots with correlation values for different categories (tran_type S/F and length of period)
 #   - phase diagrams of differences in Pearson correlation p-value distribution for tran_type S and F
 #       for dimensions win_len and efficiency, separately for every oscillation period
+#   - percentage of genes for which correlation can be calculated (enough signal)
+#       for one efficiency split out per half life category
 import os
 import pandas as pd
 import seaborn as sns
@@ -325,7 +327,7 @@ sr = StrategyReader(strategies_file)
 sr.read_strategies()
 df_strategies = sr.df_strategies
 
-run_and_plot_one_correlation(df_counts, len_win)
+# run_and_plot_one_correlation(df_counts, len_win)
 
 corr_name = "{od}{dir_sep}df_corr_all_G{gap}.csv".format(
     od=plot_dir, dir_sep=dir_sep, gap=gap)
@@ -370,7 +372,7 @@ for eff in efficiencies:
 data = pd.concat(corr_list_for_eff)
 data["half_life_h"] = (np.log(2)/(60 * data["k_d"])).round(1).map(str)
 
-# count number of half life categories over all genes
+# count number of half life categories over all genes (for normalization)
 df_hl_counts = data.groupby(['strategy', 'half_life_h']).count().reset_index()['half_life_h'].value_counts()
 
 nr_genes = len(data.strategy.unique())
