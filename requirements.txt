@@ -1,3 +1,5 @@
+pydotplus
+IPython
 seaborn
 scikit-learn
 scipy
