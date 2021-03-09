@@ -21,15 +21,15 @@ from scipy.stats import mannwhitneyu
 
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 
-efficiency = 0.2
+efficiency = 1
 
 if os.name == 'nt':
     dir_sep = "\\"
     # TODO: set your own out directory
     # out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
 
-    # out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs_on_server_{}".format(efficiency)
-    out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\sc_runs_60_{}".format(efficiency)
+    out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs_on_server_{}".format(efficiency)
+    # out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\sc_runs_60_{}".format(efficiency)
 
     prj_dir = r"D:\26 Battich Oudenaarden transcriptional bursts"
 else:
@@ -327,7 +327,7 @@ filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
 # df_counts are counts of two labeling windows (single window length)
 df_counts = pd.read_csv(filename_counts, sep=';')
 
-strategies_file = out_dir + dir_sep + "strategies_mixed_new_2.csv"
+strategies_file = out_dir + dir_sep + "strategies_mixed_new.csv"
 sr = StrategyReader(strategies_file)
 # sr = StrategyReader(in_dir + dir_sep + "strategies.csv")
 sr.read_strategies()
@@ -338,18 +338,18 @@ df_strategies = sr.df_strategies
 corr_name = "{od}{dir_sep}df_corr_all_G{gap}.csv".format(
     od=plot_dir, dir_sep=dir_sep, gap=gap)
 
-# window_lengths = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195]
-window_lengths = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
+window_lengths = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195]
+# window_lengths = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
 run_corr = True
 
 if run_corr:
-    df_corr_all = run_all_correlations(window_lengths, gap=gap, win_plus_gap=60)
+    df_corr_all = run_all_correlations(window_lengths, gap=gap, win_plus_gap=0)
     df_corr_all.to_csv(path_or_buf=corr_name, sep=';', index=False)
 else:
     df_corr_all = pd.read_csv(corr_name, sep=';')
 
-# periods = [1, 2, 3, 5, 12, 24]
-periods = [2]
+periods = [1, 2, 3, 5, 12, 24]
+# periods = [2]
 
 for period in periods:
     # df_one_period = df_corr_all[(df_corr_all.period == period) & (df_corr_all.nr_data_points >= 30)]
@@ -360,7 +360,7 @@ for period in periods:
 
 
 # set test_for_signal_strength to True for creating phase diagrams for signal strength
-test_for_signal_strength = False
+test_for_signal_strength = True
 
 if test_for_signal_strength:
     # after having run correlation for all window lengths
