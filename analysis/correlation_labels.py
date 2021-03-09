@@ -21,13 +21,16 @@ from scipy.stats import mannwhitneyu
 
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 
-efficiency = 1
+efficiency = 0.2
 
 if os.name == 'nt':
     dir_sep = "\\"
     # TODO: set your own out directory
     # out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
-    out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs_on_server_{}".format(efficiency)
+
+    # out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs_on_server_{}".format(efficiency)
+    out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\sc_runs_60_{}".format(efficiency)
+
     prj_dir = r"D:\26 Battich Oudenaarden transcriptional bursts"
 else:
     dir_sep = "/"
@@ -82,7 +85,7 @@ def calculate_corr_and_save(df_counts, len_win):
     df_corr = df_counts.groupby(["strategy"]).apply(calc_pearson_correlation).reset_index(). \
         sort_values("corr").drop('level_1', axis=1)
 
-    df_corr = df_corr[(df_corr["corr"].notna()) & (df_corr.nr_data_points >= 15)]
+    df_corr = df_corr[(df_corr["corr"].notna()) & (df_corr.nr_data_points >= 30)]
 
     filename_corr_labels = plot_dir + dir_sep + "corr_labels_{len_win}.csv".format(len_win=len_win)
 
@@ -191,10 +194,13 @@ def run_and_plot_one_correlation(df_counts, len_win):
 
 
 # combine all correlation files into one and add an extra column for window size
-def run_all_correlations(window_lengths):
+def run_all_correlations(window_lengths, gap=0, win_plus_gap=0):
     corr_list = []
 
     for len_win in window_lengths:
+
+        if win_plus_gap != 0:
+            gap = win_plus_gap - len_win
 
         filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
             len_win=len_win, gap=gap)
@@ -310,7 +316,7 @@ def create_phase_diagram(data, h_axis, measure, title, period, prj_dir):
     plt.close(1)
 
 
-len_win = 120
+len_win = 60
 
 plot_dir = out_dir + dir_sep + "correlation_labels.plots"
 os.makedirs(plot_dir, exist_ok=True)
@@ -333,15 +339,18 @@ corr_name = "{od}{dir_sep}df_corr_all_G{gap}.csv".format(
     od=plot_dir, dir_sep=dir_sep, gap=gap)
 
 window_lengths = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195]
-run_corr = False
+# window_lengths = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
+run_corr = True
 
 if run_corr:
-    df_corr_all = run_all_correlations(window_lengths)
+    df_corr_all = run_all_correlations(window_lengths, gap=gap, win_plus_gap=60)
     df_corr_all.to_csv(path_or_buf=corr_name, sep=';', index=False)
 else:
     df_corr_all = pd.read_csv(corr_name, sep=';')
 
-periods = [1, 2, 3, 5, 12, 24]
+# periods = [1, 2, 3, 5, 12, 24]
+periods = [2]
+
 for period in periods:
     # df_one_period = df_corr_all[(df_corr_all.period == period) & (df_corr_all.nr_data_points >= 30)]
     df_one_period = df_corr_all[df_corr_all.period == period]
@@ -349,64 +358,69 @@ for period in periods:
     # for 1 efficiency: make box plot and compare between F (deterministic fluctuation) and S (stochastic behavior)
     make_box_plot_for_len_win(df_one_period, period, "corr", "len_win_str", efficiency)
 
-# after having run correlation for all window lengths
-efficiencies = [1, 0.5, 0.2, 0.05]
-df_mw_values = mwu_test_for_all_efficiencies_win_lens_and_periods(prj_dir, efficiencies, window_lengths, periods)
 
-create_phase_diagrams(df_mw_values, periods, prj_dir)
+# set test_for_signal_strength to True for creating phase diagrams for signal strength
+test_for_signal_strength = False
 
-# based on one df_corr_all for one efficiency
-# we want to determine the percentage of genes for which correlation can be calculated
+if test_for_signal_strength:
+    # after having run correlation for all window lengths
+    efficiencies = [1, 0.5, 0.2, 0.05]
+    df_mw_values = mwu_test_for_all_efficiencies_win_lens_and_periods(prj_dir, efficiencies, window_lengths, periods)
 
-corr_list_for_eff = []
-for eff in efficiencies:
-    out_dir = r"{}{}runs_on_server_{}".format(prj_dir, dir_sep, eff)
-    plot_dir = out_dir + dir_sep + "correlation_labels.plots"
+    create_phase_diagrams(df_mw_values, periods, prj_dir)
 
-    corr_name = "{plot_dir}{dir_sep}df_corr_all_G{gap}.csv".format(
-        plot_dir=plot_dir, dir_sep=dir_sep, gap=gap)
-    df_corr_all_eff = pd.read_csv(corr_name, sep=';')
-    df_corr_all_eff["eff"] = eff
-    corr_list_for_eff.append(df_corr_all_eff)
+    # based on one df_corr_all for one efficiency
+    # we want to determine the percentage of genes for which correlation can be calculated
 
-data = pd.concat(corr_list_for_eff)
-data["half_life_h"] = (np.log(2)/(60 * data["k_d"])).round(1).map(str)
+    corr_list_for_eff = []
+    for eff in efficiencies:
+        out_dir = r"{}{}runs_on_server_{}".format(prj_dir, dir_sep, eff)
+        plot_dir = out_dir + dir_sep + "correlation_labels.plots"
 
-# count number of half life categories over all genes (for normalization)
-df_hl_counts = data.groupby(['strategy', 'half_life_h']).count().reset_index()['half_life_h'].value_counts()
+        corr_name = "{plot_dir}{dir_sep}df_corr_all_G{gap}.csv".format(
+            plot_dir=plot_dir, dir_sep=dir_sep, gap=gap)
+        df_corr_all_eff = pd.read_csv(corr_name, sep=';')
+        df_corr_all_eff["eff"] = eff
+        corr_list_for_eff.append(df_corr_all_eff)
 
-nr_genes = len(data.strategy.unique())
+    data = pd.concat(corr_list_for_eff)
+    data["half_life_h"] = (np.log(2)/(60 * data["k_d"])).round(1).map(str)
 
-# data = data[data.p_value < 0.05]
-data = data[(data.p_value < 0.05) & (data.nr_data_points > 30)]
+    # count number of half life categories over all genes (for normalization)
+    df_hl_counts = data.groupby(['strategy', 'half_life_h']).count().reset_index()['half_life_h'].value_counts()
 
-df_agg = data.groupby(['eff', 'len_win', 'half_life_h']).agg(
-    corr_count=('corr', 'count')
-).reset_index()
+    nr_genes = len(data.strategy.unique())
 
-df_agg["perc"] = (100 * df_agg["corr_count"] / nr_genes).round(1)
+    # data = data[data.p_value < 0.05]
+    data = data[(data.p_value < 0.05) & (data.nr_data_points > 30)]
 
-df_agg2 = df_agg.groupby(['eff', 'len_win']).agg(
-    corr_count=('corr_count', 'sum')
-).reset_index()
+    df_agg = data.groupby(['eff', 'len_win', 'half_life_h']).agg(
+        corr_count=('corr', 'count')
+    ).reset_index()
 
-df_agg2["perc"] = (100 * df_agg2["corr_count"] / nr_genes).round(1)
+    df_agg["perc"] = (100 * df_agg["corr_count"] / nr_genes).round(1)
 
-create_phase_diagram(df_agg2, "eff", "perc",
-                     "percentage of genes for which correlation can be calculated",
-                     "", prj_dir)
+    df_agg2 = df_agg.groupby(['eff', 'len_win']).agg(
+        corr_count=('corr_count', 'sum')
+    ).reset_index()
 
-# now take one row, e.g. efficiency 20%
-df_agg = df_agg[df_agg.eff == 0.2]
+    df_agg2["perc"] = (100 * df_agg2["corr_count"] / nr_genes).round(1)
 
-df_agg_plus_norm = df_agg.merge(df_hl_counts, how="inner",
-                                left_on='half_life_h',
-                                right_index=True)
+    create_phase_diagram(df_agg2, "eff", "perc",
+                         "percentage of genes for which correlation can be calculated",
+                         "", prj_dir)
 
-# normalize based on the total number of genes per half_life
-df_agg_plus_norm['corr_count_perc'] = (100 * df_agg_plus_norm.corr_count / df_agg_plus_norm.half_life_h_y).round()
+    # now take one row, e.g. efficiency 20%
+    df_agg = df_agg[df_agg.eff == 0.2]
 
-# and split per half life category
-create_phase_diagram(df_agg_plus_norm, "half_life_h", "corr_count_perc",
-                     "percentage of genes for which correlation can be calculated (eff=20%)",
-                     "", prj_dir)
+    df_agg_plus_norm = df_agg.merge(df_hl_counts, how="inner",
+                                    left_on='half_life_h',
+                                    right_index=True)
+
+    # normalize based on the total number of genes per half_life
+    df_agg_plus_norm['corr_count_perc'] = (100 * df_agg_plus_norm.corr_count / df_agg_plus_norm.half_life_h_y).round()
+
+    # and split per half life category
+    create_phase_diagram(df_agg_plus_norm, "half_life_h", "corr_count_perc",
+                         "percentage of genes for which correlation can be calculated (eff=20%)",
+                         "", prj_dir)
