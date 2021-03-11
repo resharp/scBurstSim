@@ -21,15 +21,34 @@ from scipy.stats import mannwhitneyu
 
 WINDOW_START = 0; WINDOW_END = 1; WINDOW_LABEL = 2
 
-efficiency = 1
+# setting for one efficiency (first part)
+efficiency = 0.2
+
+# settings for comparing between efficiencies and making phase diagrams
+study_zero_gap = False  # if False we study stepwise longer gaps with fixed W + G = 60
+
+if study_zero_gap:
+    win_plus_gap = 0  # this setting disables W + G = constant, and only varies W
+    strategies_file_name = "strategies_mixed_new.csv"
+    prefix = "runs_on_server"  # first part of subfolder name where count tables are
+    efficiencies = [1, 0.5, 0.2, 0.05]  # second part of subfolder name where count tables are
+    window_lengths = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195]
+    periods = [1, 2, 3, 5, 12, 24]
+else:
+    # we study W + G = 60 only for genes with period 2h and only for efficiency 20%
+    win_plus_gap = 60
+    strategies_file_name = "strategies_mixed_new_2.csv"  # contains subset of genes
+    prefix = "sc_runs_60"  # first part of subfolder name where count tables are
+    efficiencies = [0.2]   # second part of subfolder name where count tables are
+    window_lengths = [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]   # we omit 5 minutes because of low transcripts
+    periods = [2]
 
 if os.name == 'nt':
     dir_sep = "\\"
     # TODO: set your own out directory
     # out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
 
-    out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs_on_server_{}".format(efficiency)
-    # out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\sc_runs_60_{}".format(efficiency)
+    out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\{}_{}".format(prefix, efficiency)
 
     prj_dir = r"D:\26 Battich Oudenaarden transcriptional bursts"
 else:
@@ -52,7 +71,11 @@ def scatter_plot_for_allele(df_counts, strategy):
     # print("Pearsons correlation: {}".format(corr_s))
 
     plt.title("strategy: {} with correlation {} (len_win={})".format(strategy, corr_s, len_win))
-    plt.scatter(df_counts_allele.norm_count_1, df_counts_allele.norm_count_2)
+    # plt.scatter(df_counts_allele.norm_count_1, df_counts_allele.norm_count_2)
+
+    sns.kdeplot(x=df_counts_allele.norm_count_1, y=df_counts_allele.norm_count_2,
+                legend=False, bw_adjust=.2)
+
     plt.xlabel("normalized counts label 1")
     plt.ylabel("normalized counts label 2")
 
@@ -90,7 +113,7 @@ def calculate_corr_and_save(df_counts, len_win):
     filename_corr_labels = plot_dir + dir_sep + "corr_labels_{len_win}.csv".format(len_win=len_win)
 
     # do we still want to save this separately?
-    df_corr.to_csv(filename_corr_labels, sep=";", index=False)
+    # df_corr.to_csv(filename_corr_labels, sep=";", index=False)
     return df_corr
 
 
@@ -232,7 +255,7 @@ def mwu_test_for_all_efficiencies_win_lens_and_periods(prj_dir, efficiencies, wi
 
     for eff in efficiencies:
 
-        out_dir = r"{}{}runs_on_server_{}".format(prj_dir, dir_sep, eff)
+        out_dir = r"{}{}{}_{}".format(prj_dir, dir_sep, prefix, eff)
         plot_dir = out_dir + dir_sep + "correlation_labels.plots"
 
         corr_name = "{plot_dir}{dir_sep}df_corr_all_G{gap}.csv".format(
@@ -316,7 +339,9 @@ def create_phase_diagram(data, h_axis, measure, title, period, prj_dir):
     plt.close(1)
 
 
+# first part: study one correlation
 len_win = 60
+gap = 60 - len_win
 
 plot_dir = out_dir + dir_sep + "correlation_labels.plots"
 os.makedirs(plot_dir, exist_ok=True)
@@ -327,29 +352,25 @@ filename_counts = out_dir + dir_sep + "df_counts_W{len_win}_G{gap}.csv".format(
 # df_counts are counts of two labeling windows (single window length)
 df_counts = pd.read_csv(filename_counts, sep=';')
 
-strategies_file = out_dir + dir_sep + "strategies_mixed_new.csv"
+strategies_file = out_dir + dir_sep + strategies_file_name
 sr = StrategyReader(strategies_file)
 # sr = StrategyReader(in_dir + dir_sep + "strategies.csv")
 sr.read_strategies()
 df_strategies = sr.df_strategies
 
-# run_and_plot_one_correlation(df_counts, len_win)
+run_and_plot_one_correlation(df_counts, len_win)
 
+# second part: study all correlations, and make phase diagrams
 corr_name = "{od}{dir_sep}df_corr_all_G{gap}.csv".format(
     od=plot_dir, dir_sep=dir_sep, gap=gap)
 
-window_lengths = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195]
-# window_lengths = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
-run_corr = True
+run_corr = False
 
 if run_corr:
-    df_corr_all = run_all_correlations(window_lengths, gap=gap, win_plus_gap=0)
+    df_corr_all = run_all_correlations(window_lengths, gap=gap, win_plus_gap=win_plus_gap)
     df_corr_all.to_csv(path_or_buf=corr_name, sep=';', index=False)
 else:
     df_corr_all = pd.read_csv(corr_name, sep=';')
-
-periods = [1, 2, 3, 5, 12, 24]
-# periods = [2]
 
 for period in periods:
     # df_one_period = df_corr_all[(df_corr_all.period == period) & (df_corr_all.nr_data_points >= 30)]
@@ -364,7 +385,7 @@ test_for_signal_strength = True
 
 if test_for_signal_strength:
     # after having run correlation for all window lengths
-    efficiencies = [1, 0.5, 0.2, 0.05]
+
     df_mw_values = mwu_test_for_all_efficiencies_win_lens_and_periods(prj_dir, efficiencies, window_lengths, periods)
 
     create_phase_diagrams(df_mw_values, periods, prj_dir)
@@ -374,7 +395,7 @@ if test_for_signal_strength:
 
     corr_list_for_eff = []
     for eff in efficiencies:
-        out_dir = r"{}{}runs_on_server_{}".format(prj_dir, dir_sep, eff)
+        out_dir = r"{}{}{}_{}".format(prj_dir, dir_sep, prefix, eff)
         plot_dir = out_dir + dir_sep + "correlation_labels.plots"
 
         corr_name = "{plot_dir}{dir_sep}df_corr_all_G{gap}.csv".format(
