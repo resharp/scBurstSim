@@ -4,7 +4,7 @@
 #   assuming resolution on allele level
 # based on df_corr_all
 # train on 70% of data
-# irrespective of period
+# irrespective of period (which is a bit silly but this is just for fun)
 
 # inspired on
 # https://www.datacamp.com/community/tutorials/decision-tree-classification-python
@@ -28,6 +28,7 @@ gap = 0
 label_1 = "EU"
 label_2 = "4SU"
 
+# efficiency determines from which folder df_corr_all_G0.csv is read
 eff = 0.2
 
 out_dir = r"{}{}runs_on_server_{}".format(prj_dir, dir_sep, eff)
@@ -43,18 +44,23 @@ df_corr_all = pd.read_csv(corr_name, sep=';')
 # https://stats.stackexchange.com/questions/96025/how-do-decision-tree-learning-algorithms-deal-with-missing-values-under-the-hoo
 
 
-df_corr_sign = df_corr_all[df_corr_all.p_value < 0.05]
+def convert_to_columns_every_len_win(df_corr_all):
+    df_corr_sign = df_corr_all[df_corr_all.p_value < 0.05]
 
-df_corr_sign = df_corr_sign[['strategy', 'tran_type', 'corr', 'len_win']]
+    df_corr_sign = df_corr_sign[['strategy', 'tran_type', 'corr', 'len_win']]
 
-data = df_corr_sign.set_index(['strategy', 'tran_type', 'len_win'])
+    df = df_corr_sign.set_index(['strategy', 'tran_type', 'len_win'])
 
-data = data.unstack()
-data.columns = ["corr_" + str(x[1]) for x in data.columns.ravel()]
-data = data.reset_index()
+    df = df.unstack()
+    df.columns = ["corr_" + str(x[1]) for x in df.columns.ravel()]
+    df = df.reset_index()
 
-# quick and dirty: replace np.nans with Pearson correlation 0
-data = data.fillna(0)
+    # quick and dirty: replace np.nans with Pearson correlation 0
+    df = df.fillna(0)
+    return df
+
+
+data = convert_to_columns_every_len_win(df_corr_all)
 
 # feature_cols = ['corr_15', 'corr_30', 'corr_45', 'corr_60', 'corr_75', 'corr_90',
 #                 'corr_105', 'corr_120', 'corr_135', 'corr_150', 'corr_165', 'corr_180',
@@ -76,7 +82,7 @@ for i in range(0, 5):
 
     # Create Decision Tree classifier object (uses gini as a default)
     # clf = DecisionTreeClassifier()
-    clf = DecisionTreeClassifier(criterion="gini", max_depth=4)
+    clf = DecisionTreeClassifier(criterion="gini", max_depth=3)
 
     # Train Decision Tree Classifier
     clf = clf.fit(X_train, y_train)
@@ -104,6 +110,6 @@ export_graphviz(clf, out_file=dot_data,
                 filled=True, rounded=True,
                 special_characters=True, feature_names=feature_cols, class_names=['S', 'F'])
 graph = pydotplus.graph_from_dot_data(dot_data.getvalue())
-graph.write_png(plot_dir + dir_sep + 'decision_tree.png')
+graph.write_png(plot_dir + dir_sep + 'decision_tree_{}.png'.format(eff))
 Image(graph.create_png())
 
