@@ -124,6 +124,9 @@ output:
 - phase diagrams of differences in Pearson correlation p-value distribution for tran_type S and F
 - percentage of genes for which correlation can be calculated (enough signal)
 
+With this analysis can also study the best shape of the pulse, by keeping the sum of window/pulse size (W) and gap (G) constant:
+e.g. W+G=60
+
 ## signal of labels ##
 analysis of signal of label counts
 input: same as for correlation labels

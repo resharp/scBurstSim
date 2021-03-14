@@ -8,7 +8,7 @@
 #   - a csv corr_labels_<len_win>.csv with Pearson correlation values
 #   - some plots with correlation values for different categories (tran_type S/F and length of period)
 #   - phase diagrams of differences in Pearson correlation p-value distribution for tran_type S and F
-#       for dimensions win_len and efficiency, separately for every oscillation period
+#       for dimensions win_len and efficiency, separately for every oscillation period of [1, 2, 3, 5, 12, 24]
 #   - percentage of genes for which correlation can be calculated (enough signal)
 #       for one efficiency split out per half life category
 import os
@@ -329,7 +329,10 @@ def create_phase_diagram(data, h_axis, measure, title, period, prj_dir):
 
     phase_plot_name = plot_dir + dir_sep + "phase_plot_{}_{}.svg".format(measure, period)
 
-    plt.xlabel("window size in minutes (no gap)")
+    if study_zero_gap:
+        plt.xlabel("window size in minutes (no gap)")
+    else:
+        plt.xlabel("window size in minutes (fixed pulse + gap)")
 
     if h_axis == "eff":
         plt.ylabel("efficiency")
