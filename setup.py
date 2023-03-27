@@ -9,7 +9,7 @@ setup(
     description='Burst simulator',
     long_description=readme,
     author='Richard Gremmen',
-    author_email='gremmen@resharp.nl',
+    author_email='*********',
     url='https://github.com/resharp/scBurstSim',
     packages=find_packages(exclude=('tests', 'docs'))
 )
