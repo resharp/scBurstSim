@@ -19,9 +19,9 @@ if os.name == 'nt':
     out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
 else:
     dir_sep = "/"
-    out_dir = ""
+    out_dir = "~/source/scBurstSim/output"
 
-in_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\source\scBurstSim\data"
+in_dir = "~/source/scBurstSim/data"
 
 plot_dir = out_dir + dir_sep + "single_allele_example.plots"
 os.makedirs(plot_dir, exist_ok=True)
@@ -30,14 +30,15 @@ nr_days = 1
 max_minutes = 1440*nr_days  # 24 hours = 1440 minutes
 
 logger = logging.getLogger(__name__)
-out_dir = r"D:\26 Battich Oudenaarden transcriptional bursts\runs"
+out_dir = "output"
+
 logging.basicConfig(filename=out_dir + dir_sep + 'single_allele_example.log', filemode='w',
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     level=logging.INFO)
 
 # sr = StrategyReader(out_dir + dir_sep + "strategies_generated.csv" )
-sr = StrategyReader(out_dir + dir_sep + "strategies_mixed.csv" )
-# sr = StrategyReader(in_dir + dir_sep + "strategies.csv" )
+# sr = StrategyReader(in_dir + dir_sep + "strategies_mixed.csv" )
+sr = StrategyReader(in_dir + dir_sep + "strategies.csv" )
 
 
 windows, fix_time = get_windows_and_fix_time(length_window=60, gap=0)
@@ -138,7 +139,8 @@ def run_distribution(params, interval, nr_snapshots):
 
 # we can select a strategy by name
 # see strategy names in data\strategies.csv
-strategy = "a_665_F_C_5"
+# strategy = "a_665_F_C_5"
+strategy = "frequent_coor"
 params = sr.get(strategy=strategy)
 
 # or retrieve a random strategy
@@ -152,5 +154,5 @@ run_example(params)
 interval = 100
 nr_snapshots = 300
 
-# run_distribution(params, interval, nr_snapshots)
+run_distribution(params, interval, nr_snapshots)
 
