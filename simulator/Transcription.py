@@ -191,7 +191,7 @@ class Transcription:
             rename(columns={'decay': 'arrival', 'count_d': 'count_s'})
 
         df_poisson_arrivals = self.df_transcripts[["label", "arrival", "count_s"]]
-        df_events = df_poisson_arrivals.append(df_decays).sort_values(by="arrival")
+        df_events = pd.concat([df_poisson_arrivals, df_decays]).sort_values(by="arrival")
 
         return df_events
 
